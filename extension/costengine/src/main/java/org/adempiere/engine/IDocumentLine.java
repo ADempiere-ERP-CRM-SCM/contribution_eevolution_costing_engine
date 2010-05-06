@@ -14,7 +14,7 @@
  * Contributor(s): victor.perez@e-evolution.com http://www.e-evolution.com    *
  *****************************************************************************/
 
-package org.adempiere.model.engines;
+package org.adempiere.engine;
 
 import java.math.BigDecimal;
 import java.util.Properties;
