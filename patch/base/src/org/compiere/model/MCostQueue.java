@@ -24,8 +24,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
+import org.adempiere.engine.CostComponent;
 import org.adempiere.exceptions.CostInsufficientQtyException;
-import org.compiere.acct.CostComponent;
 import org.compiere.util.CLogMgt;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;

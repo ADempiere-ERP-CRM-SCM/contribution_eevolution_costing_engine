@@ -701,8 +701,10 @@ implements IDocumentLine
 		return true;
 	}
 
-// ANCA:
-	@Override
+	/**
+	 * get the Price Actual 
+	 * @return BigDecimal with the Price Actual
+	 */
 	public BigDecimal getPriceActual()
 	{
 			// FIXME: ancabradau: we need to implement a real solution that will cover all cases
@@ -728,8 +730,10 @@ implements IDocumentLine
 			return price;
 		}
 	
-
-	@Override
+	/**
+	 * get if this document line is the Sales transaction
+	 * @return boolean
+	 */
 	public boolean isSOTrx()
 	{
 		return getParent().isSOTrx();

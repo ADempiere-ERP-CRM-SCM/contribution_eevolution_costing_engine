@@ -409,7 +409,6 @@ public class MInventoryLine extends X_M_InventoryLine implements IDocumentLine
 		return getMovementQty().signum() < 0;
 	}
 
-	@Override
 	public BigDecimal getPriceActual() {
 		// TODO Auto-generated method stub
 		return null;

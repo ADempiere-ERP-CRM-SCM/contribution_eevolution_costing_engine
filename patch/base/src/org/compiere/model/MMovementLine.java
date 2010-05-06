@@ -353,13 +353,19 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine
 		;
 	}
 
-	@Override
+	/**
+	 * get price actual
+	 * @return null
+	 */
 	public BigDecimal getPriceActual() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @return
+	 */
 	public boolean isSOTrx() {
 		// TODO Auto-generated method stub
 		return false;

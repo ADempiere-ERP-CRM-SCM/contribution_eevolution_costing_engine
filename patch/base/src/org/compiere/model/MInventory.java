@@ -24,9 +24,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
+import org.adempiere.engine.CostComponent;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.model.engines.CostEngineFactory;
-import org.compiere.acct.CostComponent;
 import org.compiere.process.DocAction;
 import org.compiere.process.DocumentEngine;
 import org.compiere.util.CCache;

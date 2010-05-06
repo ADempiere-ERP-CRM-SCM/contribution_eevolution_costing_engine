@@ -27,9 +27,9 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.engine.CostComponent;
 import org.adempiere.exceptions.DBException;
 import org.compiere.Adempiere;
-import org.compiere.acct.CostComponent;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;

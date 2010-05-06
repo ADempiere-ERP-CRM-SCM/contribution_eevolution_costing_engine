@@ -28,10 +28,10 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.engine.CostComponent;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.model.engines.CostEngineFactory;
 import org.adempiere.model.engines.IDocumentLine;
-import org.compiere.acct.CostComponent;
 import org.compiere.print.ReportEngine;
 import org.compiere.process.DocAction;
 import org.compiere.process.DocumentEngine;
