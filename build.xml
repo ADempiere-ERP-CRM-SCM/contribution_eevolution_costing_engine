@@ -7,14 +7,27 @@
     </description>
   <!-- set global properties for this build -->
   <property file="build.properties"/>
-  <property name="src" location="extension/costengine/src/main"/>
+  <property name="src" location="extension/costengine/src/main/java"/>
+  <property name="patchSrc" location="patch/base/src"/>
   <property name="build" location="build"/>
   <property name="dist"  location="dist"/>
 
-  <path id="lib.class.path">
+  <path id="patch.class.path">
      <fileset dir="${adempiere.home}/lib">
         <include name="*.jar"/>
      </fileset>
+    <fileset dir="${adempiere.trunk}/packages">
+           <include name="*.jar"/>
+    </fileset>
+  </path>
+  
+  <path id="lib.class.path">
+    <fileset dir="${adempiere.home}/lib">
+           <include name="Adempiere.jar"/>
+   </fileset>
+    <fileset dir="${adempiere.trunk}/packages">
+           <include name="*.jar"/>
+    </fileset>
   </path>
 
   <target name="init" depends="clean">
@@ -26,32 +39,61 @@
     <mkdir dir="${build}"/>
   </target>
 
-  <target name="compile" depends="init"
+  <target name="compile"
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
     <javac srcdir="${src}" destdir="${build}">
-      <exclude name="**/org/eevolution/plugin/*.java"/>
+      <src path="${patchSrc}"/>
+      <include name="**/org/adempiere/engine/*.java"/>
+      <include name="**/org/adempiere/exceptions/*.java"/>
       <classpath refid="lib.class.path"/>
     </javac>
 
   </target>
 
-  <target name="dist" depends="compile"
+  <target name="dist"  depends="init,patchDist, compile"
         description="generate the distribution" >
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/lib"/>
 
     <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-    <jar jarfile="${dist}/lib/liberoCE.jar" basedir="${build}"/>
+    <jar jarfile="${dist}/lib/liberoCE.jar" basedir="${build}" 
+      excludes="**/org/compiere/**/*.class"/>
 
     <!-- Create target Libero deployment -->
-    <mkdir dir="${env.ADEMPIERE_HOME}/packages/liberoCE/lib"/>
+    <mkdir dir="${adempiere.home}/packages/liberoCE/lib"/>
 
     <!-- Transfer liberoWM.jar -->
-    <copy file="${dist}/lib/liberoCE.jar" todir="${env.ADEMPIERE_HOME}/packages/liberoCE/lib"/>
+    <copy file="${dist}/lib/liberoCE.jar" todir="${adempiere.home}/packages/liberoCE/lib" filtering="true" />
     <copy file="${dist}/lib/liberoCE.jar" todir="${adempiere.trunk}/packages/"/>
 
   </target>
+  
+  <target name="patchDist" depends="patchCompile"
+          description="generate the distribution" >
+      <!-- Create the distribution directory -->
+      <mkdir dir="${dist}/lib"/>
+
+      <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+      <jar jarfile="${dist}/lib/patches.jar" basedir="${build}"/>
+
+      <!-- Create target Libero deployment -->
+      <mkdir dir="${adempiere.home}/lib"/>
+
+      <!-- Transfer patchs.jar -->
+      <copy file="${dist}/lib/patches.jar" todir="${adempiere.home}/lib"/>
+
+  </target>
+  
+  <target name="patchCompile" depends="init"
+        description="compile the source " >
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${patchSrc}" destdir="${build}">
+      <include name="**/org/compiere/acct/*.java"/>
+      <include name="**/org/compiere/model/*.java"/>
+      <classpath refid="patch.class.path"/>
+    </javac>
+  </target>  
 
   <target name="clean"
         description="clean up" >
