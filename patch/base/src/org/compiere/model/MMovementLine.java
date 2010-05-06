@@ -21,8 +21,8 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Properties;
 
+import org.adempiere.engine.IDocumentLine;
 import org.adempiere.exceptions.AdempiereException;
-import org.adempiere.model.engines.IDocumentLine;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;

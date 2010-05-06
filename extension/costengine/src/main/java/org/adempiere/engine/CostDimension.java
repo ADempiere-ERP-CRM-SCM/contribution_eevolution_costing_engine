@@ -15,7 +15,7 @@ import org.compiere.util.Util;
 
 /**
  * Immutable Cost Dimension
- * @author Teo Sarca, www.arhipac.ro
+ * @author Teo Sarca
  */
 public class CostDimension
 {

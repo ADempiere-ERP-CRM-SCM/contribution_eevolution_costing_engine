@@ -20,18 +20,15 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
 import org.adempiere.engine.CostComponent;
+import org.adempiere.engine.CostEngineFactory;
 import org.adempiere.exceptions.AdempiereException;
-import org.adempiere.model.engines.CostEngineFactory;
-import org.adempiere.model.engines.IDocumentLine;
 import org.compiere.print.ReportEngine;
 import org.compiere.process.DocAction;
 import org.compiere.process.DocumentEngine;
@@ -2246,7 +2243,7 @@ public class MInOut extends X_M_InOut implements DocAction
 						get_TrxName());
 				pc.setQty(mtrx.getMovementQty());
 			   //
-				Collection<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
+				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
 				if (costs == null || costs.size() == 0)
 				{
 					MProduct product = MProduct.get(getCtx(), mtrx.getM_Product_ID());

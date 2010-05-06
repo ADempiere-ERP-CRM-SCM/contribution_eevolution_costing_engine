@@ -23,7 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -51,6 +51,7 @@ import org.compiere.util.Trx;
  *  @author Teo Sarca
  *  	<li>BF [ 2847648 ] Manufacture & shipment cost errors
  *  		https://sourceforge.net/tracker/?func=detail&aid=2847648&group_id=176962&atid=934929
+ *  @author victor.perez@e-evolution.com, www.e-evolution.com
  */
 public class MCost extends X_M_Cost
 {
@@ -673,7 +674,7 @@ public class MCost extends X_M_Cost
 			s_log.config(product.getName());
 
 			//	Cost Elements
-			Collection <MCostElement> ces = MCostElement.getCostElementsWithCostingMethods(product);
+			List <MCostElement> ces = MCostElement.getCostElementsWithCostingMethods(product);
 						
 			MAcctSchema[] mass = MAcctSchema.getClientAcctSchema(product.getCtx(), 
 				product.getAD_Client_ID(), product.get_TrxName());
@@ -755,7 +756,7 @@ public class MCost extends X_M_Cost
 	{
 		s_log.config(product.getName());
 		//	Cost Elements
-		Collection <MCostElement> ces = MCostElement.getCostElementsWithCostingMethods(product);
+		List <MCostElement> ces = MCostElement.getCostElementsWithCostingMethods(product);
 		
 			MAcctSchema[] mass = MAcctSchema.getClientAcctSchema(product.getCtx(), 
 				product.getAD_Client_ID(), product.get_TrxName());
@@ -1670,12 +1671,12 @@ public class MCost extends X_M_Cost
 		
 	}	//	main
 
-	private static Collection<CostComponent> getCurrentCostLayers (MProduct product, int M_ASI_ID, 
+	private static List<CostComponent> getCurrentCostLayers (MProduct product, int M_ASI_ID, 
 			MAcctSchema as, int Org_ID, int M_CostType_ID,  
 			String costingMethod, BigDecimal qty, int C_OrderLine_ID, 
 			boolean zeroCostsOK, String trxName)
 	{
-		Collection<CostComponent> list = new ArrayList<CostComponent>();
+		List<CostComponent> list = new ArrayList<CostComponent>();
 		BigDecimal currentCostPrice = null;
 		BigDecimal currentCostPriceLL = null;
 		String costElementType = null;
@@ -1784,7 +1785,7 @@ public class MCost extends X_M_Cost
 		}
 		return list;
 	}
-	public static Collection<CostComponent> getCurrentCostLayers (MProduct product,
+	public static List<CostComponent> getCurrentCostLayers (MProduct product,
 			int M_AttributeSetInstance_ID,
 			MAcctSchema as, int AD_Org_ID, String costingMethod, 
 			BigDecimal qty, int C_OrderLine_ID,

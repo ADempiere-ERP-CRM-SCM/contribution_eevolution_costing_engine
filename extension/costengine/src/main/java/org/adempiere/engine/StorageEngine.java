@@ -39,7 +39,7 @@ import org.compiere.util.Env;
 /**
  * Storage Engine
  * @author victor.perez@e-evolution.com http://www.e-evolution.com
- * @author Teo Sarca, www.arhipac.ro
+ * @author Teo Sarca
  */
 public class StorageEngine 
 {

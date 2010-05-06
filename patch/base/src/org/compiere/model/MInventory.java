@@ -20,13 +20,12 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
 import org.adempiere.engine.CostComponent;
+import org.adempiere.engine.CostEngineFactory;
 import org.adempiere.exceptions.AdempiereException;
-import org.adempiere.model.engines.CostEngineFactory;
 import org.compiere.process.DocAction;
 import org.compiere.process.DocumentEngine;
 import org.compiere.util.CCache;
@@ -953,7 +952,7 @@ public class MInventory extends X_M_Inventory implements DocAction
 				pc.setQty(trx.getMovementQty());
 				//BigDecimal costs = pc.getProductCosts(as, trx.getAD_Org_ID(), null, 
 				//		0, false);	
-				Collection<CostComponent> costs = pc.getProductCostsLayers(as, trx.getAD_Org_ID(),
+				List<CostComponent> costs = pc.getProductCostsLayers(as, trx.getAD_Org_ID(),
 						null, // CostingMethod
 						trx.get_ID(),
 						false); // zeroCostsOK

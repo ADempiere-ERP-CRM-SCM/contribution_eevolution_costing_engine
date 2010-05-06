@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -34,6 +34,7 @@ import org.compiere.util.Env;
  *	Summarizes Info in MCost
  *	
  *  @author Jorg Janke
+ *  @author victor.perez@e-evolution.com, www.e-evolution.com
  *  @version $Id: ProductCost.java,v 1.3 2006/07/30 00:51:03 jjanke Exp $
  */
 public class ProductCost
@@ -574,7 +575,7 @@ public class ProductCost
 		return sb.toString ();
 	}	//	toString
 
-	public Collection<CostComponent> getProductCostsLayers (MAcctSchema as, int AD_Org_ID, 
+	public List<CostComponent> getProductCostsLayers (MAcctSchema as, int AD_Org_ID, 
 			String costingMethod, int C_OrderLine_ID, boolean zeroCostsOK)
 	{
 		if (m_qty == null)
@@ -589,7 +590,7 @@ public class ProductCost
 			return null;
 		}
 		//
-		Collection<CostComponent> list = MCost.getCurrentCostLayers (m_product, m_M_AttributeSetInstance_ID, 
+		List<CostComponent> list = MCost.getCurrentCostLayers (m_product, m_M_AttributeSetInstance_ID, 
 				as, AD_Org_ID, costingMethod, m_qty, C_OrderLine_ID, zeroCostsOK, m_trxName);
 		if (list == null)
 		{

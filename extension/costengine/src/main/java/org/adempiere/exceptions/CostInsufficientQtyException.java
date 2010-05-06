@@ -11,31 +11,39 @@ import org.compiere.util.Env;
 
 /**
  * Throwed when the cost can't be calculated at this time
- * @author Teo Sarca, SC ARHIPAC SERVICE SRL
+ * @author Teo Sarca
+ * @author victor.perez@e-evolution.com, www.e-evolution.com
  *
  */
 public class CostInsufficientQtyException extends AdempiereException
 {
-	private static final long serialVersionUID = 1L;
-	
-//	private int m_product_id;
-//	private int m_asi_id;
-//	private BigDecimal m_qty;
-//	private BigDecimal m_remainingQty;
-	
+
 	/**
-	 * @param message
+	 * 
+	 */
+	private static final long serialVersionUID = -8516844627809849649L;
+
+	/**
+	 * Exception to Cost Insufficient Qty
+	 * @param product_id Product
+	 * @param asi_id Attribute Set Instance
+	 * @param qty Quantity
+	 * @param remainingQty Remaining Qty
 	 */
 	public CostInsufficientQtyException(int product_id, int asi_id,
 			BigDecimal qty, BigDecimal remainingQty)
 	{
 		super(createMessage(product_id, asi_id, qty, remainingQty));
-//		this.m_product_id = product_id;
-//		this.m_asi_id = asi_id;
-//		this.m_qty = qty;
-//		this.m_remainingQty = remainingQty;
 	}
 	
+	/**
+	 * Create Msg
+	 * @param product_id Product
+	 * @param asi_id Attribute Set Instance
+	 * @param qty Quantity
+	 * @param remainingQty Remaining Qty
+	 * @return String with the Msg
+	 */
 	private static String createMessage(int product_id, int asi_id, BigDecimal qty, BigDecimal remainingQty)
 	{
 		MProduct product = MProduct.get(Env.getCtx(), product_id);

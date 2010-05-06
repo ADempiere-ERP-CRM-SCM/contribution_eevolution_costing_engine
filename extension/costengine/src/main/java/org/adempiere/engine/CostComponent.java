@@ -9,14 +9,13 @@ import java.math.RoundingMode;
 import org.compiere.util.Env;
 
 /**
- * @author Teo Sarca, www.arhipac.ro
+ * @author Teo Sarca
  *
  */
 public class CostComponent
 {
 	public BigDecimal qty = Env.ZERO;
 	public BigDecimal priceActual = Env.ZERO;
-//	private int M_CostElement_ID = -1;
 	
 	private int scale = 4;
 	private BigDecimal percent = Env.ZERO;

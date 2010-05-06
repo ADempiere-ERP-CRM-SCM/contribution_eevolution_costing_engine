@@ -19,7 +19,6 @@ package org.adempiere.engine;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
@@ -132,7 +131,7 @@ public class CostEngine
 		return priceRounded;
 	}
 
-	public Collection<MCost> getByElement (MProduct product, MAcctSchema as, 
+	public List<MCost> getByElement (MProduct product, MAcctSchema as, 
 			int M_CostType_ID, int AD_Org_ID, int M_AttributeSetInstance_ID, int M_CostElement_ID)
 	{
 		CostDimension cd = new CostDimension(product, as, M_CostType_ID,
@@ -187,7 +186,7 @@ public class CostEngine
 				pc.setQty(mtrx.getMovementQty());
 				//BigDecimal costs = pc.getProductCosts(as, trx.getAD_Org_ID(), null, 
 				//		0, false);	
-				Collection<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(),
+				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(),
 						null, // CostingMethod
 						mtrx.get_ID(),
 						false); // zeroCostsOK
@@ -257,7 +256,7 @@ public class CostEngine
 						model.get_TrxName());
 				pc.setQty(mtrx.getMovementQty());
 				//
-				Collection<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
+				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
 				if (costs == null || costs.size() == 0)
 				{
 					MProduct product = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID());
@@ -293,7 +292,7 @@ public class CostEngine
 					trxFrom.getM_Product_ID(), trxFrom.getM_AttributeSetInstance_ID(),
 					model.get_TrxName());
 			pc.setQty(trxFrom.getMovementQty());
-			Collection<CostComponent> costs = pc.getProductCostsLayers(as, model.getAD_Org_ID(),
+			List<CostComponent> costs = pc.getProductCostsLayers(as, model.getAD_Org_ID(),
 					null, // CostingMethod
 					model.get_ID(),
 					false); // zeroCostsOK
@@ -455,12 +454,12 @@ public class CostEngine
 		|| MCostElement.COSTELEMENTTYPE_BurdenMOverhead.equals(costElementType);
 	}
 
-	private Collection<MCostElement> getCostElements(Properties ctx)
+	private List<MCostElement> getCostElements(Properties ctx)
 	{
 		return MCostElement.getByCostingMethod(ctx, getCostingMethod());
 	}
 	
-	private Collection<MAcctSchema> getAcctSchema(PO po)
+	private List<MAcctSchema> getAcctSchema(PO po)
 	{
 		int AD_Org_ID = po.getAD_Org_ID();
 		MAcctSchema[] ass = MAcctSchema.getClientAcctSchema(po.getCtx(), po.getAD_Client_ID());

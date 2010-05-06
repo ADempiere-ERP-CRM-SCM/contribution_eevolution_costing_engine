@@ -20,7 +20,6 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
@@ -234,7 +233,7 @@ public class MCostQueue extends X_M_CostQueue
 			Timestamp dateAcct,
 			String trxName)
 	{
-		Collection<CostComponent> list = getCostLayers(product, M_ASI_ID, as, Org_ID, ce, Qty, dateAcct, trxName);
+		List<CostComponent> list = getCostLayers(product, M_ASI_ID, as, Org_ID, ce, Qty, dateAcct, trxName);
 		if (list == null)
 			return null;
 		//
@@ -251,7 +250,7 @@ public class MCostQueue extends X_M_CostQueue
 		}
 		return costs;
 	}
-	public static Collection<CostComponent> getCostLayers (MProduct product, int M_ASI_ID,
+	public static List<CostComponent> getCostLayers (MProduct product, int M_ASI_ID,
 			MAcctSchema as, int Org_ID, MCostElement ce, BigDecimal Qty,
 			Timestamp dateAcct,
 			String trxName)

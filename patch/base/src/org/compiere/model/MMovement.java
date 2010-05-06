@@ -20,14 +20,12 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
 import org.adempiere.engine.CostComponent;
+import org.adempiere.engine.CostEngineFactory;
 import org.adempiere.exceptions.AdempiereException;
-import org.adempiere.model.engines.CostEngineFactory;
-import org.adempiere.model.engines.IDocumentLine;
 import org.compiere.process.DocAction;
 import org.compiere.process.DocumentEngine;
 import org.compiere.util.DB;
@@ -898,7 +896,7 @@ public class MMovement extends X_M_Movement implements DocAction
 					trxFrom.getM_Product_ID(), trxFrom.getM_AttributeSetInstance_ID(),
 					get_TrxName());
 			pc.setQty(trxFrom.getMovementQty());
-			Collection<CostComponent> costs = pc.getProductCostsLayers(as, line.getAD_Org_ID(),
+			List<CostComponent> costs = pc.getProductCostsLayers(as, line.getAD_Org_ID(),
 								null, // CostingMethod
 								line.get_ID(),
 								false); // zeroCostsOK

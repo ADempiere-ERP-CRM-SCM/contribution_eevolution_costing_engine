@@ -40,7 +40,6 @@ public interface IDocumentLine
 	public int getM_AttributeSetInstance_ID();
 	public void setM_AttributeSetInstance_ID(int M_AttributeSetInstance_ID);
 	public BigDecimal getMovementQty();
-	//added by anca
 	public boolean isSOTrx();
 	public int getReversalLine_ID();
 	public BigDecimal getPriceActual();
