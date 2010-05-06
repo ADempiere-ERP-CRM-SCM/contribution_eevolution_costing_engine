@@ -7,20 +7,19 @@
     </description>
   <!-- set global properties for this build -->
   <property file="build.properties"/>
-  <import file="${adempiere.trunk}/utils_dev/properties.xml"/>
-  <property name="src" location="extension/eevolution/smartbrowser/src/main"/>
+  <property name="src" location="extension/costengine/src/main"/>
   <property name="build" location="build"/>
   <property name="dist"  location="dist"/>
 
   <path id="lib.class.path">
-     <fileset dir="${env.ADEMPIERE_HOME}/lib">
+     <fileset dir="${adempiere.home}/lib">
         <include name="*.jar"/>
      </fileset>
   </path>
 
   <target name="init" depends="clean">
     <echo message="Trunk location: ${adempiere.trunk}"/>
-    <echo message="ADempiere home: ${env.ADEMPIERE_HOME}"/>
+    <echo message="ADempiere home: ${adempiere.home}"/>
     <!-- Create the time stamp -->
     <tstamp/>
     <!-- Create the build directory structure used by compile -->
