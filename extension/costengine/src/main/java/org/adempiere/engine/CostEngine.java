@@ -19,6 +19,7 @@ package org.adempiere.engine;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
@@ -186,7 +187,7 @@ public class CostEngine
 				pc.setQty(mtrx.getMovementQty());
 				//BigDecimal costs = pc.getProductCosts(as, trx.getAD_Org_ID(), null, 
 				//		0, false);	
-				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(),
+				Collection<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(),
 						null, // CostingMethod
 						mtrx.get_ID(),
 						false); // zeroCostsOK
@@ -209,25 +210,38 @@ public class CostEngine
 		}
 		else if (model.getReversalLine_ID() > 0)
 		{
-			final String whereClause = model.get_TableName()+"_ID=?"
-			+" AND "+MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+"=?";
-
-			List<MCostDetail> list = new Query(mtrx.getCtx(), MCostDetail.Table_Name, whereClause, mtrx.get_TrxName())
-			.setParameters(new Object[]{model.getReversalLine_ID(), mtrx.getM_AttributeSetInstance_ID()})
-			.list();
-			for (MCostDetail cd : list)
+			//anca.bradau begin
+			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(mtrx.getCtx(), mtrx.getAD_Client_ID()))
 			{
-				MCostDetail cdnew = new MCostDetail(mtrx.getCtx(), 0, mtrx.get_TrxName());
-				PO.copyValues(cd, cdnew);
-				cdnew.setProcessed(false);
-				cdnew.setM_InOutLine_ID(mtrx.getM_InOutLine_ID());
-				cdnew.setAmt(cd.getAmt().negate());
-				cdnew.setQty(cd.getQty().negate());
-				cdnew.saveEx();
-				//
-				MClient client = MClient.get(cdnew.getCtx(), cdnew.getAD_Client_ID());
-				if (client.isCostImmediate())
-					cdnew.process();
+				MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
+				String CostingLevel = product.getCostingLevel(as);
+
+				int M_ASI_ID = model.getM_AttributeSetInstance_ID();
+
+				if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+					M_ASI_ID = 0;
+				// end
+				final String whereClause = model.get_TableName()+"_ID=?"
+				+" AND "+MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+"=?";
+
+
+				List<MCostDetail> list = new Query(mtrx.getCtx(), MCostDetail.Table_Name, whereClause, mtrx.get_TrxName())
+				.setParameters(new Object[]{model.getReversalLine_ID(), M_ASI_ID})
+				.list();
+				for (MCostDetail cd : list)
+				{
+					MCostDetail cdnew = new MCostDetail(mtrx.getCtx(), 0, mtrx.get_TrxName());
+					PO.copyValues(cd, cdnew);
+					cdnew.setProcessed(false);
+					cdnew.setM_InOutLine_ID(mtrx.getM_InOutLine_ID());
+					cdnew.setAmt(cd.getAmt().negate());
+					cdnew.setQty(cd.getQty().negate());
+					cdnew.saveEx();
+					//
+					MClient client = MClient.get(cdnew.getCtx(), cdnew.getAD_Client_ID());
+					if (client.isCostImmediate())
+						cdnew.process();
+				}
 			}
 		}
 		else if (!model.isSOTrx())
@@ -256,7 +270,7 @@ public class CostEngine
 						model.get_TrxName());
 				pc.setQty(mtrx.getMovementQty());
 				//
-				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
+				Collection<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
 				if (costs == null || costs.size() == 0)
 				{
 					MProduct product = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID());
@@ -292,7 +306,7 @@ public class CostEngine
 					trxFrom.getM_Product_ID(), trxFrom.getM_AttributeSetInstance_ID(),
 					model.get_TrxName());
 			pc.setQty(trxFrom.getMovementQty());
-			List<CostComponent> costs = pc.getProductCostsLayers(as, model.getAD_Org_ID(),
+			Collection<CostComponent> costs = pc.getProductCostsLayers(as, model.getAD_Org_ID(),
 					null, // CostingMethod
 					model.get_ID(),
 					false); // zeroCostsOK
