@@ -21,6 +21,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -575,7 +576,7 @@ public class ProductCost
 		return sb.toString ();
 	}	//	toString
 
-	public Collection<CostComponent> getProductCostsLayers (MAcctSchema as, int AD_Org_ID, 
+	public List<CostComponent> getProductCostsLayers (MAcctSchema as, int AD_Org_ID, 
 			String costingMethod, int C_OrderLine_ID, boolean zeroCostsOK)
 	{
 		if (m_qty == null)
@@ -589,7 +590,7 @@ public class ProductCost
 			log.fine("No Product");
 			return null;
 		}
-		 Collection<CostComponent> list = MCost.getCurrentCostLayers (m_product, m_M_AttributeSetInstance_ID, 
+		 List<CostComponent> list = MCost.getCurrentCostLayers (m_product, m_M_AttributeSetInstance_ID, 
 				as, AD_Org_ID, costingMethod, m_qty, C_OrderLine_ID, zeroCostsOK, m_trxName);
 		if (list == null)
 		{
