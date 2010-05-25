@@ -24,6 +24,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.util.CLogMgt;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -89,7 +90,7 @@ public class MCostDetail extends X_M_CostDetail
 			{
 				MCostElement ce = ces[i];
 				M_CostElement_ID = ce.get_ID();
-				MCostType[] mcost = null;
+				/*MCostType[] mcost = null;
 				mcost = MCostType.get(as.getCtx(), as.get_TrxName());
 				for (MCostType mc : mcost)
 				{	
@@ -97,7 +98,12 @@ public class MCostDetail extends X_M_CostDetail
 					cd = new MCostDetail (as, AD_Org_ID, 
 							M_Product_ID, M_AttributeSetInstance_ID, 
 							M_CostElement_ID, 
-							Amt, Qty, Description, trxName, M_CostType_ID);
+							Amt, Qty, Description, trxName, M_CostType_ID);*/
+				MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
+				MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
+				for (MCost mcost: cost)
+				{
+					cd = new MCostDetail(as, AD_Org_ID, mcost, Amt, Qty); 
 					cd.setC_OrderLine_ID (C_OrderLine_ID);
 					cd.setM_Transaction_ID(mtrxID);
 					cd.save();
@@ -255,39 +261,43 @@ public class MCostDetail extends X_M_CostDetail
 		//	if (cd == null)		//	createNew // commented by anca
 
 		boolean ok = false;
-		MCostElement[] ces = MCostElement.getCostingMethods(as);
+		/*MCostElement[] ces = MCostElement.getCostingMethods(as);
 		for (int i = 0; i < ces.length; i++)
 		{
 			MCostElement ce = ces[i];
-			M_CostElement_ID = ce.get_ID();
-			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
-			if (ce.isAveragePO() && IsSOTrx)
+			M_CostElement_ID = ce.get_ID();*/
+		MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
+		/*if (ce.isAveragePO() && IsSOTrx)
 			{
 				Amt = MCost.getCurrentCost(product, M_AttributeSetInstance_ID, as, AD_Org_ID, ce.getCostingMethod(), Qty, M_CostElement_ID, false, trxName); 
-			}
-			MCostType[] mcost = null;
+			}*/
+		/*	MCostType[] mcost = null;
 			mcost = MCostType.get(as.getCtx(), as.get_TrxName());
 			for (MCostType mc : mcost)
 			{	
-				int M_CostType_ID = mc.get_ID();
-				cd = new MCostDetail (as, AD_Org_ID, 
+				int M_CostType_ID = mc.get_ID();*/
+		MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
+		for (MCost mcost: cost)
+		{
+			cd = new MCostDetail(as, AD_Org_ID, mcost, Amt, Qty); 
+			/*	cd = new MCostDetail (as, AD_Org_ID, 
 						M_Product_ID, M_AttributeSetInstance_ID, 
 						M_CostElement_ID, 
-						Amt, Qty, Description, trxName, M_CostType_ID);
-				cd.setM_InOutLine_ID(M_InOutLine_ID);
-				cd.setIsSOTrx(IsSOTrx);	
-				cd.setM_Transaction_ID(mtrxID);
-				cd.save();
-				ok = cd.save();
-				if (ok && !cd.isProcessed())
-				{
-					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-					if (client.isCostImmediate())
-						cd.process();
-				}
-				s_log.config("(" + ok + ") " + cd);
-
+						Amt, Qty, Description, trxName, M_CostType_ID);*/
+			cd.setM_InOutLine_ID(M_InOutLine_ID);
+			cd.setIsSOTrx(IsSOTrx);	
+			cd.setM_Transaction_ID(mtrxID);
+			cd.save();
+			ok = cd.save();
+			if (ok && !cd.isProcessed())
+			{
+				MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+				if (client.isCostImmediate())
+					cd.process();
 			}
+			s_log.config("(" + ok + ") " + cd);
+
+			//	}
 		}
 		return ok;
 		//		else  //commented by anca
@@ -712,6 +722,29 @@ public class MCostDetail extends X_M_CostDetail
 	}	//	MCostDetail
 
 	/**
+	 * @param as
+	 * @param AD_Org_ID
+	 * @param cost
+	 * @param Amt
+	 * @param Qty
+	 */
+	public MCostDetail(MAcctSchema as, int AD_Org_ID, MCost cost,
+			BigDecimal Amt, BigDecimal Qty)
+	{
+		this (cost.getCtx(), 0, cost.get_TrxName());
+		setClientOrg(cost.getAD_Client_ID(), AD_Org_ID);
+		setC_AcctSchema_ID(cost.getC_AcctSchema_ID());
+		setM_Product_ID(cost.getM_Product_ID());
+		setM_AttributeSetInstance_ID(cost.getM_AttributeSetInstance_ID());
+		//
+		setM_CostType_ID(cost.getM_CostType_ID());
+		setM_CostElement_ID(cost.getM_CostElement_ID());
+		//
+		setAmt(Amt);
+		setQty(Qty);
+		setDescription(cost.getDescription());
+	}
+	/**
 	 * 	Set Amt
 	 *	@param Amt amt
 	 */
@@ -1126,7 +1159,8 @@ public class MCostDetail extends X_M_CostDetail
 						cost.setCurrentQty(cost.getCurrentQty().add(qty));
 					log.finer("QtyAdjust - AveragePO - " + cost);
 				}
-				else if (ce.isFifo() || ce.isLifo())
+				else if ((ce.isFifo() || ce.isLifo()) 
+						&& mc.getName().equalsIgnoreCase("Fifo")) //TODO dont use this!
 				{
 					if (addition)
 					{
@@ -1229,8 +1263,9 @@ public class MCostDetail extends X_M_CostDetail
 				log.warning("Unknown Type: " + toString());
 				return false;
 			}
-			return cost.save();
 		}
+			//return cost.save();
+	//}
 		return true;
 	}
 

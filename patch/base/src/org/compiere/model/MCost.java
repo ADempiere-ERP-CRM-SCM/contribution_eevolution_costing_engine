@@ -322,12 +322,17 @@ public class MCost extends X_M_Cost
 		if (!MCostElement.COSTINGMETHOD_StandardCosting.equals(costingMethod))
 		{
 			MCostElement ce = MCostElement.getMaterialCostElement(as, MCostElement.COSTINGMETHOD_StandardCosting);
-			MCost cost = get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID());
+			MCostType[] mcost = null;
+			mcost = MCostType.get(product.getCtx(), product.get_TrxName()); 
+			for (MCostType mc : mcost)
+			{
+			MCost cost = get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(), mc);
 			if (cost != null && cost.getCurrentCostPrice().signum() != 0)
 			{
 				s_log.fine(product.getName() + ", Standard - " + retValue);
 				return cost.getCurrentCostPrice();
 			}
+		}
 		}
 
 		//	We do not have a price
@@ -695,6 +700,8 @@ public class MCost extends X_M_Cost
 
 						for (MCostType mc : mcost)
 						{
+							if (ce.getName().equalsIgnoreCase(mc.getName())) //TODO dont use name!
+							{	
 							MCost cost = MCost.get (product, M_ASI_ID, 
 									as, 0, ce.getM_CostElement_ID(), product.get_TrxName(),mc);
 							if (cost.is_new())
@@ -707,6 +714,7 @@ public class MCost extends X_M_Cost
 											+ " - " + as.getName());
 							}
 						}
+					}
 					}	
 				}
 				else if (MAcctSchema.COSTINGLEVEL_Organization.equals(cl))
@@ -723,6 +731,8 @@ public class MCost extends X_M_Cost
 
 							for (MCostType mc : mcost)
 							{
+								if (ce.getName().equalsIgnoreCase(mc.getName())) //TODO dont use name!
+								{	
 								MCost cost = MCost.get (product, M_ASI_ID, 
 										as, o.getAD_Org_ID(), ce.getM_CostElement_ID(), product.get_TrxName(), mc);
 								if (cost.is_new())
@@ -736,6 +746,7 @@ public class MCost extends X_M_Cost
 												+ " - " + o.getName()
 												+ " - " + as.getName());
 								}
+							 }
 							}
 						}	
 					}	//	for all orgs
@@ -1340,9 +1351,9 @@ public class MCost extends X_M_Cost
 	
 	@Deprecated
 	public static MCost get (MProduct product, int M_AttributeSetInstance_ID,
-			MAcctSchema as, int AD_Org_ID, int M_CostElement_ID)
+			MAcctSchema as, int AD_Org_ID, int M_CostElement_ID, MCostType mc)
 	{
-		return get(product, M_AttributeSetInstance_ID, as, AD_Org_ID, M_CostElement_ID, product.get_TrxName(), null);
+		return get(product, M_AttributeSetInstance_ID, as, AD_Org_ID, M_CostElement_ID, product.get_TrxName(), mc);
 	}
 	
 	/**
@@ -1377,6 +1388,17 @@ public class MCost extends X_M_Cost
 					.setParameters(params)
 					.firstOnly();
 	}	//	get
+	
+	//ancabradau need this when make CostDetail start to MCost 
+	public static MCost[] getForProduct(Properties ctx, int M_Product_ID, int AD_Org_ID, String trxName)
+	{
+		final String whereClause = "AD_Org_ID=? AND M_Product_ID=?" ;
+		List<MCost> list = new Query(ctx, Table_Name, whereClause, trxName)
+			.setParameters(AD_Org_ID, M_Product_ID)
+			.setClient_ID()
+			.list();
+		return list.toArray(new MCost[list.size()]);
+	}
 	
 	@Deprecated
 	public static MCost get (Properties ctx, int AD_Client_ID, int AD_Org_ID, int M_Product_ID, 
