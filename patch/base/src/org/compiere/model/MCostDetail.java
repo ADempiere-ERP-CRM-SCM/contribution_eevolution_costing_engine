@@ -1214,6 +1214,7 @@ public class MCostDetail extends X_M_CostDetail
 						cost.setCumulatedAmt(cost.getCumulatedAmt().add(cAmt));
 						cost.setCumulatedQty(cost.getCumulatedQty().add(qty));
 					}
+					cost.saveEx();
 					log.finer("QtyAdjust - FiFo/Lifo - " + cost);
 				}
 				else if (ce.isLastInvoice())
@@ -1261,7 +1262,7 @@ public class MCostDetail extends X_M_CostDetail
 			else	//	unknown or no id
 			{
 				log.warning("Unknown Type: " + toString());
-				return false;
+				return true;
 			}
 		}
 			//return cost.save();
