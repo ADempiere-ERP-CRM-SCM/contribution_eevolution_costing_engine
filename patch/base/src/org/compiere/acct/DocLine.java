@@ -1176,7 +1176,6 @@ public class DocLine
 	}
 	/**
 	 * @return cost detail or null if not found
-	 * @category arhipac
 	 */
 	private MCostDetail[] getCostDetail(MAcctSchema as, int AD_Org_ID, String whereClause)
 	{
@@ -1189,12 +1188,14 @@ public class DocLine
 			+" AND M_Product_ID=?"
 			+" AND Processed=?"
 			+" AND C_AcctSchema_ID=?"
+			+" AND M_CostType_ID=?" //ancabradau
 			+(Util.isEmpty(whereClause, true) ? "" : " AND "+whereClause)
 		;
 		List<MCostDetail> list = new Query(p_po.getCtx(), MCostDetail.Table_Name, whereClauseFinal, null)
 			.setParameters(new Object[]{AD_Org_ID,
 					getM_Product_ID(),
-					true, as.getC_AcctSchema_ID()})
+					true, as.getC_AcctSchema_ID(),
+					as.getM_CostType_ID()}) //ancabradau
 			.setOrderBy("IsSOTrx ASC") // Receipt First (IsSOTrx=N)
 			.list();
 		return list.toArray(new MCostDetail[list.size()]);

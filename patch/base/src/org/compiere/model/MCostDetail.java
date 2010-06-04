@@ -362,7 +362,11 @@ public class MCostDetail extends X_M_CostDetail
 		//
 		if (cd == null)		//	createNew
 		{
-			MCostType[] mcost = null;
+			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
+			MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
+			for (MCost mcost: cost)
+			{
+			/*MCostType[] mcost = null;
 			mcost = MCostType.get(as.getCtx(), as.get_TrxName());
 			for (MCostType mc : mcost)
 			{	
@@ -370,9 +374,20 @@ public class MCostDetail extends X_M_CostDetail
 				cd = new MCostDetail (as, AD_Org_ID, 
 						M_Product_ID, M_AttributeSetInstance_ID, 
 						M_CostElement_ID, 
-						Amt, Qty, Description, trxName, M_CostType_ID);
+						Amt, Qty, Description, trxName, M_CostType_ID);*/
+				cd = new MCostDetail(as, AD_Org_ID, mcost, Amt, Qty);
 				cd.setM_InventoryLine_ID(M_InventoryLine_ID);
 				cd.setM_Transaction_ID(mtrxID);
+				cd.save();
+				boolean ok = cd.save();
+				ok = cd.save();
+				if (ok && !cd.isProcessed())
+				{
+					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+					if (client.isCostImmediate())
+						cd.process();
+				}
+				s_log.config("(" + ok + ") " + cd);
 			}
 		}
 		else
@@ -438,7 +453,7 @@ public class MCostDetail extends X_M_CostDetail
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int M_MovementLine_ID, int M_CostElement_ID, 
 			BigDecimal Amt, BigDecimal Qty, boolean from,
-			boolean autoProcess, // arhipac: anca_bradau
+			boolean autoProcess, // anca_bradau
 			String Description, String trxName)
 	{
 		//	Delete Unprocessed zero Differences
@@ -457,17 +472,38 @@ public class MCostDetail extends X_M_CostDetail
 		//
 		if (cd == null)		//	createNew
 		{
-			MCostType[] mcost = null;
+			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
+			MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
+			for (MCost mcost: cost)
+			{
+			/*MCostType[] mcost = null;
 			mcost = MCostType.get(as.getCtx(), as.get_TrxName());
 			for (MCostType mc : mcost)
 			{	
 				int M_CostType_ID = mc.get_ID();
+				
 				cd = new MCostDetail (as, AD_Org_ID, 
 						M_Product_ID, M_AttributeSetInstance_ID, 
 						M_CostElement_ID, 
-						Amt, Qty, Description, trxName, M_CostType_ID);
+						Amt, Qty, Description, trxName, M_CostType_ID);*/
+				cd = new MCostDetail(as, AD_Org_ID, mcost, Amt, Qty);
 				cd.setM_MovementLine_ID (M_MovementLine_ID);
 				cd.setIsSOTrx(from);
+				cd.setDescription(Description);
+				cd.save();
+				boolean ok = cd.save();
+				ok = cd.save();
+				if (autoProcess)
+				{
+					cd.setProcessed(true);
+				}
+				if (ok && !cd.isProcessed())
+				{
+					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+					if (client.isCostImmediate())
+						cd.process();
+				}
+				s_log.config("(" + ok + ") " + cd);
 			}
 		}
 		else
@@ -896,7 +932,7 @@ public class MCostDetail extends X_M_CostDetail
 		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
 			Org_ID = 0;
 
-		// arhipac: teo_sarca: begin
+		// teo_sarca: begin
 		//	Movement: If the costing level is not Organization, then we don't need to alter the costs (specially FIFO/LIFO queue)
 		if (getM_MovementLine_ID() > 0 
 				&& !MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
@@ -904,7 +940,7 @@ public class MCostDetail extends X_M_CostDetail
 			ok = true;
 		}
 		else
-			// arhipac: teo_sarca: end
+			//teo_sarca: end
 			//	Create Material Cost elements
 			if (getM_CostElement_ID() == 0)
 			{
@@ -947,14 +983,14 @@ public class MCostDetail extends X_M_CostDetail
 	private boolean process (MAcctSchema as, MProduct product, MCostElement ce, 
 			int Org_ID, int M_ASI_ID)
 	{
-		// arhipac: teo_sarca: begin        commented by anca
+		// teo_sarca: begin        commented by anca
 		/*if (getM_InOutLine_ID() != 0 && !isSOTrx() && !ce.isFifo() && !ce.isLifo())
 		{
 			// If is Receipt and is not FIFO/LIFO costing method, then do nothing - like in original version
 			if (CLogMgt.isLevelFine()) log.fine("SKIP: this=" + this + ", ce=" + ce);
 			return true;
 		}*/
-		// arhipac: teo_sarca: end
+		// teo_sarca: end
 		MCostType[] mcost = null;
 		mcost = MCostType.get(product.getCtx(), product.get_TrxName());
 
@@ -1052,7 +1088,7 @@ public class MCostDetail extends X_M_CostDetail
 				else if (ce.isFifo()
 						|| ce.isLifo())
 				{
-					// arhipac: teo_sarca: Cost is created on receipt and the match invoice should check
+					// teo_sarca: Cost is created on receipt and the match invoice should check
 					// the difference between receipt price and invoice price
 					// so, do nothing here
 					log.finer("Inv - FiFo/LiFo - amt=" + amt + ", qty=" + qty + " [NOTHING TO DO]");
@@ -1165,7 +1201,7 @@ public class MCostDetail extends X_M_CostDetail
 					if (addition)
 					{
 						//	Real ASI - costing level Org
-						// arhipac: teo_sarca: modified
+						// teo_sarca: modified
 						MCostQueue.add(product, M_ASI_ID,
 								as, Org_ID, ce.getM_CostElement_ID(),
 								amt, qty, precision,
@@ -1199,7 +1235,7 @@ public class MCostDetail extends X_M_CostDetail
 								throw new AdempiereException("Amt not match "+this+": price="+price+", priceQueue="+priceQueue); 
 							}
 						}
-						/** ARHIPAC: TEO: END ----------------------------------------------------------------------------- */
+						/** TEO: END ----------------------------------------------------------------------------- */
 					}
 					//	Get Costs - costing level Org/ASI
 					MCostQueue[] cQueue = MCostQueue.getQueue(product, M_ASI_ID, 
@@ -1207,7 +1243,7 @@ public class MCostDetail extends X_M_CostDetail
 					if (cQueue != null && cQueue.length > 0)
 						cost.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
 					cost.setCurrentQty(cost.getCurrentQty().add(qty));
-					// arhipac: teo_sarca: Cumulate Amt & Qty
+					// teo_sarca: Cumulate Amt & Qty
 					if (cQueue != null && cQueue.length > 0)
 					{
 						BigDecimal cAmt = cQueue[0].getCurrentCostPrice().multiply(qty);
@@ -1334,7 +1370,7 @@ public class MCostDetail extends X_M_CostDetail
 	 *	@param Description optional description
 	 *	@param IsSOTrx sales order (not used, always considered IsSOTrx=false)
 	 * 
-	 * @author Teo Sarca, www.arhipac.ro
+	 * @author Teo Sarca
 	 * @param mtrxID 
 	 */
 	public static boolean createReceipt (MAcctSchema as, int AD_Org_ID, 
