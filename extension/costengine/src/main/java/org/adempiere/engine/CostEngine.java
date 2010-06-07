@@ -187,7 +187,7 @@ public class CostEngine
 				pc.setQty(mtrx.getMovementQty());
 				//BigDecimal costs = pc.getProductCosts(as, trx.getAD_Org_ID(), null, 
 				//		0, false);	
-				Collection<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(),
+				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(),
 						null, // CostingMethod
 						mtrx.get_ID(),
 						false); // zeroCostsOK
@@ -270,7 +270,7 @@ public class CostEngine
 						model.get_TrxName());
 				pc.setQty(mtrx.getMovementQty());
 				//
-				Collection<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
+				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
 				if (costs == null || costs.size() == 0)
 				{
 					MProduct product = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID());
@@ -300,13 +300,13 @@ public class CostEngine
 			throw new AdempiereException("Same qty is needed - "+trxFrom+", "+trxTo);
 		}
 		//
-		for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), trxFrom.getAD_Client_ID()))
+		for(MAcctSchema as : MAcctSchema.getClientAcctSchema(trxTo.getCtx(), trxFrom.getAD_Client_ID()))
 		{
-			ProductCost pc = new ProductCost (model.getCtx(), 
-					trxFrom.getM_Product_ID(), trxFrom.getM_AttributeSetInstance_ID(),
+			ProductCost pc = new ProductCost (trxTo.getCtx(), 
+					trxTo.getM_Product_ID(), trxTo.getM_AttributeSetInstance_ID(),
 					model.get_TrxName());
-			pc.setQty(trxFrom.getMovementQty());
-			Collection<CostComponent> costs = pc.getProductCostsLayers(as, model.getAD_Org_ID(),
+			pc.setQty(trxTo.getMovementQty());
+			List<CostComponent> costs = pc.getProductCostsLayers(as, model.getAD_Org_ID(),
 					null, // CostingMethod
 					model.get_ID(),
 					false); // zeroCostsOK
