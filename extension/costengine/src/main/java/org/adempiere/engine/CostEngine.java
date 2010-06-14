@@ -33,6 +33,7 @@ import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
 import org.compiere.model.MInventoryLine;
+import org.compiere.model.MMovementLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.PO;
@@ -299,7 +300,44 @@ public class CostEngine
 		{
 			throw new AdempiereException("Same qty is needed - "+trxFrom+", "+trxTo);
 		}
-		//
+		if (model.getReversalLine_ID() > 0)
+		{
+			//anca.bradau begin
+			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(trxTo.getCtx(), trxTo.getAD_Client_ID()))
+			{
+				MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
+				String CostingLevel = product.getCostingLevel(as);
+
+				int M_ASI_ID = model.getM_AttributeSetInstance_ID();
+
+				if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+					M_ASI_ID = 0;
+				// end
+				final String whereClause = model.get_TableName()+"_ID=?"
+				+" AND "+MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+"=?";
+
+
+				List<MCostDetail> list = new Query(trxTo.getCtx(), MCostDetail.Table_Name, whereClause, trxTo.get_TrxName())
+				.setParameters(new Object[]{model.getReversalLine_ID(), M_ASI_ID})
+				.list();
+				for (MCostDetail cd : list)
+				{
+					MCostDetail cdnew = new MCostDetail(trxTo.getCtx(), 0, trxTo.get_TrxName());
+					PO.copyValues(cd, cdnew);
+					cdnew.setProcessed(false);
+					cdnew.setM_InOutLine_ID(trxTo.getM_InOutLine_ID());
+					cdnew.setAmt(cd.getAmt().negate());
+					cdnew.setQty(cd.getQty().negate());
+					cdnew.saveEx();
+					//
+					MClient client = MClient.get(cdnew.getCtx(), cdnew.getAD_Client_ID());
+					if (client.isCostImmediate())
+						cdnew.setProcessed(true);
+						cdnew.process();
+				}
+		}
+		}
+		else if(model instanceof MMovementLine && model.getReversalLine_ID() == 0)
 		for(MAcctSchema as : MAcctSchema.getClientAcctSchema(trxTo.getCtx(), trxFrom.getAD_Client_ID()))
 		{
 			ProductCost pc = new ProductCost (trxTo.getCtx(), 

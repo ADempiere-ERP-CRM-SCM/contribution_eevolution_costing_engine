@@ -23,8 +23,9 @@ import java.sql.Timestamp;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.engine.CostingMethodFactory;
+import org.adempiere.engine.ICostingMethod;
 import org.adempiere.exceptions.AdempiereException;
-import org.compiere.util.CLogMgt;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -998,14 +999,21 @@ public class MCostDetail extends X_M_CostDetail
 		{	
 			MCost cost = MCost.get(product, M_ASI_ID, as, 
 					Org_ID, ce.getM_CostElement_ID(), get_TrxName(), mc);
-
+			
+			if (ce.isFifo() && mc.getName().equalsIgnoreCase("Fifo")   //TODO dont use this!
+				|| ce.isAverageInvoice() && mc.getName().equalsIgnoreCase("Average Invoice"))
+			{
+			CostingMethodFactory cmFactory = CostingMethodFactory.get();
+			ICostingMethod cm = cmFactory.getCostingMethod(ce);
+			cm.process(getCtx(), this, get_TrxName(), cost);
+			}
 			//	if (cost == null)
 			//		cost = new MCost(product, M_ASI_ID, 
 			//			as, Org_ID, ce.getM_CostElement_ID());
 
 			// MZ Goodwill
 			// used deltaQty and deltaAmt if exist 
-			BigDecimal qty = Env.ZERO;
+			/*BigDecimal qty = Env.ZERO;
 			BigDecimal amt = Env.ZERO;
 			//comment anca		
 			//		if (isDelta())
@@ -1025,7 +1033,7 @@ public class MCostDetail extends X_M_CostDetail
 			if (qty.signum() != 0)
 				price = amt.divide(qty, precision, BigDecimal.ROUND_HALF_UP);
 
-			/** All Costing Methods
+			*//** All Costing Methods
 		if (ce.isAverageInvoice())
 		else if (ce.isAveragePO())
 		else if (ce.isFifo())
@@ -1035,7 +1043,7 @@ public class MCostDetail extends X_M_CostDetail
 		else if (ce.isStandardCosting())
 		else if (ce.isUserDefined())
 		else if (!ce.isCostingMethod())
-			 **/
+			 **//*
 
 			//	*** Purchase Order Detail Record ***
 			if (getC_OrderLine_ID() != 0)
@@ -1085,7 +1093,8 @@ public class MCostDetail extends X_M_CostDetail
 					cost.setWeightedAverage(amt, qty);
 					log.finer("Inv - AverageInv - " + cost);
 				}
-				else if (ce.isFifo()
+				//else
+				if (ce.isFifo()
 						|| ce.isLifo())
 				{
 					// teo_sarca: Cost is created on receipt and the match invoice should check
@@ -1187,7 +1196,8 @@ public class MCostDetail extends X_M_CostDetail
 						cost.setCurrentQty(cost.getCurrentQty().add(qty));
 					log.finer("QtyAdjust - AverageInv - " + cost);
 				}
-				else if (ce.isAveragePO())
+				//else 
+				if (ce.isAveragePO())
 				{
 					if (addition)
 						cost.setWeightedAverage(amt, qty);
@@ -1197,7 +1207,7 @@ public class MCostDetail extends X_M_CostDetail
 				}
 				else if ((ce.isFifo() || ce.isLifo()) 
 						&& mc.getName().equalsIgnoreCase("Fifo")) //TODO dont use this!
-				{
+						{
 					if (addition)
 					{
 						//	Real ASI - costing level Org
@@ -1235,7 +1245,7 @@ public class MCostDetail extends X_M_CostDetail
 								throw new AdempiereException("Amt not match "+this+": price="+price+", priceQueue="+priceQueue); 
 							}
 						}
-						/** TEO: END ----------------------------------------------------------------------------- */
+						*//** TEO: END ----------------------------------------------------------------------------- *//*
 					}
 					//	Get Costs - costing level Org/ASI
 					MCostQueue[] cQueue = MCostQueue.getQueue(product, M_ASI_ID, 
@@ -1292,7 +1302,7 @@ public class MCostDetail extends X_M_CostDetail
 					log.finer("QtyAdjust - ?none? - " + cost);
 				}
 				else
-					log.warning("QtyAdjust - " + ce + " - " + cost);
+					log.finer("QtyAdjust - " + ce + " - " + cost);
 			}
 
 			else	//	unknown or no id
@@ -1303,6 +1313,7 @@ public class MCostDetail extends X_M_CostDetail
 		}
 			//return cost.save();
 	//}
+*/		}
 		return true;
 	}
 
