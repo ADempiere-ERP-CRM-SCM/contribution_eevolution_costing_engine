@@ -2192,7 +2192,7 @@ public class MInOut extends X_M_InOut implements DocAction
 	 * @param mtrx
 	 * @param reversalLine_ID (optional)
 	 */
-	private void createCostDetail(MTransaction mtrx, MInOutLine sLine)
+/*	private void createCostDetail(MTransaction mtrx, MInOutLine sLine)
 	{
 		// TODO: sa folosim isSOTrx sau MovementType=V+/-,C+/-  sau MovementQty.signum?
 		
@@ -2265,5 +2265,5 @@ public class MInOut extends X_M_InOut implements DocAction
 				}
 			}
 		}
-	}
+	}*/
 }	//	MInOut

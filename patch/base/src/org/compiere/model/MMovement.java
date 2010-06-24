@@ -882,7 +882,7 @@ public class MMovement extends X_M_Movement implements DocAction
 			|| DOCSTATUS_Closed.equals(ds)
 			|| DOCSTATUS_Reversed.equals(ds);
 	}	//	isComplete
-	// CostDetail
+/*	// CostDetail
 	private void createCostDetail(MTransaction trxFrom, MTransaction trxTo, MMovementLine line)
 	{
 		if (trxFrom.getMovementQty().compareTo(trxTo.getMovementQty().negate()) != 0)
@@ -930,7 +930,7 @@ public class MMovement extends X_M_Movement implements DocAction
 						get_TrxName());
 			}
 		}
-	}
+	}*/
 	
 	private boolean isSameCostDimension(MAcctSchema as, MTransaction trxFrom, MTransaction trxTo)
 	{

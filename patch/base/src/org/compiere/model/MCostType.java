@@ -100,9 +100,11 @@ public class MCostType extends X_M_CostType
 	//added by anca
 	public static MCostType[] get (Properties ctx, String trxName)
 	{
-		final String whereClause = "IsActive='Y'" ;
-		List<MCostType> list = new Query(ctx, Table_Name, whereClause, trxName)
+		// TODO: anca_bradau: do caching
+		List<MCostType> list = new Query(ctx, Table_Name, null, trxName)
+		.setOnlyActiveRecords(true)
 		.setClient_ID()
+		.setOrderBy(COLUMNNAME_M_CostType_ID)
 		.list();
         return list.toArray(new MCostType[list.size()]);
 	}

@@ -7,6 +7,7 @@ import java.util.Properties;
 
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.MCost;
+import org.compiere.model.MCostDetail;
 import org.compiere.util.CLogger;
 
 /**
@@ -17,8 +18,9 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 
 	
 	@Override
-	public void process(Properties ctx, I_M_CostDetail cd, String trxName, MCost cost)
+	public void process(Properties ctx, I_M_CostDetail cd, String trxName)
 	{
+		MCost cost = ((MCostDetail)cd).getM_Cost();
 		CLogger s_log = CLogger.getCLogger (AverageInvoiceCostingMethod.class);
 		if (cd.getC_InvoiceLine_ID() != 0)
 		{

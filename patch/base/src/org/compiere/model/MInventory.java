@@ -934,7 +934,7 @@ public class MInventory extends X_M_Inventory implements DocAction
 	 * @param M_AttributeSetInstance_ID
 	 * @param qty
 	 */
-	private void createCostDetail(MTransaction trx)
+	/*private void createCostDetail(MTransaction trx)
 	{
 		if (trx.getMovementQty().signum() == 0)
 			return;
@@ -973,7 +973,7 @@ public class MInventory extends X_M_Inventory implements DocAction
 				}
 			
 		}
-	}
+	}*/
 	//if isReversal CostDetail is created from CostDetail of original document 
 	// is made a new CostDetail where Amt and Qty are negate
 	private void createCostDetail(MTransaction trx, int reversalLine_ID) {

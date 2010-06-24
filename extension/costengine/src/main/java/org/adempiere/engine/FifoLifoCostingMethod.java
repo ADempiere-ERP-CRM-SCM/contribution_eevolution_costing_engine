@@ -24,8 +24,9 @@ import org.compiere.util.Env;
 public class FifoLifoCostingMethod implements ICostingMethod //extends AbstractCostingMethod
 {
 	@Override
-	public void process(Properties ctx, I_M_CostDetail cd, String trxName, MCost cost)
+	public void process(Properties ctx, I_M_CostDetail cd, String trxName)
 	{
+		MCost cost = ((MCostDetail)cd).getM_Cost();
 		// TODO
 		boolean addition = cd.getQty().signum() > 0;
 		MAcctSchema as =  MAcctSchema.get(ctx, cd.getC_AcctSchema_ID());

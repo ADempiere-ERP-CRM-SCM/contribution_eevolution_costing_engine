@@ -40,6 +40,11 @@ public class CostComponent
 		}
 		return amt;
 	}
+	
+	public BigDecimal getQty()
+	{
+		return this.qty;
+	}
 
 	public int getScale()
 	{
@@ -64,6 +69,14 @@ public class CostComponent
 	public String toString()
 	{
 		return "qty=" + qty + ", price=" + priceActual + ", percentage="+percent;
+	}
+	
+	public CostComponent reverseQty()
+	{
+		CostComponent cc = new CostComponent(qty.negate(), priceActual);
+		cc.setPercent(getPercent());
+		cc.setScale(getScale());
+		return cc;
 	}
 
 }

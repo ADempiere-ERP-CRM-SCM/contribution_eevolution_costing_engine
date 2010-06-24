@@ -25,7 +25,6 @@ import java.util.logging.Level;
 
 import org.adempiere.engine.CostingMethodFactory;
 import org.adempiere.engine.ICostingMethod;
-import org.adempiere.exceptions.AdempiereException;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -86,40 +85,33 @@ public class MCostDetail extends X_M_CostDetail
 		if (cd == null)		//	createNew
 		{
 			boolean ok = false;
-			MCostElement[] ces = MCostElement.getCostingMethods(as);
-			for (int i = 0; i < ces.length; i++)
-			{
-				MCostElement ce = ces[i];
-				M_CostElement_ID = ce.get_ID();
-				/*MCostType[] mcost = null;
-				mcost = MCostType.get(as.getCtx(), as.get_TrxName());
-				for (MCostType mc : mcost)
-				{	
-					int M_CostType_ID = mc.get_ID();
-					cd = new MCostDetail (as, AD_Org_ID, 
-							M_Product_ID, M_AttributeSetInstance_ID, 
-							M_CostElement_ID, 
-							Amt, Qty, Description, trxName, M_CostType_ID);*/
-				MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
-				MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
-				for (MCost mcost: cost)
-				{
-					cd = new MCostDetail(as, AD_Org_ID, mcost, Amt, Qty); 
-					cd.setC_OrderLine_ID (C_OrderLine_ID);
-					cd.setM_Transaction_ID(mtrxID);
-					cd.save();
-					ok = cd.save();
-					if (ok && !cd.isProcessed())
-					{
-						MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-						if (client.isCostImmediate())
-							cd.process();
-					}
-					s_log.config("(" + ok + ") " + cd);
 
+			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
+			MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
+			for (MCost mcost: cost)
+			{
+				final MCostElement ce = MCostElement.get(mcost.getCtx(), mcost.getM_CostElement_ID());
+				if (ce.isLandedCost())
+				{
+					// skip landed costs
+					continue;
 				}
-				return ok;
+
+				cd = new MCostDetail(mcost, Amt, Qty); 
+				cd.setC_OrderLine_ID (C_OrderLine_ID);
+				cd.setM_Transaction_ID(mtrxID);
+				cd.save();
+				ok = cd.save();
+				if (ok && !cd.isProcessed())
+				{
+					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+					if (client.isCostImmediate())
+						cd.process();
+				}
+				s_log.config("(" + ok + ") " + cd);
+
 			}
+			return ok;
 		}
 		else
 		{
@@ -184,18 +176,31 @@ public class MCostDetail extends X_M_CostDetail
 		//
 		if (cd == null)		//	createNew
 		{
-			MCostType[] mcost = null;
-			mcost = MCostType.get(as.getCtx(), as.get_TrxName());
-			for (MCostType mc : mcost)
-			{	
-				int M_CostType_ID = mc.get_ID();
-				cd = new MCostDetail (as, AD_Org_ID, 
-						M_Product_ID, M_AttributeSetInstance_ID, 
-						M_CostElement_ID, 
-						Amt, Qty, Description, trxName, M_CostType_ID);
+			boolean ok = false;
+			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
+			MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
+			for (MCost mcost: cost)
+			{
+				final MCostElement ce = MCostElement.get(mcost.getCtx(), mcost.getM_CostElement_ID());
+				if (ce.isLandedCost())
+				{
+					// skip landed costs
+					continue;
+				}
+				cd = new MCostDetail(mcost, Amt, Qty); 
 				cd.setC_InvoiceLine_ID (C_InvoiceLine_ID);
 				cd.setM_Transaction_ID(mtrxID);
+				cd.save();
+				ok = cd.save();
+				if (ok && !cd.isProcessed())
+				{
+					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+					if (client.isCostImmediate())
+						cd.process();
+				}
+				s_log.config("(" + ok + ") " + cd);
 			}
+			return ok;
 		}
 		else
 		{
@@ -224,322 +229,32 @@ public class MCostDetail extends X_M_CostDetail
 		return ok;
 	}	//	createInvoice
 
-	/**
-	 * 	Create New Shipment Cost Detail for SO Shipments.
-	 * 	Called from Doc_MInOut - for SO Shipments  
-	 *	@param as accounting schema
-	 *	@param AD_Org_ID org
-	 *	@param M_Product_ID product
-	 *	@param M_AttributeSetInstance_ID asi
-	 *	@param M_InOutLine_ID shipment
-	 *	@param M_CostElement_ID optional cost element for Freight
-	 *	@param Amt amt
-	 *	@param Qty qty
-	 *	@param Description optional description
-	 *	@param IsSOTrx sales order
-	 *	@param trxName transaction
-	 * @param mtrxID 
-	 *	@return true if no error
-	 */
-	public static boolean createShipment (MAcctSchema as, int AD_Org_ID, 
+	/*public static boolean createShipment (MAcctSchema as, int AD_Org_ID, 
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int M_InOutLine_ID, int M_CostElement_ID, 
 			BigDecimal Amt, BigDecimal Qty,
-			String Description, boolean IsSOTrx, String trxName, int mtrxID)
-	{
-		//	Delete Unprocessed zero Differences
-		String sql = "DELETE M_CostDetail "
-			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
-			+ " AND M_InOutLine_ID=" + M_InOutLine_ID
-			+ " AND C_AcctSchema_ID =" + as.getC_AcctSchema_ID()
-			+ " AND M_AttributeSetInstance_ID=" + M_AttributeSetInstance_ID;
-		int no = DB.executeUpdate(sql, trxName);
-		if (no != 0)
-			s_log.config("Deleted #" + no);
-		MCostDetail cd = get (as.getCtx(), "M_InOutLine_ID=?", 
-				M_InOutLine_ID, M_AttributeSetInstance_ID, as.getC_AcctSchema_ID(), trxName);
-		//
-		//	if (cd == null)		//	createNew // commented by anca
+			String Description, boolean IsSOTrx, String trxName, int mtrxID)*/
+	
 
-		boolean ok = false;
-		/*MCostElement[] ces = MCostElement.getCostingMethods(as);
-		for (int i = 0; i < ces.length; i++)
-		{
-			MCostElement ce = ces[i];
-			M_CostElement_ID = ce.get_ID();*/
-		MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
-		/*if (ce.isAveragePO() && IsSOTrx)
-			{
-				Amt = MCost.getCurrentCost(product, M_AttributeSetInstance_ID, as, AD_Org_ID, ce.getCostingMethod(), Qty, M_CostElement_ID, false, trxName); 
-			}*/
-		/*	MCostType[] mcost = null;
-			mcost = MCostType.get(as.getCtx(), as.get_TrxName());
-			for (MCostType mc : mcost)
-			{	
-				int M_CostType_ID = mc.get_ID();*/
-		MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
-		for (MCost mcost: cost)
-		{
-			cd = new MCostDetail(as, AD_Org_ID, mcost, Amt, Qty); 
-			/*	cd = new MCostDetail (as, AD_Org_ID, 
-						M_Product_ID, M_AttributeSetInstance_ID, 
-						M_CostElement_ID, 
-						Amt, Qty, Description, trxName, M_CostType_ID);*/
-			cd.setM_InOutLine_ID(M_InOutLine_ID);
-			cd.setIsSOTrx(IsSOTrx);	
-			cd.setM_Transaction_ID(mtrxID);
-			cd.save();
-			ok = cd.save();
-			if (ok && !cd.isProcessed())
-			{
-				MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-				if (client.isCostImmediate())
-					cd.process();
-			}
-			s_log.config("(" + ok + ") " + cd);
-
-			//	}
-		}
-		return ok;
-		//		else  //commented by anca
-		//		{
-		//			// MZ Goodwill 
-		//		  // set deltaAmt=Amt, deltaQty=qty, and set Cost Detail for Amt and Qty	 
-		//			cd.setDeltaAmt(Amt.subtract(cd.getAmt()));
-		//			cd.setDeltaQty(Qty.subtract(cd.getQty()));
-		//			if (cd.isDelta())
-		//			{
-		//				cd.setProcessed(false);
-		//				cd.setAmt(Amt);
-		//				cd.setQty(Qty);
-		//			}
-		//			// end MZ
-		//			else
-		//				return true;	//	nothing to do
-		//		}
-		/*	boolean ok = cd.save();
-		if (ok && !cd.isProcessed())
-		{
-			MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-			if (client.isCostImmediate())
-				cd.process();
-		}
-		s_log.config("(" + ok + ") " + cd);
-		return ok;*/
-	}	//	createShipment
-
-	/**
-	 * 	Create New Order Cost Detail for Physical Inventory.
-	 * 	Called from Doc_Inventory
-	 *	@param as accounting schema
-	 *	@param AD_Org_ID org
-	 *	@param M_Product_ID product
-	 *	@param M_AttributeSetInstance_ID asi
-	 *	@param M_InventoryLine_ID order
-	 *	@param M_CostElement_ID optional cost element
-	 *	@param Amt amt total amount
-	 *	@param Qty qty
-	 *	@param Description optional description
-	 *	@param trxName transaction
-	 *	@return true if no error
-	 */
-	public static boolean createInventory (MAcctSchema as, int AD_Org_ID, 
+	/*public static boolean createInventory (MAcctSchema as, int AD_Org_ID, 
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int M_InventoryLine_ID, int M_CostElement_ID, 
 			BigDecimal Amt, BigDecimal Qty,
-			String Description, String trxName, int mtrxID)
-	{
-		//	Delete Unprocessed zero Differences
-		String sql = "DELETE M_CostDetail "
-			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
-			+ " AND M_InventoryLine_ID=" + M_InventoryLine_ID
-			+ " AND C_AcctSchema_ID =" + as.getC_AcctSchema_ID()
-			+ " AND M_AttributeSetInstance_ID=" + M_AttributeSetInstance_ID;
-		int no = DB.executeUpdate(sql, trxName);
-		if (no != 0)
-			s_log.config("Deleted #" + no);
-		MCostDetail cd = get (as.getCtx(), "M_InventoryLine_ID=?", 
-				M_InventoryLine_ID, M_AttributeSetInstance_ID, as.getC_AcctSchema_ID(), trxName);
-		//
-		if (cd == null)		//	createNew
-		{
-			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
-			MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
-			for (MCost mcost: cost)
-			{
-			/*MCostType[] mcost = null;
-			mcost = MCostType.get(as.getCtx(), as.get_TrxName());
-			for (MCostType mc : mcost)
-			{	
-				int M_CostType_ID = mc.get_ID();
-				cd = new MCostDetail (as, AD_Org_ID, 
-						M_Product_ID, M_AttributeSetInstance_ID, 
-						M_CostElement_ID, 
-						Amt, Qty, Description, trxName, M_CostType_ID);*/
-				cd = new MCostDetail(as, AD_Org_ID, mcost, Amt, Qty);
-				cd.setM_InventoryLine_ID(M_InventoryLine_ID);
-				cd.setM_Transaction_ID(mtrxID);
-				cd.save();
-				boolean ok = cd.save();
-				ok = cd.save();
-				if (ok && !cd.isProcessed())
-				{
-					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-					if (client.isCostImmediate())
-						cd.process();
-				}
-				s_log.config("(" + ok + ") " + cd);
-			}
-		}
-		else
-		{
-			// MZ Goodwill
-			// set deltaAmt=Amt, deltaQty=qty, and set Cost Detail for Amt and Qty	
-			cd.setDeltaAmt(Amt.subtract(cd.getAmt()));
-			cd.setDeltaQty(Qty.subtract(cd.getQty()));
-			if (cd.isDelta())
-			{
-				cd.setProcessed(false);
-				cd.setAmt(Amt);
-				cd.setQty(Qty);
-			}
-			// end MZ
-			else
-				return true;	//	nothing to do
-		}
-		boolean ok = cd.save();
-		if (ok && !cd.isProcessed())
-		{
-			MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-			if (client.isCostImmediate())
-				cd.process();
-		}
-		s_log.config("(" + ok + ") " + cd);
-		return ok;
-	}	//	createInventory
-
-	/**
-	 * 	Create New Order Cost Detail for Movements.
-	 * 	Called from Doc_Movement
-	 *	@param as accounting schema
-	 *	@param AD_Org_ID org
-	 *	@param M_Product_ID product
-	 *	@param M_AttributeSetInstance_ID asi
-	 *	@param M_MovementLine_ID movement
-	 *	@param M_CostElement_ID optional cost element for Freight
-	 *	@param Amt amt total amount
-	 *	@param Qty qty
-	 *	@param from if true the from (reduction)
-	 *	@param Description optional description
-	 *	@param trxName transaction
-	 *	@return true if no error
-	 *
-	 * @deprecated Please use {@link #createMovement(MAcctSchema, int, int, int, int, int, BigDecimal, BigDecimal, boolean, boolean, String, String)}
-	 */
-	public static boolean createMovement (MAcctSchema as, int AD_Org_ID, 
+			String Description, String trxName, int mtrxID)*/
+	
+	/*public static boolean createMovement (MAcctSchema as, int AD_Org_ID, 
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int M_MovementLine_ID, int M_CostElement_ID, 
 			BigDecimal Amt, BigDecimal Qty, boolean from,
-			String Description, String trxName)
-	{
-		return createMovement(as, AD_Org_ID,
-				M_Product_ID, M_AttributeSetInstance_ID,
-				M_MovementLine_ID, M_CostElement_ID,
-				Amt, Qty, from,
-				false,
-				Description, trxName);
-	}
+			String Description, String trxName)*/
 
-	public static boolean createMovement (MAcctSchema as, int AD_Org_ID, 
+	/*public static boolean createMovement (MAcctSchema as, int AD_Org_ID, 
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int M_MovementLine_ID, int M_CostElement_ID, 
 			BigDecimal Amt, BigDecimal Qty, boolean from,
 			boolean autoProcess, // anca_bradau
-			String Description, String trxName)
-	{
-		//	Delete Unprocessed zero Differences
-		String sql = "DELETE M_CostDetail "
-			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
-			+ " AND M_MovementLine_ID=" + M_MovementLine_ID 
-			+ " AND IsSOTrx=" + (from ? "'Y'" : "'N'")
-			+ " AND C_AcctSchema_ID =" + as.getC_AcctSchema_ID()
-			+ " AND M_AttributeSetInstance_ID=" + M_AttributeSetInstance_ID;
-		int no = DB.executeUpdate(sql, trxName);
-		if (no != 0)
-			s_log.config("Deleted #" + no);
-		MCostDetail cd = get (as.getCtx(), "M_MovementLine_ID=? AND IsSOTrx=" 
-				+ (from ? "'Y'" : "'N'"), 
-				M_MovementLine_ID, M_AttributeSetInstance_ID, as.getC_AcctSchema_ID(), trxName);
-		//
-		if (cd == null)		//	createNew
-		{
-			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
-			MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
-			for (MCost mcost: cost)
-			{
-			/*MCostType[] mcost = null;
-			mcost = MCostType.get(as.getCtx(), as.get_TrxName());
-			for (MCostType mc : mcost)
-			{	
-				int M_CostType_ID = mc.get_ID();
-				
-				cd = new MCostDetail (as, AD_Org_ID, 
-						M_Product_ID, M_AttributeSetInstance_ID, 
-						M_CostElement_ID, 
-						Amt, Qty, Description, trxName, M_CostType_ID);*/
-				cd = new MCostDetail(as, AD_Org_ID, mcost, Amt, Qty);
-				cd.setM_MovementLine_ID (M_MovementLine_ID);
-				cd.setIsSOTrx(from);
-				cd.setDescription(Description);
-				cd.save();
-				boolean ok = cd.save();
-				ok = cd.save();
-				if (autoProcess)
-				{
-					cd.setProcessed(true);
-				}
-				if (ok && !cd.isProcessed())
-				{
-					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-					if (client.isCostImmediate())
-						cd.process();
-				}
-				s_log.config("(" + ok + ") " + cd);
-			}
-		}
-		else
-		{
-			// MZ Goodwill
-			// set deltaAmt=Amt, deltaQty=qty, and set Cost Detail for Amt and Qty	
-			cd.setDeltaAmt(Amt.subtract(cd.getAmt()));
-			cd.setDeltaQty(Qty.subtract(cd.getQty()));
-			if (cd.isDelta())
-			{
-				cd.setProcessed(false);
-				cd.setAmt(Amt);
-				cd.setQty(Qty);
-			}
-			// end MZ
-			else
-				return true;	//	nothing to do
-		}
-		// Check if we just need to mark this record as processed - anca_bradau
-		if (autoProcess)
-		{
-			cd.setProcessed(true);
-		}
-		//
-		boolean ok = cd.save();
-		if (ok && !cd.isProcessed())
-		{
-			MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-			if (client.isCostImmediate())
-				cd.process();
-		}
-		s_log.config("(" + ok + ") " + cd);
-		return ok;
-	}	//	createMovement
-
+			String Description, String trxName)*/
+	
 	/**
 	 * 	Create New Order Cost Detail for Production.
 	 * 	Called from Doc_Production
@@ -759,26 +474,24 @@ public class MCostDetail extends X_M_CostDetail
 	}	//	MCostDetail
 
 	/**
-	 * @param as
-	 * @param AD_Org_ID
 	 * @param cost
-	 * @param Amt
-	 * @param Qty
+	 * @param amt
+	 * @param qty
 	 */
-	public MCostDetail(MAcctSchema as, int AD_Org_ID, MCost cost,
-			BigDecimal Amt, BigDecimal Qty)
+	public MCostDetail(MCost cost, BigDecimal amt, BigDecimal qty)
 	{
 		this (cost.getCtx(), 0, cost.get_TrxName());
-		setClientOrg(cost.getAD_Client_ID(), AD_Org_ID);
+		setClientOrg(cost.getAD_Client_ID(), cost.getAD_Org_ID());
 		setC_AcctSchema_ID(cost.getC_AcctSchema_ID());
 		setM_Product_ID(cost.getM_Product_ID());
 		setM_AttributeSetInstance_ID(cost.getM_AttributeSetInstance_ID());
 		//
 		setM_CostType_ID(cost.getM_CostType_ID());
 		setM_CostElement_ID(cost.getM_CostElement_ID());
+		setCostingMethod(cost.getCostingMethod()); 
 		//
-		setAmt(Amt);
-		setQty(Qty);
+		setAmt(amt);
+		setQty(qty);
 		setDescription(cost.getDescription());
 	}
 	/**
@@ -981,8 +694,7 @@ public class MCostDetail extends X_M_CostDetail
 	 *	@param M_ASI_ID - asi corrected for costing level
 	 *	@return true if cost ok
 	 */
-	private boolean process (MAcctSchema as, MProduct product, MCostElement ce, 
-			int Org_ID, int M_ASI_ID)
+	private boolean process (MAcctSchema as, MProduct product, MCostElement ce, int Org_ID, int M_ASI_ID)
 	{
 		// teo_sarca: begin        commented by anca
 		/*if (getM_InOutLine_ID() != 0 && !isSOTrx() && !ce.isFifo() && !ce.isLifo())
@@ -992,20 +704,21 @@ public class MCostDetail extends X_M_CostDetail
 			return true;
 		}*/
 		// teo_sarca: end
-		MCostType[] mcost = null;
-		mcost = MCostType.get(product.getCtx(), product.get_TrxName());
+//		MCostType[] mcost = null;
+//		mcost = MCostType.get(product.getCtx(), product.get_TrxName());
 
-		for (MCostType mc : mcost)
-		{	
-			MCost cost = MCost.get(product, M_ASI_ID, as, 
-					Org_ID, ce.getM_CostElement_ID(), get_TrxName(), mc);
+//		for (MCostType mc : mcost)
+//		{
+			MCostType mc = (MCostType)getM_CostType();
+			m_cost = MCost.get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(),
+					mc, null /*getCostingMethod()*/, get_TrxName());
 			
 			if (ce.isFifo() && mc.getName().equalsIgnoreCase("Fifo")   //TODO dont use this!
 				|| ce.isAverageInvoice() && mc.getName().equalsIgnoreCase("Average Invoice"))
 			{
 			CostingMethodFactory cmFactory = CostingMethodFactory.get();
 			ICostingMethod cm = cmFactory.getCostingMethod(ce);
-			cm.process(getCtx(), this, get_TrxName(), cost);
+			cm.process(getCtx(), this, get_TrxName());
 			}
 			//	if (cost == null)
 			//		cost = new MCost(product, M_ASI_ID, 
@@ -1313,7 +1026,8 @@ public class MCostDetail extends X_M_CostDetail
 		}
 			//return cost.save();
 	//}
-*/		}
+*/		
+//			}
 		return true;
 	}
 
@@ -1384,7 +1098,7 @@ public class MCostDetail extends X_M_CostDetail
 	 * @author Teo Sarca
 	 * @param mtrxID 
 	 */
-	public static boolean createReceipt (MAcctSchema as, int AD_Org_ID, 
+	/*public static boolean createReceipt (MAcctSchema as, int AD_Org_ID, 
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int M_InOutLine_ID, int M_CostElement_ID, 
 			BigDecimal Amt, BigDecimal Qty,
@@ -1398,7 +1112,7 @@ public class MCostDetail extends X_M_CostDetail
 				, Description, IsSOTrx, trxName, mtrxID);
 		return ok;
 	}	//	createReceipt
-
+*/
 	private void setDateAcct(boolean force)
 	{
 		Timestamp dateAcct = getDateAcct();
@@ -1456,4 +1170,17 @@ public class MCostDetail extends X_M_CostDetail
 	}
 
 
+	@Override
+	public I_M_CostType getM_CostType() throws RuntimeException
+	{
+		// TODO OPTIMIZATION: use a cached method
+		return super.getM_CostType();
+	}
+
+	private MCost m_cost = null;
+	public MCost getM_Cost()
+	{
+		// TODO: load automatically m_cost if is not set
+		return m_cost;
+	}
 }	//	MCostDetail

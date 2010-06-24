@@ -32,7 +32,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100505L;
+	private static final long serialVersionUID = 20100622L;
 
     /** Standard Constructor */
     public X_M_CostDetail (Properties ctx, int M_CostDetail_ID, String trxName)
@@ -209,6 +209,103 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
+	}
+
+	/** Set Costing Method.
+		@param CostingMethod 
+		Indicates how Costs will be calculated
+	  */
+	public void setCostingMethod (String CostingMethod)
+	{
+		set_Value (COLUMNNAME_CostingMethod, CostingMethod);
+	}
+
+	/** Get Costing Method.
+		@return Indicates how Costs will be calculated
+	  */
+	public String getCostingMethod () 
+	{
+		return (String)get_Value(COLUMNNAME_CostingMethod);
+	}
+
+	/** Set Accumulated Amt.
+		@param CumulatedAmt 
+		Total Amount
+	  */
+	public void setCumulatedAmt (BigDecimal CumulatedAmt)
+	{
+		set_Value (COLUMNNAME_CumulatedAmt, CumulatedAmt);
+	}
+
+	/** Get Accumulated Amt.
+		@return Total Amount
+	  */
+	public BigDecimal getCumulatedAmt () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CumulatedAmt);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Accumulated Qty.
+		@param CumulatedQty 
+		Total Quantity
+	  */
+	public void setCumulatedQty (BigDecimal CumulatedQty)
+	{
+		set_Value (COLUMNNAME_CumulatedQty, CumulatedQty);
+	}
+
+	/** Get Accumulated Qty.
+		@return Total Quantity
+	  */
+	public BigDecimal getCumulatedQty () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CumulatedQty);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Current Cost Price.
+		@param CurrentCostPrice 
+		The currently used cost price
+	  */
+	public void setCurrentCostPrice (BigDecimal CurrentCostPrice)
+	{
+		set_Value (COLUMNNAME_CurrentCostPrice, CurrentCostPrice);
+	}
+
+	/** Get Current Cost Price.
+		@return The currently used cost price
+	  */
+	public BigDecimal getCurrentCostPrice () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CurrentCostPrice);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Current Quantity.
+		@param CurrentQty 
+		Current Quantity
+	  */
+	public void setCurrentQty (BigDecimal CurrentQty)
+	{
+		set_Value (COLUMNNAME_CurrentQty, CurrentQty);
+	}
+
+	/** Get Current Quantity.
+		@return Current Quantity
+	  */
+	public BigDecimal getCurrentQty () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CurrentQty);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
 	}
 
 	/** Set Account Date.

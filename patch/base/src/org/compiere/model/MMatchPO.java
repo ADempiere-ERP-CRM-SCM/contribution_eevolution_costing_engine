@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.engine.CostEngineFactory;
+import org.adempiere.engine.IDocumentLine;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -944,7 +946,6 @@ public class MMatchPO extends X_M_MatchPO
 					if (tAmt.scale() > as.getCostingPrecision())
 						tAmt = tAmt.setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);			
 				}
-				
 				// Set Total Amount and Total Quantity from Matched PO 
 			
 				MCostDetail.createOrder(as, oLine.getAD_Org_ID(), 
