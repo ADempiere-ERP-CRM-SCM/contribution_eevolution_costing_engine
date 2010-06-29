@@ -20,17 +20,17 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import org.compiere.util.KeyNamePair;
 
-/** Generated Interface for M_CostDetail
+/** Generated Interface for M_Cost
  *  @author Adempiere (generated) 
  *  @version Release 3.5.4a
  */
-public interface I_M_CostDetail 
+public interface I_M_Cost 
 {
 
-    /** TableName=M_CostDetail */
-    public static final String Table_Name = "M_CostDetail";
+    /** TableName=M_Cost */
+    public static final String Table_Name = "M_Cost";
 
-    /** AD_Table_ID=808 */
+    /** AD_Table_ID=771 */
     public static final int Table_ID = MTable.getTable_ID(Table_Name);
 
     KeyNamePair Model = new KeyNamePair(Table_ID, Table_Name);
@@ -62,19 +62,6 @@ public interface I_M_CostDetail
 	  */
 	public int getAD_Org_ID();
 
-    /** Column name Amt */
-    public static final String COLUMNNAME_Amt = "Amt";
-
-	/** Set Amount.
-	  * Amount
-	  */
-	public void setAmt (BigDecimal Amt);
-
-	/** Get Amount.
-	  * Amount
-	  */
-	public BigDecimal getAmt();
-
     /** Column name C_AcctSchema_ID */
     public static final String COLUMNNAME_C_AcctSchema_ID = "C_AcctSchema_ID";
 
@@ -89,66 +76,6 @@ public interface I_M_CostDetail
 	public int getC_AcctSchema_ID();
 
 	public I_C_AcctSchema getC_AcctSchema() throws RuntimeException;
-
-    /** Column name C_InvoiceLine_ID */
-    public static final String COLUMNNAME_C_InvoiceLine_ID = "C_InvoiceLine_ID";
-
-	/** Set Invoice Line.
-	  * Invoice Detail Line
-	  */
-	public void setC_InvoiceLine_ID (int C_InvoiceLine_ID);
-
-	/** Get Invoice Line.
-	  * Invoice Detail Line
-	  */
-	public int getC_InvoiceLine_ID();
-
-	public I_C_InvoiceLine getC_InvoiceLine() throws RuntimeException;
-
-    /** Column name C_LandedCostAllocation_ID */
-    public static final String COLUMNNAME_C_LandedCostAllocation_ID = "C_LandedCostAllocation_ID";
-
-	/** Set Landed Cost Allocation.
-	  * Allocation for Land Costs
-	  */
-	public void setC_LandedCostAllocation_ID (int C_LandedCostAllocation_ID);
-
-	/** Get Landed Cost Allocation.
-	  * Allocation for Land Costs
-	  */
-	public int getC_LandedCostAllocation_ID();
-
-	public I_C_LandedCostAllocation getC_LandedCostAllocation() throws RuntimeException;
-
-    /** Column name C_OrderLine_ID */
-    public static final String COLUMNNAME_C_OrderLine_ID = "C_OrderLine_ID";
-
-	/** Set Sales Order Line.
-	  * Sales Order Line
-	  */
-	public void setC_OrderLine_ID (int C_OrderLine_ID);
-
-	/** Get Sales Order Line.
-	  * Sales Order Line
-	  */
-	public int getC_OrderLine_ID();
-
-	public I_C_OrderLine getC_OrderLine() throws RuntimeException;
-
-    /** Column name C_ProjectIssue_ID */
-    public static final String COLUMNNAME_C_ProjectIssue_ID = "C_ProjectIssue_ID";
-
-	/** Set Project Issue.
-	  * Project Issues (Material, Labor)
-	  */
-	public void setC_ProjectIssue_ID (int C_ProjectIssue_ID);
-
-	/** Get Project Issue.
-	  * Project Issues (Material, Labor)
-	  */
-	public int getC_ProjectIssue_ID();
-
-	public I_C_ProjectIssue getC_ProjectIssue() throws RuntimeException;
 
     /** Column name CostingMethod */
     public static final String COLUMNNAME_CostingMethod = "CostingMethod";
@@ -218,6 +145,19 @@ public interface I_M_CostDetail
 	  */
 	public BigDecimal getCurrentCostPrice();
 
+    /** Column name CurrentCostPriceLL */
+    public static final String COLUMNNAME_CurrentCostPriceLL = "CurrentCostPriceLL";
+
+	/** Set Current Cost Price Lower Level.
+	  * Current Price Lower Level Is the sum of the costs of the components of this product manufactured for this level.
+	  */
+	public void setCurrentCostPriceLL (BigDecimal CurrentCostPriceLL);
+
+	/** Get Current Cost Price Lower Level.
+	  * Current Price Lower Level Is the sum of the costs of the components of this product manufactured for this level.
+	  */
+	public BigDecimal getCurrentCostPriceLL();
+
     /** Column name CurrentQty */
     public static final String COLUMNNAME_CurrentQty = "CurrentQty";
 
@@ -230,45 +170,6 @@ public interface I_M_CostDetail
 	  * Current Quantity
 	  */
 	public BigDecimal getCurrentQty();
-
-    /** Column name DateAcct */
-    public static final String COLUMNNAME_DateAcct = "DateAcct";
-
-	/** Set Account Date.
-	  * Accounting Date
-	  */
-	public void setDateAcct (Timestamp DateAcct);
-
-	/** Get Account Date.
-	  * Accounting Date
-	  */
-	public Timestamp getDateAcct();
-
-    /** Column name DeltaAmt */
-    public static final String COLUMNNAME_DeltaAmt = "DeltaAmt";
-
-	/** Set Delta Amount.
-	  * Difference Amount
-	  */
-	public void setDeltaAmt (BigDecimal DeltaAmt);
-
-	/** Get Delta Amount.
-	  * Difference Amount
-	  */
-	public BigDecimal getDeltaAmt();
-
-    /** Column name DeltaQty */
-    public static final String COLUMNNAME_DeltaQty = "DeltaQty";
-
-	/** Set Delta Quantity.
-	  * Quantity Difference
-	  */
-	public void setDeltaQty (BigDecimal DeltaQty);
-
-	/** Get Delta Quantity.
-	  * Quantity Difference
-	  */
-	public BigDecimal getDeltaQty();
 
     /** Column name Description */
     public static final String COLUMNNAME_Description = "Description";
@@ -283,6 +184,24 @@ public interface I_M_CostDetail
 	  */
 	public String getDescription();
 
+    /** Column name FutureCostPrice */
+    public static final String COLUMNNAME_FutureCostPrice = "FutureCostPrice";
+
+	/** Set Future Cost Price	  */
+	public void setFutureCostPrice (BigDecimal FutureCostPrice);
+
+	/** Get Future Cost Price	  */
+	public BigDecimal getFutureCostPrice();
+
+    /** Column name FutureCostPriceLL */
+    public static final String COLUMNNAME_FutureCostPriceLL = "FutureCostPriceLL";
+
+	/** Set Future Cost Price Lower Level	  */
+	public void setFutureCostPriceLL (BigDecimal FutureCostPriceLL);
+
+	/** Get Future Cost Price Lower Level	  */
+	public BigDecimal getFutureCostPriceLL();
+
     /** Column name IsActive */
     public static final String COLUMNNAME_IsActive = "IsActive";
 
@@ -296,18 +215,18 @@ public interface I_M_CostDetail
 	  */
 	public boolean isActive();
 
-    /** Column name IsSOTrx */
-    public static final String COLUMNNAME_IsSOTrx = "IsSOTrx";
+    /** Column name IsCostFrozen */
+    public static final String COLUMNNAME_IsCostFrozen = "IsCostFrozen";
 
-	/** Set Sales Transaction.
-	  * This is a Sales Transaction
+	/** Set Cost Frozen.
+	  * Indicated that the Standard Cost is frozen
 	  */
-	public void setIsSOTrx (boolean IsSOTrx);
+	public void setIsCostFrozen (boolean IsCostFrozen);
 
-	/** Get Sales Transaction.
-	  * This is a Sales Transaction
+	/** Get Cost Frozen.
+	  * Indicated that the Standard Cost is frozen
 	  */
-	public boolean isSOTrx();
+	public boolean isCostFrozen();
 
     /** Column name M_AttributeSetInstance_ID */
     public static final String COLUMNNAME_M_AttributeSetInstance_ID = "M_AttributeSetInstance_ID";
@@ -323,19 +242,6 @@ public interface I_M_CostDetail
 	public int getM_AttributeSetInstance_ID();
 
 	public I_M_AttributeSetInstance getM_AttributeSetInstance() throws RuntimeException;
-
-    /** Column name M_CostDetail_ID */
-    public static final String COLUMNNAME_M_CostDetail_ID = "M_CostDetail_ID";
-
-	/** Set Cost Detail.
-	  * Cost Detail Information
-	  */
-	public void setM_CostDetail_ID (int M_CostDetail_ID);
-
-	/** Get Cost Detail.
-	  * Cost Detail Information
-	  */
-	public int getM_CostDetail_ID();
 
     /** Column name M_CostElement_ID */
     public static final String COLUMNNAME_M_CostElement_ID = "M_CostElement_ID";
@@ -367,51 +273,6 @@ public interface I_M_CostDetail
 
 	public I_M_CostType getM_CostType() throws RuntimeException;
 
-    /** Column name M_InOutLine_ID */
-    public static final String COLUMNNAME_M_InOutLine_ID = "M_InOutLine_ID";
-
-	/** Set Shipment/Receipt Line.
-	  * Line on Shipment or Receipt document
-	  */
-	public void setM_InOutLine_ID (int M_InOutLine_ID);
-
-	/** Get Shipment/Receipt Line.
-	  * Line on Shipment or Receipt document
-	  */
-	public int getM_InOutLine_ID();
-
-	public I_M_InOutLine getM_InOutLine() throws RuntimeException;
-
-    /** Column name M_InventoryLine_ID */
-    public static final String COLUMNNAME_M_InventoryLine_ID = "M_InventoryLine_ID";
-
-	/** Set Phys.Inventory Line.
-	  * Unique line in an Inventory document
-	  */
-	public void setM_InventoryLine_ID (int M_InventoryLine_ID);
-
-	/** Get Phys.Inventory Line.
-	  * Unique line in an Inventory document
-	  */
-	public int getM_InventoryLine_ID();
-
-	public I_M_InventoryLine getM_InventoryLine() throws RuntimeException;
-
-    /** Column name M_MovementLine_ID */
-    public static final String COLUMNNAME_M_MovementLine_ID = "M_MovementLine_ID";
-
-	/** Set Move Line.
-	  * Inventory Move document Line
-	  */
-	public void setM_MovementLine_ID (int M_MovementLine_ID);
-
-	/** Get Move Line.
-	  * Inventory Move document Line
-	  */
-	public int getM_MovementLine_ID();
-
-	public I_M_MovementLine getM_MovementLine() throws RuntimeException;
-
     /** Column name M_Product_ID */
     public static final String COLUMNNAME_M_Product_ID = "M_Product_ID";
 
@@ -427,53 +288,18 @@ public interface I_M_CostDetail
 
 	public I_M_Product getM_Product() throws RuntimeException;
 
-    /** Column name M_ProductionLine_ID */
-    public static final String COLUMNNAME_M_ProductionLine_ID = "M_ProductionLine_ID";
+    /** Column name Percent */
+    public static final String COLUMNNAME_Percent = "Percent";
 
-	/** Set Production Line.
-	  * Document Line representing a production
+	/** Set Percent.
+	  * Percentage
 	  */
-	public void setM_ProductionLine_ID (int M_ProductionLine_ID);
+	public void setPercent (int Percent);
 
-	/** Get Production Line.
-	  * Document Line representing a production
+	/** Get Percent.
+	  * Percentage
 	  */
-	public int getM_ProductionLine_ID();
-
-	public I_M_ProductionLine getM_ProductionLine() throws RuntimeException;
-
-    /** Column name M_Transaction_ID */
-    public static final String COLUMNNAME_M_Transaction_ID = "M_Transaction_ID";
-
-	/** Set Inventory Transaction	  */
-	public void setM_Transaction_ID (int M_Transaction_ID);
-
-	/** Get Inventory Transaction	  */
-	public int getM_Transaction_ID();
-
-    /** Column name PP_Cost_Collector_ID */
-    public static final String COLUMNNAME_PP_Cost_Collector_ID = "PP_Cost_Collector_ID";
-
-	/** Set Manufacturing Cost Collector	  */
-	public void setPP_Cost_Collector_ID (int PP_Cost_Collector_ID);
-
-	/** Get Manufacturing Cost Collector	  */
-	public int getPP_Cost_Collector_ID();
-
-	public org.eevolution.model.I_PP_Cost_Collector getPP_Cost_Collector() throws RuntimeException;
-
-    /** Column name Price */
-    public static final String COLUMNNAME_Price = "Price";
-
-	/** Set Price.
-	  * Price
-	  */
-	public void setPrice (BigDecimal Price);
-
-	/** Get Price.
-	  * Price
-	  */
-	public BigDecimal getPrice();
+	public int getPercent();
 
     /** Column name Processed */
     public static final String COLUMNNAME_Processed = "Processed";
@@ -487,19 +313,6 @@ public interface I_M_CostDetail
 	  * The document has been processed
 	  */
 	public boolean isProcessed();
-
-    /** Column name Qty */
-    public static final String COLUMNNAME_Qty = "Qty";
-
-	/** Set Quantity.
-	  * Quantity
-	  */
-	public void setQty (BigDecimal Qty);
-
-	/** Get Quantity.
-	  * Quantity
-	  */
-	public BigDecimal getQty();
 
     /** Column name Updated */
     public static final String COLUMNNAME_Updated = "Updated";

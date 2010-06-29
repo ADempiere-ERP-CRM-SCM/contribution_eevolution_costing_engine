@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.engine.IDocumentLine;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
@@ -47,7 +48,7 @@ import org.compiere.util.Msg;
  * 				incorrectly calculated.
  * @author red1 FR: [ 2214883 ] Remove SQL code and Replace for Query
  */
-public class MInvoiceLine extends X_C_InvoiceLine
+public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 {
 	/**
 	 * 
@@ -1314,6 +1315,42 @@ public class MInvoiceLine extends X_C_InvoiceLine
 						+" WHERE "+MMatchInv.COLUMNNAME_C_InvoiceLine_ID+"=?"
 							+" AND "+MMatchInv.COLUMNNAME_Processed+"=?";
 		return DB.getSQLValueBDEx(get_TrxName(), sql, getC_InvoiceLine_ID(), true);
+	}
+
+	@Override
+	public int getM_Locator_ID() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public BigDecimal getMovementQty() 
+	{
+		return this.getQtyInvoiced();
+	}
+
+	@Override
+	public int getReversalLine_ID() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean isSOTrx() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void setM_Locator_ID(int M_Locator_ID) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public int getM_CostElement_ID() 
+	{
+		return 0;
 	}
 
 }	//	MInvoiceLine

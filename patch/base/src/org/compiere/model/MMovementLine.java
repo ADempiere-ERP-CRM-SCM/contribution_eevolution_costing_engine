@@ -369,5 +369,11 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine
 	public boolean isSOTrx() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public int getM_CostElement_ID() {
+		// TODO Auto-generated method stub
+		return 0;
 	}	
 }	//	MMovementLine

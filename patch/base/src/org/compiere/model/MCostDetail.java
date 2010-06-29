@@ -49,186 +49,18 @@ public class MCostDetail extends X_M_CostDetail
 	private static final long serialVersionUID = 5452006110417178583L;
 
 
-	/**
-	 * 	Create New Order Cost Detail for Purchase Orders.
-	 * 	Called from Doc_MatchPO
-	 *	@param as accounting schema
-	 *	@param AD_Org_ID org
-	 *	@param M_Product_ID product
-	 *	@param M_AttributeSetInstance_ID asi
-	 *	@param C_OrderLine_ID order
-	 *	@param M_CostElement_ID optional cost element for Freight
-	 *	@param Amt amt total amount
-	 *	@param Qty qty
-	 *	@param Description optional description
-	 *	@param trxName transaction
-	 *	@return true if created
-	 */
-	public static boolean createOrder (MAcctSchema as, int AD_Org_ID, 
+	/*public static boolean createOrder (MAcctSchema as, int AD_Org_ID, 
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int C_OrderLine_ID, int M_CostElement_ID, 
 			BigDecimal Amt, BigDecimal Qty,
-			String Description, String trxName, int mtrxID)
-	{
-		//	Delete Unprocessed zero Differences
-		String sql = "DELETE M_CostDetail "
-			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
-			+ " AND C_OrderLine_ID=" + C_OrderLine_ID
-			+ " AND C_AcctSchema_ID =" + as.getC_AcctSchema_ID()
-			+ " AND M_AttributeSetInstance_ID=" + M_AttributeSetInstance_ID;
-		int no = DB.executeUpdate(sql, trxName);
-		if (no != 0)
-			s_log.config("Deleted #" + no);
-		MCostDetail cd = get (as.getCtx(), "C_OrderLine_ID=?", 
-				C_OrderLine_ID, M_AttributeSetInstance_ID, as.getC_AcctSchema_ID(), trxName);
-		//
-		if (cd == null)		//	createNew
-		{
-			boolean ok = false;
-
-			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
-			MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
-			for (MCost mcost: cost)
-			{
-				final MCostElement ce = MCostElement.get(mcost.getCtx(), mcost.getM_CostElement_ID());
-				if (ce.isLandedCost())
-				{
-					// skip landed costs
-					continue;
-				}
-
-				cd = new MCostDetail(mcost, Amt, Qty); 
-				cd.setC_OrderLine_ID (C_OrderLine_ID);
-				cd.setM_Transaction_ID(mtrxID);
-				cd.save();
-				ok = cd.save();
-				if (ok && !cd.isProcessed())
-				{
-					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-					if (client.isCostImmediate())
-						cd.process();
-				}
-				s_log.config("(" + ok + ") " + cd);
-
-			}
-			return ok;
-		}
-		else
-		{
-			// MZ Goodwill
-			// set deltaAmt=Amt, deltaQty=qty, and set Cost Detail for Amt and Qty	 
-			cd.setDeltaAmt(Amt.subtract(cd.getAmt()));
-			cd.setDeltaQty(Qty.subtract(cd.getQty()));
-			if (cd.isDelta())
-			{
-				cd.setProcessed(false);
-				cd.setAmt(Amt);
-				cd.setQty(Qty);
-			}
-			// end MZ
-			else
-				return true;	//	nothing to do
-		}
-		boolean ok = cd.save();
-		if (ok && !cd.isProcessed())
-		{
-			MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-			if (client.isCostImmediate())
-				cd.process();
-		}
-		s_log.config("(" + ok + ") " + cd);
-		return ok;
-	}	//	createOrder
-
-
-	/**
-	 * 	Create New Invoice Cost Detail for AP Invoices.
-	 * 	Called from Doc_Invoice - for Invoice Adjustments
-	 *	@param as accounting schema
-	 *	@param AD_Org_ID org
-	 *	@param M_Product_ID product
-	 *	@param M_AttributeSetInstance_ID asi
-	 *	@param C_InvoiceLine_ID invoice
-	 *	@param M_CostElement_ID optional cost element for Freight
-	 *	@param Amt amt
-	 *	@param Qty qty
-	 *	@param Description optional description
-	 *	@param trxName transaction
-	 *	@return true if created
-	 */
-	public static boolean createInvoice (MAcctSchema as, int AD_Org_ID, 
+			String Description, String trxName, int mtrxID)*/
+	
+	/*public static boolean createInvoice (MAcctSchema as, int AD_Org_ID, 
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int C_InvoiceLine_ID, int M_CostElement_ID, 
 			BigDecimal Amt, BigDecimal Qty,
-			String Description, String trxName, int mtrxID)
-	{
-		//	Delete Unprocessed zero Differences
-		String sql = "DELETE M_CostDetail "
-			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
-			+ " AND C_InvoiceLine_ID=" + C_InvoiceLine_ID
-			+ " AND C_AcctSchema_ID =" + as.getC_AcctSchema_ID()			
-			+ " AND M_AttributeSetInstance_ID=" + M_AttributeSetInstance_ID;
-		int no = DB.executeUpdate(sql, trxName);
-		if (no != 0)
-			s_log.config("Deleted #" + no);
-		MCostDetail cd = get (as.getCtx(), "C_InvoiceLine_ID=?", 
-				C_InvoiceLine_ID, M_AttributeSetInstance_ID, as.getC_AcctSchema_ID(), trxName);
-		//
-		if (cd == null)		//	createNew
-		{
-			boolean ok = false;
-			MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
-			MCost[] cost = MCost.getForProduct(as.getCtx(), product.get_ID(), AD_Org_ID, trxName);
-			for (MCost mcost: cost)
-			{
-				final MCostElement ce = MCostElement.get(mcost.getCtx(), mcost.getM_CostElement_ID());
-				if (ce.isLandedCost())
-				{
-					// skip landed costs
-					continue;
-				}
-				cd = new MCostDetail(mcost, Amt, Qty); 
-				cd.setC_InvoiceLine_ID (C_InvoiceLine_ID);
-				cd.setM_Transaction_ID(mtrxID);
-				cd.save();
-				ok = cd.save();
-				if (ok && !cd.isProcessed())
-				{
-					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-					if (client.isCostImmediate())
-						cd.process();
-				}
-				s_log.config("(" + ok + ") " + cd);
-			}
-			return ok;
-		}
-		else
-		{
-			// MZ Goodwill
-			// set deltaAmt=Amt, deltaQty=qty, and set Cost Detail for Amt and Qty	 
-			cd.setDeltaAmt(Amt.subtract(cd.getAmt()));
-			cd.setDeltaQty(Qty.subtract(cd.getQty()));
-			if (cd.isDelta())
-			{
-				cd.setProcessed(false);
-				cd.setAmt(Amt);
-				cd.setQty(Qty);
-			}
-			// end MZ
-			else
-				return true;	//	nothing to do
-		}
-		boolean ok = cd.save();
-		if (ok && !cd.isProcessed())
-		{
-			MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-			if (client.isCostImmediate())
-				cd.process();
-		}
-		s_log.config("(" + ok + ") " + cd);
-		return ok;
-	}	//	createInvoice
-
+			String Description, String trxName, int mtrxID)*/
+	
 	/*public static boolean createShipment (MAcctSchema as, int AD_Org_ID, 
 			int M_Product_ID, int M_AttributeSetInstance_ID,
 			int M_InOutLine_ID, int M_CostElement_ID, 
@@ -1155,6 +987,14 @@ public class MCostDetail extends X_M_CostDetail
 				+" INNER JOIN M_Movement i ON (i.M_Movement_ID = il.M_Movement_ID)"
 				+" WHERE il.M_MovementLine_ID=?";
 			param1 = getM_MovementLine_ID();
+		}
+		else if (getC_LandedCostAllocation_ID() > 0)
+		{
+			sql = "SELECT i.DateAcct FROM C_Invoice i"
+				+" INNER JOIN C_InvoiceLine il ON (i.C_Invoice_ID=il.C_Invoice_ID)"
+				+" INNER JOIN C_LandedCostAllocation la ON (il.C_InvoiceLine_ID=la.C_InvoiceLine_ID)"
+				+" WHERE la.C_LandedCostAllocation_ID=?";
+			param1 = getC_LandedCostAllocation_ID();
 		}
 		//
 		dateAcct = DB.getSQLValueTSEx(get_TrxName(), sql, param1);

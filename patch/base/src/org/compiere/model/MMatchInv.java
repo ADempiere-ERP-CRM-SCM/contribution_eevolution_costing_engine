@@ -22,6 +22,7 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Properties;
 
+import org.adempiere.engine.CostEngineFactory;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -395,10 +396,11 @@ public class MMatchInv extends X_M_MatchInv
 				tQty = tQty.add(getQty());
 			
 			// Set Total Amount and Total Quantity from Matched Invoice 
-			MCostDetail.createInvoice(as, getAD_Org_ID(), 
+			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(invoiceLine, null);
+			/*MCostDetail.createInvoice(as, getAD_Org_ID(), 
 					getM_Product_ID(), getM_AttributeSetInstance_ID(),
 					invoiceLine.getC_InvoiceLine_ID(), 0,		//	No cost element
-					tAmt, tQty,	getDescription(), get_TrxName(),invoiceLine.get_ID());
+					tAmt, tQty,	getDescription(), get_TrxName(),invoiceLine.get_ID());*/
 			// end MZ
 		}
 		

@@ -33,7 +33,10 @@ import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
 import org.compiere.model.MInventoryLine;
+import org.compiere.model.MInvoice;
 import org.compiere.model.MInvoiceLine;
+import org.compiere.model.MLandedCost;
+import org.compiere.model.MLandedCostAllocation;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
@@ -242,7 +245,10 @@ public class CostEngine
 				}
 			}
 		}
-		else if (!model.isSOTrx())
+		//receipt
+		final MCostElement ce = MCostElement.get(model.getCtx(), model.getM_CostElement_ID());
+	    if (!model.isSOTrx() && !(model instanceof MOrderLine) && !(model instanceof MInvoiceLine)
+	    		&& !(model instanceof MLandedCostAllocation))
 		{
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), mtrx.getAD_Client_ID()))
 			{
@@ -250,6 +256,7 @@ public class CostEngine
 				createCostDetail(model, mtrx, as, cc, null, false);
 			}
 		}
+	    //shipment
 		else if (model.isSOTrx())
 		{
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(mtrx.getCtx(), mtrx.getAD_Client_ID()))
@@ -271,8 +278,23 @@ public class CostEngine
 				}
 			}
 		}
-		
-		
+		else if (model instanceof MOrderLine || (model instanceof MInvoiceLine &&
+				!(model instanceof MLandedCostAllocation)))
+		{
+			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), model.getAD_Client_ID()))
+			{
+				CostComponent cc = new CostComponent(model.getMovementQty(), model.getPriceActual());
+				createCostDetail(model, as, cc, null, false);
+			}
+		}
+		else if (ce.isLandedCost())
+		{
+			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), model.getAD_Client_ID()))
+			{
+				CostComponent cc = new CostComponent(model.getMovementQty(), model.getPriceActual());
+				createCostDetailForLandedCost(model, as, cc, null, false);	
+			}
+		}
 	}
 	public void createCostDetail (IDocumentLine model , MTransaction trxTo, MTransaction trxFrom)
 	{
@@ -386,7 +408,7 @@ public class CostEngine
 			{
 				cd = null;
 			}
-			if (cd == null)
+			if (cd == null || model.isSOTrx())
 			{
 				cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
 				if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
@@ -406,6 +428,129 @@ public class CostEngine
 				MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
 				if (client.isCostImmediate())
 					cd.process();
+			}
+		}
+	}
+
+	public void createCostDetail (IDocumentLine model ,
+			MAcctSchema as, CostComponent cc,
+			Boolean isSOTrx, boolean setProcessed)
+	{
+		final String idColumnName = model.get_TableName()+"_ID";
+		final String trxName = model.get_TrxName();
+		
+		//	Delete Unprocessed zero Differences
+		String sql = "DELETE M_CostDetail "
+			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
+			+ " AND "+idColumnName+"=?"
+			+ " AND C_AcctSchema_ID=?"
+			+ " AND M_AttributeSetInstance_ID=?";
+		if (isSOTrx != null)
+		{
+			sql += " AND "+I_M_CostDetail.COLUMNNAME_IsSOTrx+"="+(isSOTrx ? "'Y'" : "'N'");
+		}
+		int no = DB.executeUpdateEx(sql,
+				new Object[]{model.get_ID(), as.getC_AcctSchema_ID(), model.getM_AttributeSetInstance_ID()},
+				trxName);
+		if (no != 0)
+			log.config("Deleted #" + no);
+		
+		// Build Description string
+		StringBuilder description = new StringBuilder();
+		if (!Util.isEmpty(model.getDescription(), true))
+			description.append(model.getDescription());
+		if (isSOTrx != null)
+		{
+			description.append(isSOTrx ? "(|->)" : "(|<-)");
+		}
+		
+		MCost[] costs = MCost.getForProduct(as.getCtx(), model.getM_Product_ID(), model.getAD_Org_ID(), trxName);
+		for (MCost cost : costs)
+		{
+			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
+			if (ce.isLandedCost())
+			{
+				// skip landed costs
+				continue;
+			}
+			MCostDetail cd = getCostDetail(cost, model);
+			if (model instanceof MMovementLine)
+			{
+				cd = null;
+			}
+			if (cd == null)
+			{
+				cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
+				if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
+					throw new AdempiereException("Cannot set "+idColumnName);
+				if (isSOTrx != null)
+					cd.setIsSOTrx(isSOTrx);
+				else
+					cd.setIsSOTrx(model.isSOTrx());	
+				cd.setM_Transaction_ID(model.get_ID());
+				cd.setDescription(description.toString());
+				if (setProcessed)
+					cd.setProcessed(true);
+				cd.saveEx();
+			}
+			if (!cd.isProcessed())
+			{
+				MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+				if (client.isCostImmediate())
+					cd.process();
+			}
+		}
+	}
+	public void createCostDetailForLandedCost (IDocumentLine model ,
+			MAcctSchema as, CostComponent cc,
+			Boolean isSOTrx, boolean setProcessed)
+	{
+		final String idColumnName = model.get_TableName()+"_ID";
+		final String trxName = model.get_TrxName();
+       // String idColumnName = MLandedCost.COLUMNNAME_C_InvoiceLine_ID;
+		//	Delete Unprocessed zero Differences
+		String sql = "DELETE M_CostDetail "
+			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
+			+ " AND "+idColumnName+"=?"
+			+ " AND C_AcctSchema_ID=?"
+			+ " AND M_AttributeSetInstance_ID=?";
+		if (isSOTrx != null)
+		{
+			sql += " AND "+I_M_CostDetail.COLUMNNAME_IsSOTrx+"="+(isSOTrx ? "'Y'" : "'N'");
+		}
+		int no = DB.executeUpdateEx(sql,
+				new Object[]{model.get_ID(), as.getC_AcctSchema_ID(), model.getM_AttributeSetInstance_ID()},
+				trxName);
+		if (no != 0)
+			log.config("Deleted #" + no);
+
+		MCost[] costs = MCost.getForProduct(as.getCtx(), model.getM_Product_ID(), model.getAD_Org_ID(), trxName);
+		for (MCost cost : costs)
+		{
+			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
+			if (ce.isLandedCost() && ce.get_ID()== model.getM_CostElement_ID())
+			{
+				MCostDetail	cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
+					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
+						throw new AdempiereException("Cannot set "+idColumnName);
+					if (isSOTrx != null)
+						cd.setIsSOTrx(isSOTrx);
+					else
+						cd.setIsSOTrx(model.isSOTrx());	
+					cd.setM_Transaction_ID(model.get_ID());
+					if (setProcessed)
+						cd.setProcessed(true);
+					cd.saveEx();
+				if (!cd.isProcessed())
+				{
+					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+					if (client.isCostImmediate())
+						cd.process();
+				}
+			}
+			else 
+			{
+				continue;
 			}
 		}
 	}

@@ -947,12 +947,12 @@ public class MMatchPO extends X_M_MatchPO
 						tAmt = tAmt.setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);			
 				}
 				// Set Total Amount and Total Quantity from Matched PO 
-			
-				MCostDetail.createOrder(as, oLine.getAD_Org_ID(), 
+				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(oLine, null);
+				/*MCostDetail.createOrder(as, oLine.getAD_Org_ID(), 
 						getM_Product_ID(), getM_AttributeSetInstance_ID(),
 						oLine.getC_OrderLine_ID(), 0,		//	no cost element
 						tAmt, tQty,			//	Delivered
-						oLine.getDescription(), get_TrxName(), oLine.get_ID());
+						oLine.getDescription(), get_TrxName(), oLine.get_ID());*/
 				// end MZ
 			}
 		}

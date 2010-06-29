@@ -32,7 +32,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100622L;
+	private static final long serialVersionUID = 20100625L;
 
     /** Standard Constructor */
     public X_M_CostDetail (Properties ctx, int M_CostDetail_ID, String trxName)
@@ -150,6 +150,34 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public int getC_InvoiceLine_ID () 
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_C_InvoiceLine_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public I_C_LandedCostAllocation getC_LandedCostAllocation() throws RuntimeException
+    {
+		return (I_C_LandedCostAllocation)MTable.get(getCtx(), I_C_LandedCostAllocation.Table_Name)
+			.getPO(getC_LandedCostAllocation_ID(), get_TrxName());	}
+
+	/** Set Landed Cost Allocation.
+		@param C_LandedCostAllocation_ID 
+		Allocation for Land Costs
+	  */
+	public void setC_LandedCostAllocation_ID (int C_LandedCostAllocation_ID)
+	{
+		if (C_LandedCostAllocation_ID < 1) 
+			set_Value (COLUMNNAME_C_LandedCostAllocation_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_LandedCostAllocation_ID, Integer.valueOf(C_LandedCostAllocation_ID));
+	}
+
+	/** Get Landed Cost Allocation.
+		@return Allocation for Land Costs
+	  */
+	public int getC_LandedCostAllocation_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_LandedCostAllocation_ID);
 		if (ii == null)
 			 return 0;
 		return ii.intValue();

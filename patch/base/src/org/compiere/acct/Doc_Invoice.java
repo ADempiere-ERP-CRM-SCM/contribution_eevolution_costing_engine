@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
+import org.adempiere.engine.CostEngineFactory;
 import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MClientInfo;
@@ -864,11 +865,12 @@ public class Doc_Invoice extends Doc
 				allocationAmt = allocationAmt.negate();
 			// AZ Goodwill
 			// use createInvoice to create/update non Material Cost Detail
-			MCostDetail.createInvoice(as, lca.getAD_Org_ID(), 
+//			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(lca, null);
+			/*MCostDetail.createInvoice(as, lca.getAD_Org_ID(), 
 					lca.getM_Product_ID(), lca.getM_AttributeSetInstance_ID(),
 					C_InvoiceLine_ID, lca.getM_CostElement_ID(),
 					allocationAmt, lca.getQty(),
-					desc, getTrxName(), line.get_ID());
+					desc, getTrxName(), line.get_ID());*/
 			// end AZ
 		}
 		

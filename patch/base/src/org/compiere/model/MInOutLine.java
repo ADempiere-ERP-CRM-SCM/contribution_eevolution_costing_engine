@@ -739,4 +739,10 @@ implements IDocumentLine
 		return getParent().isSOTrx();
 	}
 
+	@Override
+	public int getM_CostElement_ID() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }	//	MInOutLine

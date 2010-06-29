@@ -19,14 +19,13 @@ package org.compiere.model;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
-import java.sql.Timestamp;
 import java.util.Properties;
 import org.compiere.util.Env;
 
-/** Generated Model for M_CostQueue
+/** Generated Model for M_Cost
  *  @author Adempiere (generated) 
  *  @version Release 3.5.4a - $Id$ */
-public class X_M_CostQueue extends PO implements I_M_CostQueue, I_Persistent 
+public class X_M_Cost extends PO implements I_M_Cost, I_Persistent 
 {
 
 	/**
@@ -35,24 +34,25 @@ public class X_M_CostQueue extends PO implements I_M_CostQueue, I_Persistent
 	private static final long serialVersionUID = 20100625L;
 
     /** Standard Constructor */
-    public X_M_CostQueue (Properties ctx, int M_CostQueue_ID, String trxName)
+    public X_M_Cost (Properties ctx, int M_Cost_ID, String trxName)
     {
-      super (ctx, M_CostQueue_ID, trxName);
-      /** if (M_CostQueue_ID == 0)
+      super (ctx, M_Cost_ID, trxName);
+      /** if (M_Cost_ID == 0)
         {
 			setC_AcctSchema_ID (0);
 			setCurrentCostPrice (Env.ZERO);
+			setCurrentCostPriceLL (Env.ZERO);
 			setCurrentQty (Env.ZERO);
+			setFutureCostPrice (Env.ZERO);
 			setM_AttributeSetInstance_ID (0);
 			setM_CostElement_ID (0);
-			setM_CostQueue_ID (0);
 			setM_CostType_ID (0);
 			setM_Product_ID (0);
         } */
     }
 
     /** Load Constructor */
-    public X_M_CostQueue (Properties ctx, ResultSet rs, String trxName)
+    public X_M_Cost (Properties ctx, ResultSet rs, String trxName)
     {
       super (ctx, rs, trxName);
     }
@@ -74,7 +74,7 @@ public class X_M_CostQueue extends PO implements I_M_CostQueue, I_Persistent
 
     public String toString()
     {
-      StringBuffer sb = new StringBuffer ("X_M_CostQueue[")
+      StringBuffer sb = new StringBuffer ("X_M_Cost[")
         .append(get_ID()).append("]");
       return sb.toString();
     }
@@ -107,6 +107,63 @@ public class X_M_CostQueue extends PO implements I_M_CostQueue, I_Persistent
 		return ii.intValue();
 	}
 
+	/** Set Costing Method.
+		@param CostingMethod 
+		Indicates how Costs will be calculated
+	  */
+	public void setCostingMethod (String CostingMethod)
+	{
+		set_Value (COLUMNNAME_CostingMethod, CostingMethod);
+	}
+
+	/** Get Costing Method.
+		@return Indicates how Costs will be calculated
+	  */
+	public String getCostingMethod () 
+	{
+		return (String)get_Value(COLUMNNAME_CostingMethod);
+	}
+
+	/** Set Accumulated Amt.
+		@param CumulatedAmt 
+		Total Amount
+	  */
+	public void setCumulatedAmt (BigDecimal CumulatedAmt)
+	{
+		set_ValueNoCheck (COLUMNNAME_CumulatedAmt, CumulatedAmt);
+	}
+
+	/** Get Accumulated Amt.
+		@return Total Amount
+	  */
+	public BigDecimal getCumulatedAmt () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CumulatedAmt);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Accumulated Qty.
+		@param CumulatedQty 
+		Total Quantity
+	  */
+	public void setCumulatedQty (BigDecimal CumulatedQty)
+	{
+		set_ValueNoCheck (COLUMNNAME_CumulatedQty, CumulatedQty);
+	}
+
+	/** Get Accumulated Qty.
+		@return Total Quantity
+	  */
+	public BigDecimal getCumulatedQty () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CumulatedQty);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
 	/** Set Current Cost Price.
 		@param CurrentCostPrice 
 		The currently used cost price
@@ -122,6 +179,26 @@ public class X_M_CostQueue extends PO implements I_M_CostQueue, I_Persistent
 	public BigDecimal getCurrentCostPrice () 
 	{
 		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CurrentCostPrice);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Current Cost Price Lower Level.
+		@param CurrentCostPriceLL 
+		Current Price Lower Level Is the sum of the costs of the components of this product manufactured for this level.
+	  */
+	public void setCurrentCostPriceLL (BigDecimal CurrentCostPriceLL)
+	{
+		set_Value (COLUMNNAME_CurrentCostPriceLL, CurrentCostPriceLL);
+	}
+
+	/** Get Current Cost Price Lower Level.
+		@return Current Price Lower Level Is the sum of the costs of the components of this product manufactured for this level.
+	  */
+	public BigDecimal getCurrentCostPriceLL () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CurrentCostPriceLL);
 		if (bd == null)
 			 return Env.ZERO;
 		return bd;
@@ -147,21 +224,79 @@ public class X_M_CostQueue extends PO implements I_M_CostQueue, I_Persistent
 		return bd;
 	}
 
-	/** Set Account Date.
-		@param DateAcct 
-		Accounting Date
+	/** Set Description.
+		@param Description 
+		Optional short description of the record
 	  */
-	public void setDateAcct (Timestamp DateAcct)
+	public void setDescription (String Description)
 	{
-		set_Value (COLUMNNAME_DateAcct, DateAcct);
+		set_Value (COLUMNNAME_Description, Description);
 	}
 
-	/** Get Account Date.
-		@return Accounting Date
+	/** Get Description.
+		@return Optional short description of the record
 	  */
-	public Timestamp getDateAcct () 
+	public String getDescription () 
 	{
-		return (Timestamp)get_Value(COLUMNNAME_DateAcct);
+		return (String)get_Value(COLUMNNAME_Description);
+	}
+
+	/** Set Future Cost Price.
+		@param FutureCostPrice Future Cost Price	  */
+	public void setFutureCostPrice (BigDecimal FutureCostPrice)
+	{
+		set_Value (COLUMNNAME_FutureCostPrice, FutureCostPrice);
+	}
+
+	/** Get Future Cost Price.
+		@return Future Cost Price	  */
+	public BigDecimal getFutureCostPrice () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_FutureCostPrice);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Future Cost Price Lower Level.
+		@param FutureCostPriceLL Future Cost Price Lower Level	  */
+	public void setFutureCostPriceLL (BigDecimal FutureCostPriceLL)
+	{
+		set_Value (COLUMNNAME_FutureCostPriceLL, FutureCostPriceLL);
+	}
+
+	/** Get Future Cost Price Lower Level.
+		@return Future Cost Price Lower Level	  */
+	public BigDecimal getFutureCostPriceLL () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_FutureCostPriceLL);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Cost Frozen.
+		@param IsCostFrozen 
+		Indicated that the Standard Cost is frozen
+	  */
+	public void setIsCostFrozen (boolean IsCostFrozen)
+	{
+		set_Value (COLUMNNAME_IsCostFrozen, Boolean.valueOf(IsCostFrozen));
+	}
+
+	/** Get Cost Frozen.
+		@return Indicated that the Standard Cost is frozen
+	  */
+	public boolean isCostFrozen () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsCostFrozen);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
 	}
 
 	public I_M_AttributeSetInstance getM_AttributeSetInstance() throws RuntimeException
@@ -215,29 +350,6 @@ public class X_M_CostQueue extends PO implements I_M_CostQueue, I_Persistent
 	public int getM_CostElement_ID () 
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_M_CostElement_ID);
-		if (ii == null)
-			 return 0;
-		return ii.intValue();
-	}
-
-	/** Set Cost Queue.
-		@param M_CostQueue_ID 
-		FiFo/LiFo Cost Queue
-	  */
-	public void setM_CostQueue_ID (int M_CostQueue_ID)
-	{
-		if (M_CostQueue_ID < 1) 
-			set_ValueNoCheck (COLUMNNAME_M_CostQueue_ID, null);
-		else 
-			set_ValueNoCheck (COLUMNNAME_M_CostQueue_ID, Integer.valueOf(M_CostQueue_ID));
-	}
-
-	/** Get Cost Queue.
-		@return FiFo/LiFo Cost Queue
-	  */
-	public int getM_CostQueue_ID () 
-	{
-		Integer ii = (Integer)get_Value(COLUMNNAME_M_CostQueue_ID);
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
@@ -297,5 +409,48 @@ public class X_M_CostQueue extends PO implements I_M_CostQueue, I_Persistent
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
+	}
+
+	/** Set Percent.
+		@param Percent 
+		Percentage
+	  */
+	public void setPercent (int Percent)
+	{
+		set_Value (COLUMNNAME_Percent, Integer.valueOf(Percent));
+	}
+
+	/** Get Percent.
+		@return Percentage
+	  */
+	public int getPercent () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_Percent);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Processed.
+		@param Processed 
+		The document has been processed
+	  */
+	public void setProcessed (boolean Processed)
+	{
+		throw new IllegalArgumentException ("Processed is virtual column");	}
+
+	/** Get Processed.
+		@return The document has been processed
+	  */
+	public boolean isProcessed () 
+	{
+		Object oo = get_Value(COLUMNNAME_Processed);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
 	}
 }
