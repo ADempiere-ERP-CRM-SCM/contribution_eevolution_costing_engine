@@ -89,6 +89,7 @@
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
     <javac srcdir="${patchSrc}" destdir="${build}">
+      <src path="${src}"/>
       <include name="**/org/compiere/acct/*.java"/>
       <include name="**/org/compiere/model/*.java"/>
       <classpath refid="patch.class.path"/>
