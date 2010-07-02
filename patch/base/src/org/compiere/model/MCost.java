@@ -1878,4 +1878,5 @@ public class MCost extends X_M_Cost
 				C_OrderLine_ID, zeroCostsOK, trxName);
 	}
 
+
 }	//	MCost

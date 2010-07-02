@@ -1346,11 +1346,4 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 		// TODO Auto-generated method stub
 		
 	}
-
-	@Override
-	public int getM_CostElement_ID() 
-	{
-		return 0;
-	}
-
 }	//	MInvoiceLine

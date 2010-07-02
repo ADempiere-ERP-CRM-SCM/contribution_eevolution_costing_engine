@@ -4,16 +4,19 @@
 package org.adempiere.engine;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Properties;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.I_M_CostDetail;
+import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostQueue;
 import org.compiere.model.MProduct;
+import org.compiere.model.ProductCost;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
 
@@ -47,6 +50,11 @@ public class FifoLifoCostingMethod implements ICostingMethod //extends AbstractC
 		{
 			s_log.finer("Inv - FiFo/LiFo - amt=" + cd.getAmt() + ", qty=" + cd.getQty() + " [NOTHING TO DO]");	
 		}
+		/*else if (cd.getC_LandedCostAllocation_ID()!=0)
+		{
+			cost.setWeightedAverage(cd.getAmt(), cd.getQty());
+			s_log.finer("Inv - Fifo/Lifo - " + cost);
+		}*/
 		else if (cd.getM_InOutLine_ID() != 0 		//	AR Shipment Detail Record  
 				|| cd.getM_MovementLine_ID() != 0 
 				|| cd.getM_InventoryLine_ID() != 0
@@ -106,11 +114,26 @@ public class FifoLifoCostingMethod implements ICostingMethod //extends AbstractC
 				cost.setCumulatedAmt(cost.getCumulatedAmt().add(cAmt));
 				cost.setCumulatedQty(cost.getCumulatedQty().add(cd.getQty()));
 			}
-			cost.saveEx();
-			s_log.finer("QtyAdjust - FiFo/Lifo - " + cost);
-			
+			s_log.finer("QtyAdjust - FiFo/Lifo - " + cost);		
 		}
-		
+		cost.saveEx();
+	}
+
+	@Override
+	public List<CostComponent> getCostComponents(MAcctSchema as, IDocumentLine model, I_M_Transaction mtrx)
+	{
+		ProductCost pc = new ProductCost (model.getCtx(), 
+				model.getM_Product_ID(), model.getM_AttributeSetInstance_ID(),
+				model.get_TrxName());
+		pc.setQty(model.getMovementQty());
+		//
+		List<CostComponent> ccs = pc.getProductCostsLayers(as, model.getAD_Org_ID(), null, 0, false);
+		if (ccs == null || ccs.size() == 0)
+		{
+			MProduct product = MProduct.get(Env.getCtx(), model.getM_Product_ID());
+			throw new AdempiereException("No Costs for " + product.getName());
+		}
+		return ccs;
 	}
 }
 

@@ -184,31 +184,18 @@ public class CostEngine
 	
 	public void createCostDetail (IDocumentLine model , MTransaction mtrx)
 	{
+		//Physical Inventory
 		if(model instanceof MInventoryLine && model.getReversalLine_ID() <= 0)
 		{	
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(mtrx.getCtx(), mtrx.getAD_Client_ID()))
 			{
-				ProductCost pc = new ProductCost (mtrx.getCtx(), 
-						mtrx.getM_Product_ID(), mtrx.getM_AttributeSetInstance_ID(),
-						mtrx.get_TrxName());
-				pc.setQty(mtrx.getMovementQty());
-				//BigDecimal costs = pc.getProductCosts(as, trx.getAD_Org_ID(), null, 
-				//		0, false);	
-				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(),
-						null, // CostingMethod
-						mtrx.get_ID(),
-						false); // zeroCostsOK
-				if (costs == null || costs.size() == 0)
-				{
-					MProduct product = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID());
-					throw new AdempiereException("No Costs for " + product.getName());
+					createCostDetail(model, mtrx, as,
+							null, // CostComponent will be automatically fetched in this method
+							null, // IsSOTrx = null
+							false); // setProcessed = false
 				}
-				for (CostComponent cc : costs)
-				{
-					createCostDetail(model, mtrx, as, cc, null, false);
-				}
-			}
 		}
+		// Reverse all documents
 		else if (model.getReversalLine_ID() > 0)
 		{
 			//anca.bradau begin
@@ -245,39 +232,28 @@ public class CostEngine
 				}
 			}
 		}
-		//receipt
-		final MCostElement ce = MCostElement.get(model.getCtx(), model.getM_CostElement_ID());
-	    if (!model.isSOTrx() && !(model instanceof MOrderLine) && !(model instanceof MInvoiceLine)
+		//Receipt
+		else if (!model.isSOTrx() && !(model instanceof MOrderLine) && !(model instanceof MInvoiceLine)
 	    		&& !(model instanceof MLandedCostAllocation))
 		{
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), mtrx.getAD_Client_ID()))
 			{
 				CostComponent cc = new CostComponent(mtrx.getMovementQty(), model.getPriceActual());
-				createCostDetail(model, mtrx, as, cc, null, false);
+				createCostDetail(model, as, cc, null, false);
 			}
 		}
-	    //shipment
+	    //Shipment
 		else if (model.isSOTrx())
 		{
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(mtrx.getCtx(), mtrx.getAD_Client_ID()))
+			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), model.getAD_Client_ID()))
 			{
-				ProductCost pc = new ProductCost (model.getCtx(), 
-						mtrx.getM_Product_ID(), mtrx.getM_AttributeSetInstance_ID(),
-						model.get_TrxName());
-				pc.setQty(mtrx.getMovementQty());
-				//
-				List<CostComponent> costs = pc.getProductCostsLayers(as, mtrx.getAD_Org_ID(), null, 0, false);
-				if (costs == null || costs.size() == 0)
-				{
-					MProduct product = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID());
-					throw new AdempiereException("No Costs for " + product.getName());
-				}
-				for (CostComponent cc : costs)
-				{
-					createCostDetail(model, mtrx, as, cc, null, false);
-				}
+				createCostDetail(model, mtrx, as,
+						null, // CostComponent will be automatically fetched in this method
+						null, // IsSOTrx = null
+						false); // setProcessed = false
 			}
 		}
+		// Order, Invoice
 		else if (model instanceof MOrderLine || (model instanceof MInvoiceLine &&
 				!(model instanceof MLandedCostAllocation)))
 		{
@@ -287,7 +263,8 @@ public class CostEngine
 				createCostDetail(model, as, cc, null, false);
 			}
 		}
-		else if (ce.isLandedCost())
+	    // Landed cost
+		else if (model instanceof MLandedCostAllocation)
 		{
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), model.getAD_Client_ID()))
 			{
@@ -343,24 +320,19 @@ public class CostEngine
 		{
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(trxTo.getCtx(), trxFrom.getAD_Client_ID()))
 			{
-				ProductCost pc = new ProductCost (trxTo.getCtx(), 
-						trxTo.getM_Product_ID(), trxTo.getM_AttributeSetInstance_ID(),
-						model.get_TrxName());
-				pc.setQty(trxTo.getMovementQty());
-				List<CostComponent> costs = pc.getProductCostsLayers(as, model.getAD_Org_ID(),
-						null, // CostingMethod
-						model.get_ID(),
-						false); // zeroCostsOK
-	
-				for (CostComponent cc : costs)
-				{
-					final boolean sameCostDimension = CostDimension.isSameCostDimension(as, trxFrom, trxTo);
-					createCostDetail(model, trxFrom, as, cc, true, sameCostDimension);
-					createCostDetail(model, trxTo, as, cc.reverseQty(), false, sameCostDimension);
-				}
+				final boolean sameCostDimension = CostDimension.isSameCostDimension(as, trxFrom, trxTo);
+				createCostDetail(model, trxFrom, as,
+						null, // CostComponent will be automatically fetched in this method
+						true, // IsSOTrx = null
+						sameCostDimension); // setProcessed = false
+				createCostDetail(model, trxTo, as,
+						null, //cc.reverseQty() CostComponent will be automatically fetched in this method
+						false, // IsSOTrx = null
+						sameCostDimension); // setProcessed = false
 			}
 		}
 	}
+
 	
 	public void createCostDetail (IDocumentLine model , MTransaction mtrx,
 			MAcctSchema as, CostComponent cc,
@@ -400,29 +372,51 @@ public class CostEngine
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
 			if (ce.isLandedCost())
 			{
-				// skip landed costs
-				continue;
+				// skip landed costs for incoming transactions
+				if (cost.getCurrentQty().equals(Env.ZERO))
+				{
+					continue;
+				}
+
+				else if (isSOTrx != null)
+				{
+					if (!isSOTrx && model instanceof MMovementLine)
+						continue;
+				}
+				else if (!model.isSOTrx())
+				{
+					continue;
+				}
 			}
-			MCostDetail cd = getCostDetail(cost, model);
-			if (model instanceof MMovementLine)
-			{
-				cd = null;
-			}
+			MCostDetail cd = getCostDetail(cost, model, isSOTrx);
 			if (cd == null || model.isSOTrx())
 			{
-				cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
-				if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
-					throw new AdempiereException("Cannot set "+idColumnName);
-				if (isSOTrx != null)
-					cd.setIsSOTrx(isSOTrx);
-				else
-					cd.setIsSOTrx(model.isSOTrx());	
-				cd.setM_Transaction_ID(mtrx.get_ID());
-				cd.setDescription(description.toString());
-				if (setProcessed)
-					cd.setProcessed(true);
-				cd.saveEx();
+				final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
+				List<CostComponent> ccs = method.getCostComponents(as, model, mtrx);
+				for (CostComponent cc1 : ccs)
+				{
+					cd = new MCostDetail(cost, cc1.getAmount().negate(), cc1.getQty().negate());
+					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
+						throw new AdempiereException("Cannot set "+idColumnName);
+					if (isSOTrx != null)
+						cd.setIsSOTrx(isSOTrx);
+					else
+						cd.setIsSOTrx(model.isSOTrx());	
+					cd.setM_Transaction_ID(mtrx.get_ID());
+					cd.setDescription(description.toString());
+					if (setProcessed)
+						cd.setProcessed(true);
+					cd.saveEx();
+					//
+					if (!cd.isProcessed())
+					{
+						MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+						if (client.isCostImmediate())
+							cd.process();
+					}
+				}
 			}
+			//
 			if (!cd.isProcessed())
 			{
 				MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
@@ -473,11 +467,7 @@ public class CostEngine
 				// skip landed costs
 				continue;
 			}
-			MCostDetail cd = getCostDetail(cost, model);
-			if (model instanceof MMovementLine)
-			{
-				cd = null;
-			}
+			MCostDetail cd = getCostDetail(cost, model, isSOTrx);
 			if (cd == null)
 			{
 				cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
@@ -507,7 +497,7 @@ public class CostEngine
 	{
 		final String idColumnName = model.get_TableName()+"_ID";
 		final String trxName = model.get_TrxName();
-       // String idColumnName = MLandedCost.COLUMNNAME_C_InvoiceLine_ID;
+		// String idColumnName = MLandedCost.COLUMNNAME_C_InvoiceLine_ID;
 		//	Delete Unprocessed zero Differences
 		String sql = "DELETE M_CostDetail "
 			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
@@ -528,9 +518,10 @@ public class CostEngine
 		for (MCost cost : costs)
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
-			if (ce.isLandedCost() && ce.get_ID()== model.getM_CostElement_ID())
+			
+			if (ce.isLandedCost()) 
 			{
-				MCostDetail	cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
+						MCostDetail	cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
 					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 						throw new AdempiereException("Cannot set "+idColumnName);
 					if (isSOTrx != null)
@@ -541,12 +532,13 @@ public class CostEngine
 					if (setProcessed)
 						cd.setProcessed(true);
 					cd.saveEx();
-				if (!cd.isProcessed())
-				{
-					MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-					if (client.isCostImmediate())
-						cd.process();
-				}
+					if (!cd.isProcessed())
+					{
+						MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
+						if (client.isCostImmediate())
+							cd.process();
+					}
+			//	}
 			}
 			else 
 			{
@@ -556,16 +548,26 @@ public class CostEngine
 	}
 
 
-	public MCostDetail getCostDetail (MCost cost, IDocumentLine line)
+	public MCostDetail getCostDetail (MCost cost, IDocumentLine line, Boolean isSOTrx)
 	{
 		final String idColumnName = line.get_TableName()+"_ID";
-		final String whereClauseFinal = idColumnName+"=?"
+		
+		List<Object> params = new ArrayList<Object>();
+		String whereClauseFinal = idColumnName+"=?"
 		+ " AND M_AttributeSetInstance_ID=?"
 		+ " AND C_AcctSchema_ID=?"
 		+ " AND M_CostType_ID=?";
+		params.add(line.get_ID());
+		params.add(cost.getM_AttributeSetInstance_ID());
+		params.add(cost.getC_AcctSchema_ID());
+		params.add(cost.getM_CostType_ID());
+		if (isSOTrx != null)
+		{
+			whereClauseFinal += " AND IsSOTrx=?";
+			params.add(isSOTrx);
+		}
 		MCostDetail retValue = new Query(cost.getCtx(), MCostDetail.Table_Name, whereClauseFinal, cost.get_TrxName())
-		.setParameters(new Object[]{line.get_ID(), cost.getM_AttributeSetInstance_ID(),
-				cost.getC_AcctSchema_ID(), cost.getM_CostType_ID()})
+		.setParameters(params)
 		.first();
 		return retValue;
 	}

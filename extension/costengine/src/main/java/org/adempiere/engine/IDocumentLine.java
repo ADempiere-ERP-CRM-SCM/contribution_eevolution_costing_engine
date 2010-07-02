@@ -43,5 +43,4 @@ public interface IDocumentLine
 	public boolean isSOTrx();
 	public int getReversalLine_ID();
 	public BigDecimal getPriceActual();
-	public int getM_CostElement_ID();
 }

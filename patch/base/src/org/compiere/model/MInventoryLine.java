@@ -413,10 +413,4 @@ public class MInventoryLine extends X_M_InventoryLine implements IDocumentLine
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	@Override
-	public int getM_CostElement_ID() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 }	//	MInventoryLine

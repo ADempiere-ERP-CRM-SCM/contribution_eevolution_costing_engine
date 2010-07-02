@@ -1075,11 +1075,5 @@ public class MOrderLine extends X_C_OrderLine implements IDocumentLine
 		// TODO Auto-generated method stub
 		
 	}
-
-	@Override
-	public int getM_CostElement_ID() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 	
 }	//	MOrderLine

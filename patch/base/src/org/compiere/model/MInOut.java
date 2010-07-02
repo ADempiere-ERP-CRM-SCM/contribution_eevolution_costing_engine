@@ -1348,7 +1348,7 @@ public class MInOut extends X_M_InOut implements DocAction
 							return DocAction.STATUS_Invalid;
 						}
 						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(sLine, mtrx);
-						//createCostDetail(mtrx, sLine); // arhipac: anca_bradau
+						
 					}
 				}
 				//	sLine.getM_AttributeSetInstance_ID() != 0

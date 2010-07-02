@@ -545,13 +545,22 @@ public class MCostDetail extends X_M_CostDetail
 			m_cost = MCost.get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(),
 					mc, null /*getCostingMethod()*/, get_TrxName());
 			
-			if (ce.isFifo() && mc.getName().equalsIgnoreCase("Fifo")   //TODO dont use this!
-				|| ce.isAverageInvoice() && mc.getName().equalsIgnoreCase("Average Invoice"))
+			/*if (ce.isFifo() && mc.getName().equalsIgnoreCase("Fifo")   //TODO dont use this!
+				|| ce.isAverageInvoice() && mc.getName().equalsIgnoreCase("Average Invoice"))*/
 			{
 			CostingMethodFactory cmFactory = CostingMethodFactory.get();
-			ICostingMethod cm = cmFactory.getCostingMethod(ce);
+			ICostingMethod cm = cmFactory.getCostingMethod(ce, m_cost.getCostingMethod());
 			cm.process(getCtx(), this, get_TrxName());
 			}
+			//else if (ce.isLandedCost())
+			//	{
+
+			///m_cost.setCurrentCostPrice(m_cost.getCurrentCostPrice());
+			//		m_cost.setCurrentQty(m_cost.getCurrentQty().add(getQty()));
+			// m_cost.setCumulatedAmt(m_cost.getCumulatedAmt().add(getAmt()));
+			//   m_cost.setCumulatedQty(m_cost.getCumulatedQty().add(getQty()));
+			//	    m_cost.saveEx();
+			//	}
 			//	if (cost == null)
 			//		cost = new MCost(product, M_ASI_ID, 
 			//			as, Org_ID, ce.getM_CostElement_ID());
