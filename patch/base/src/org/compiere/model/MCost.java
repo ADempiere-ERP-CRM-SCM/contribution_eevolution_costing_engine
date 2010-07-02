@@ -1424,9 +1424,10 @@ public class MCost extends X_M_Cost
 	}	//	get
 	
 	//ancabradau need this when make CostDetail start to MCost 
+	//TODO: Is necessary validate the cost level (Client/Org/ASI) 
 	public static MCost[] getForProduct(Properties ctx, int M_Product_ID, int AD_Org_ID, String trxName)
 	{
-		final String whereClause = "AD_Org_ID=? AND M_Product_ID=?" ;
+		final String whereClause = "AD_Org_ID=? OR AD_Org_ID=0 AND M_Product_ID=? " ;
 		List<MCost> list = new Query(ctx, Table_Name, whereClause, trxName)
 			.setParameters(AD_Org_ID, M_Product_ID)
 			.setClient_ID()
@@ -1663,11 +1664,13 @@ public class MCost extends X_M_Cost
 		}
 		
 		//	Cannot enter calculated
-		if (m_manual && ce != null && ce.isCalculated())
+		/*
+		if (m_manual && ce != null)
 		{
 			log.saveError("Error", Msg.getElement(getCtx(), "IsCalculated"));
 			return false;
-		}
+		}*/
+		
 		//	Percentage
 		if (ce != null)
 		{
