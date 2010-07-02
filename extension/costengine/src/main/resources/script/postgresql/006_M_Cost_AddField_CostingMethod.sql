@@ -28,7 +28,9 @@ DELETE FROM AD_Column_Trl WHERE AD_Column_ID=13481
 DELETE FROM AD_Column WHERE AD_Column_ID=13481
 ;
 
-delete from AD_Field where ad_column_id=13481-- Jun 22, 2010 12:36:03 PM EEST
+delete from AD_Field where ad_column_id=13481;
+
+-- Jun 22, 2010 12:36:03 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
 DELETE FROM AD_Column_Trl WHERE AD_Column_ID=13481
 ;
@@ -90,8 +92,8 @@ INSERT INTO t_alter_column values('m_cost','CostingMethod','CHAR(1)',null,null)
 
 -- Jun 22, 2010 12:46:19 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-INSERT INTO t_alter_column values('m_cost','CostingMethod',null,'NOT NULL',null)
-;
+--INSERT INTO t_alter_column values('m_cost','CostingMethod',null,'NOT NULL',null)
+--;
 
 -- Jun 22, 2010 1:01:11 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
@@ -105,8 +107,8 @@ INSERT INTO t_alter_column values('m_cost','CostingMethod','CHAR(1)',null,null)
 
 -- Jun 22, 2010 1:01:16 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-INSERT INTO t_alter_column values('m_cost','CostingMethod',null,'NOT NULL',null)
-;
+--INSERT INTO t_alter_column values('m_cost','CostingMethod',null,'NOT NULL',null)
+--;
 
 -- Jun 22, 2010 1:01:41 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
@@ -115,7 +117,7 @@ UPDATE AD_Column SET IsMandatory='N',Updated=TO_TIMESTAMP('2010-06-22 13:01:41',
 
 -- Jun 22, 2010 1:01:44 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-INSERT INTO t_alter_column values('m_cost','CostingMethod','CHAR(1)',null,'NULL')
+INSERT INTO t_alter_column values('m_cost','CostingMethod','CHAR(1)',null,null)
 ;
 
 -- Jun 22, 2010 1:15:19 PM EEST
@@ -140,6 +142,6 @@ UPDATE AD_Column SET AD_Reference_ID=17,Updated=TO_TIMESTAMP('2010-06-22 13:26:1
 
 -- Jun 22, 2010 1:26:21 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-INSERT INTO t_alter_column values('m_cost','CostingMethod','VARCHAR(10)',null,'NULL')
+INSERT INTO t_alter_column values('m_cost','CostingMethod','VARCHAR(10)',null,null)
 ;
 

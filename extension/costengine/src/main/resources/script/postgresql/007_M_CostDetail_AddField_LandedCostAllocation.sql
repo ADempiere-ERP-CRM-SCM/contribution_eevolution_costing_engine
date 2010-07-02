@@ -10,7 +10,7 @@ INSERT INTO AD_Column_Trl (AD_Language,AD_Column_ID, Name, IsTranslated,AD_Clien
 
 -- Jun 25, 2010 5:03:05 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-INSERT INTO t_alter_column values('m_costdetail','C_LandedCostAllocation_ID','NUMERIC(10)',null,'NULL')
+INSERT INTO t_alter_column values('m_costdetail','C_LandedCostAllocation_ID','NUMERIC(10)',null,null)
 ;
 
 -- Jun 25, 2010 5:05:37 PM EEST
@@ -100,5 +100,5 @@ UPDATE AD_Column SET IsIdentifier='Y',Updated=TO_TIMESTAMP('2010-06-29 09:23:56'
 
 -- Jun 29, 2010 9:27:39 AM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-INSERT INTO t_alter_column values('m_costdetail','C_LandedCostAllocation_ID','NUMERIC(10)',null,'NULL')
+INSERT INTO t_alter_column values('m_costdetail','C_LandedCostAllocation_ID','NUMERIC(10)',null,null)
 ;

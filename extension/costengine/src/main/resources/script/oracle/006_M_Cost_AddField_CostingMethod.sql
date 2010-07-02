@@ -27,7 +27,9 @@ DELETE  FROM  AD_Column_Trl WHERE AD_Column_ID=13481
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
 DELETE FROM AD_Column WHERE AD_Column_ID=13481
 ;
-delete from AD_Field where ad_column_id=13481
+
+delete from AD_Field where ad_column_id=13481;
+
 -- Jun 22, 2010 12:36:03 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
 DELETE  FROM  AD_Column_Trl WHERE AD_Column_ID=13481
@@ -90,8 +92,8 @@ ALTER TABLE M_Cost MODIFY CostingMethod CHAR(1)
 
 -- Jun 22, 2010 12:46:19 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-ALTER TABLE M_Cost MODIFY CostingMethod NOT NULL
-;
+--ALTER TABLE M_Cost MODIFY CostingMethod NOT NULL
+--;
 
 -- Jun 22, 2010 1:01:11 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
@@ -105,8 +107,8 @@ ALTER TABLE M_Cost MODIFY CostingMethod CHAR(1)
 
 -- Jun 22, 2010 1:01:16 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-ALTER TABLE M_Cost MODIFY CostingMethod NOT NULL
-;
+--ALTER TABLE M_Cost MODIFY CostingMethod NOT NULL
+--;
 
 -- Jun 22, 2010 1:01:41 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
