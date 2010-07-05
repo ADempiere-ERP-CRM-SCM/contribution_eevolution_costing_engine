@@ -307,12 +307,15 @@ public class MCostDetail extends X_M_CostDetail
 
 	/**
 	 * @param cost
+	 * @param AD_Org_ID Organization ID
 	 * @param amt
 	 * @param qty
 	 */
-	public MCostDetail(MCost cost, BigDecimal amt, BigDecimal qty)
+	public MCostDetail(MCost cost,int AD_Org_ID ,BigDecimal amt, BigDecimal qty)
 	{
 		this (cost.getCtx(), 0, cost.get_TrxName());
+		setAD_Client_ID(cost.getAD_Client_ID());
+		setAD_Org_ID(AD_Org_ID);
 		setClientOrg(cost.getAD_Client_ID(), cost.getAD_Org_ID());
 		setC_AcctSchema_ID(cost.getC_AcctSchema_ID());
 		setM_Product_ID(cost.getM_Product_ID());

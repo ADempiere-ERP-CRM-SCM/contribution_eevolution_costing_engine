@@ -395,7 +395,7 @@ public class CostEngine
 				List<CostComponent> ccs = method.getCostComponents(as, model, mtrx);
 				for (CostComponent cc1 : ccs)
 				{
-					cd = new MCostDetail(cost, cc1.getAmount().negate(), cc1.getQty().negate());
+					cd = new MCostDetail(cost, model.getAD_Org_ID(),cc1.getAmount().negate(), cc1.getQty().negate());
 					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 						throw new AdempiereException("Cannot set "+idColumnName);
 					if (isSOTrx != null)
@@ -470,7 +470,7 @@ public class CostEngine
 			MCostDetail cd = getCostDetail(cost, model, isSOTrx);
 			if (cd == null)
 			{
-				cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
+				cd = new MCostDetail(cost, model.getAD_Org_ID(), cc.getAmount(), cc.getQty());
 				if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 					throw new AdempiereException("Cannot set "+idColumnName);
 				if (isSOTrx != null)
@@ -521,7 +521,7 @@ public class CostEngine
 			
 			if (ce.isLandedCost()) 
 			{
-						MCostDetail	cd = new MCostDetail(cost, cc.getAmount(), cc.getQty());
+						MCostDetail	cd = new MCostDetail(cost, model.getAD_Org_ID() , cc.getAmount(), cc.getQty());
 					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 						throw new AdempiereException("Cannot set "+idColumnName);
 					if (isSOTrx != null)

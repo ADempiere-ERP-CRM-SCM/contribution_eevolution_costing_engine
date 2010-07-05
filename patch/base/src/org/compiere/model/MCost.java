@@ -1427,9 +1427,9 @@ public class MCost extends X_M_Cost
 	//TODO: Is necessary validate the cost level (Client/Org/ASI) 
 	public static MCost[] getForProduct(Properties ctx, int M_Product_ID, int AD_Org_ID, String trxName)
 	{
-		final String whereClause = "AD_Org_ID=? OR AD_Org_ID=0 AND M_Product_ID=? " ;
+		final String whereClause = " M_Product_ID=? " ;
 		List<MCost> list = new Query(ctx, Table_Name, whereClause, trxName)
-			.setParameters(AD_Org_ID, M_Product_ID)
+			.setParameters(M_Product_ID)
 			.setClient_ID()
 			.list();
 		return list.toArray(new MCost[list.size()]);
