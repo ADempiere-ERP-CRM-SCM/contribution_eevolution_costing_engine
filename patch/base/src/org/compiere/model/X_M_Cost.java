@@ -24,14 +24,14 @@ import org.compiere.util.Env;
 
 /** Generated Model for M_Cost
  *  @author Adempiere (generated) 
- *  @version Release 3.5.4a - $Id$ */
+ *  @version Release 3.6.0LTS - $Id$ */
 public class X_M_Cost extends PO implements I_M_Cost, I_Persistent 
 {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100625L;
+	private static final long serialVersionUID = 20100705L;
 
     /** Standard Constructor */
     public X_M_Cost (Properties ctx, int M_Cost_ID, String trxName)
@@ -79,9 +79,9 @@ public class X_M_Cost extends PO implements I_M_Cost, I_Persistent
       return sb.toString();
     }
 
-	public I_C_AcctSchema getC_AcctSchema() throws RuntimeException
+	public org.compiere.model.I_C_AcctSchema getC_AcctSchema() throws RuntimeException
     {
-		return (I_C_AcctSchema)MTable.get(getCtx(), I_C_AcctSchema.Table_Name)
+		return (org.compiere.model.I_C_AcctSchema)MTable.get(getCtx(), org.compiere.model.I_C_AcctSchema.Table_Name)
 			.getPO(getC_AcctSchema_ID(), get_TrxName());	}
 
 	/** Set Accounting Schema.
@@ -107,14 +107,34 @@ public class X_M_Cost extends PO implements I_M_Cost, I_Persistent
 		return ii.intValue();
 	}
 
+	/** CostingMethod AD_Reference_ID=122 */
+	public static final int COSTINGMETHOD_AD_Reference_ID=122;
+	/** Standard Costing = S */
+	public static final String COSTINGMETHOD_StandardCosting = "S";
+	/** Average PO = A */
+	public static final String COSTINGMETHOD_AveragePO = "A";
+	/** Lifo = L */
+	public static final String COSTINGMETHOD_Lifo = "L";
+	/** Fifo = F */
+	public static final String COSTINGMETHOD_Fifo = "F";
+	/** Last PO Price = p */
+	public static final String COSTINGMETHOD_LastPOPrice = "p";
+	/** Average Invoice = I */
+	public static final String COSTINGMETHOD_AverageInvoice = "I";
+	/** Last Invoice = i */
+	public static final String COSTINGMETHOD_LastInvoice = "i";
+	/** User Defined = U */
+	public static final String COSTINGMETHOD_UserDefined = "U";
+	/** _ = x */
+	public static final String COSTINGMETHOD__ = "x";
 	/** Set Costing Method.
 		@param CostingMethod 
 		Indicates how Costs will be calculated
 	  */
 	public void setCostingMethod (String CostingMethod)
 	{
-		set_Value (COLUMNNAME_CostingMethod, CostingMethod);
-	}
+
+		throw new IllegalArgumentException ("CostingMethod is virtual column");	}
 
 	/** Get Costing Method.
 		@return Indicates how Costs will be calculated
@@ -327,9 +347,9 @@ public class X_M_Cost extends PO implements I_M_Cost, I_Persistent
 		return ii.intValue();
 	}
 
-	public I_M_CostElement getM_CostElement() throws RuntimeException
+	public org.compiere.model.I_M_CostElement getM_CostElement() throws RuntimeException
     {
-		return (I_M_CostElement)MTable.get(getCtx(), I_M_CostElement.Table_Name)
+		return (org.compiere.model.I_M_CostElement)MTable.get(getCtx(), org.compiere.model.I_M_CostElement.Table_Name)
 			.getPO(getM_CostElement_ID(), get_TrxName());	}
 
 	/** Set Cost Element.
@@ -355,9 +375,9 @@ public class X_M_Cost extends PO implements I_M_Cost, I_Persistent
 		return ii.intValue();
 	}
 
-	public I_M_CostType getM_CostType() throws RuntimeException
+	public org.compiere.model.I_M_CostType getM_CostType() throws RuntimeException
     {
-		return (I_M_CostType)MTable.get(getCtx(), I_M_CostType.Table_Name)
+		return (org.compiere.model.I_M_CostType)MTable.get(getCtx(), org.compiere.model.I_M_CostType.Table_Name)
 			.getPO(getM_CostType_ID(), get_TrxName());	}
 
 	/** Set Cost Type.
@@ -383,9 +403,9 @@ public class X_M_Cost extends PO implements I_M_Cost, I_Persistent
 		return ii.intValue();
 	}
 
-	public I_M_Product getM_Product() throws RuntimeException
+	public org.compiere.model.I_M_Product getM_Product() throws RuntimeException
     {
-		return (I_M_Product)MTable.get(getCtx(), I_M_Product.Table_Name)
+		return (org.compiere.model.I_M_Product)MTable.get(getCtx(), org.compiere.model.I_M_Product.Table_Name)
 			.getPO(getM_Product_ID(), get_TrxName());	}
 
 	/** Set Product.
