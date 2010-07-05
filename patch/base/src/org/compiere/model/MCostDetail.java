@@ -322,6 +322,8 @@ public class MCostDetail extends X_M_CostDetail
 		setM_CostElement_ID(cost.getM_CostElement_ID());
 		MCostElement element = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
 		setCostingMethod(element.getCostingMethod()); 
+		setCurrentCostPrice(cost.getCurrentCostPrice());
+		setCurrentCostPriceLL(cost.getCurrentCostPriceLL());
 		//
 		setAmt(amt);
 		setQty(qty);
