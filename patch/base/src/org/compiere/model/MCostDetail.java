@@ -316,7 +316,6 @@ public class MCostDetail extends X_M_CostDetail
 		this (cost.getCtx(), 0, cost.get_TrxName());
 		setAD_Client_ID(cost.getAD_Client_ID());
 		setAD_Org_ID(AD_Org_ID);
-		setClientOrg(cost.getAD_Client_ID(), cost.getAD_Org_ID());
 		setC_AcctSchema_ID(cost.getC_AcctSchema_ID());
 		setM_Product_ID(cost.getM_Product_ID());
 		setM_AttributeSetInstance_ID(cost.getM_AttributeSetInstance_ID());

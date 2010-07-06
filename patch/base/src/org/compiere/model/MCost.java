@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import org.adempiere.engine.CostComponent;
+import org.adempiere.engine.IDocumentLine;
 import org.adempiere.exceptions.DBException;
 import org.compiere.Adempiere;
 import org.compiere.util.CLogger;
@@ -1423,17 +1424,41 @@ public class MCost extends X_M_Cost
 					.firstOnly();
 	}	//	get
 	
-	//ancabradau need this when make CostDetail start to MCost 
-	//TODO: Is necessary validate the cost level (Client/Org/ASI) 
-	public static MCost[] getForProduct(Properties ctx, int M_Product_ID, int AD_Org_ID, String trxName)
+	/**
+	 * Get MCost (Cost Dimension) for this Product 
+	 * @param as Account Schema
+	 * @param model Document Line Model
+	 * @param trxName Transaction Line
+	 * @return Cost Dimension List for this product
+	 */
+	public static List<MCost> getForProduct(MAcctSchema as, IDocumentLine model )
 	{
-		 final String whereClause = "(AD_Org_ID=? OR AD_Org_ID=0) AND M_Product_ID=? " ;
+		int AD_Org_ID = 0;
+		int M_AttributeSetInstance_ID = 0;
+		String CostingLevel = MProduct.get(as.getCtx(), model.getM_Product_ID()).getCostingLevel(as);
+		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
+		{
+			AD_Org_ID = 0;
+			M_AttributeSetInstance_ID = 0;
+		}
+		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+		{	
+			AD_Org_ID = model.getAD_Org_ID();
+			M_AttributeSetInstance_ID = 0;
+		}	
+		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
+		{	
+			AD_Org_ID = model.getAD_Org_ID();
+			M_AttributeSetInstance_ID = model.getM_AttributeSetInstance_ID();
+		}
 		
-		List<MCost> list = new Query(ctx, Table_Name, whereClause, trxName)
-			.setParameters(AD_Org_ID, M_Product_ID)
+		final String whereClause = "M_Product_ID=?  AND AD_Org_ID=? AND M_AttributeSetInstance_ID=?" ;
+		
+		return new Query(as.getCtx(), Table_Name, whereClause, model.get_TrxName())
+			.setParameters(model.getM_Product_ID(), AD_Org_ID, M_AttributeSetInstance_ID)
 			.setClient_ID()
+			.setOrderBy("AD_Client_ID, AD_Org_ID, M_AttributeSetInstance_ID")
 			.list();
-		return list.toArray(new MCost[list.size()]);
 	}
 	
 	@Deprecated
@@ -1880,6 +1905,14 @@ public class MCost extends X_M_Cost
 				product, M_AttributeSetInstance_ID, 
 				as, AD_Org_ID, as.getM_CostType_ID(), costingMethod, qty, 
 				C_OrderLine_ID, zeroCostsOK, trxName);
+	}
+	
+	/**
+	 * get Costing Method based on Cost Element
+	 */
+	public String getCostingMethod()
+	{
+		return MCostElement.get(getCtx(), this.getM_CostElement_ID()).getCostingMethod();
 	}
 
 

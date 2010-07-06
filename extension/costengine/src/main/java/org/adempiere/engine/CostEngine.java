@@ -33,16 +33,13 @@ import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
 import org.compiere.model.MInventoryLine;
-import org.compiere.model.MInvoice;
 import org.compiere.model.MInvoiceLine;
-import org.compiere.model.MLandedCost;
 import org.compiere.model.MLandedCostAllocation;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.PO;
-import org.compiere.model.ProductCost;
 import org.compiere.model.Query;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
@@ -251,6 +248,7 @@ public class CostEngine
 						null, // CostComponent will be automatically fetched in this method
 						null, // IsSOTrx = null
 						false); // setProcessed = false
+
 			}
 		}
 		// Order, Invoice
@@ -339,7 +337,7 @@ public class CostEngine
 			Boolean isSOTrx, boolean setProcessed)
 	{
 		final String idColumnName = model.get_TableName()+"_ID";
-		final String trxName = mtrx.get_TrxName();
+		final String trxName = model.get_TrxName();
 		
 		//	Delete Unprocessed zero Differences
 		String sql = "DELETE M_CostDetail "
@@ -366,7 +364,7 @@ public class CostEngine
 			description.append(isSOTrx ? "(|->)" : "(|<-)");
 		}
 		
-		MCost[] costs = MCost.getForProduct(as.getCtx(), mtrx.getM_Product_ID(), mtrx.getAD_Org_ID(), trxName);
+		List<MCost> costs = MCost.getForProduct(as, model);
 		for (MCost cost : costs)
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
@@ -458,7 +456,7 @@ public class CostEngine
 			description.append(isSOTrx ? "(|->)" : "(|<-)");
 		}
 		
-		MCost[] costs = MCost.getForProduct(as.getCtx(), model.getM_Product_ID(), model.getAD_Org_ID(), trxName);
+		List<MCost> costs =MCost.getForProduct(as, model);
 		for (MCost cost : costs)
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
@@ -491,6 +489,7 @@ public class CostEngine
 			}
 		}
 	}
+	
 	public void createCostDetailForLandedCost (IDocumentLine model ,
 			MAcctSchema as, CostComponent cc,
 			Boolean isSOTrx, boolean setProcessed)
@@ -514,14 +513,14 @@ public class CostEngine
 		if (no != 0)
 			log.config("Deleted #" + no);
 
-		MCost[] costs = MCost.getForProduct(as.getCtx(), model.getM_Product_ID(), model.getAD_Org_ID(), trxName);
+		List<MCost> costs = MCost.getForProduct(as, model);
 		for (MCost cost : costs)
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
 			
 			if (ce.isLandedCost()) 
 			{
-						MCostDetail	cd = new MCostDetail(cost, model.getAD_Org_ID() , cc.getAmount(), cc.getQty());
+					MCostDetail	cd = new MCostDetail(cost, model.getAD_Org_ID(),cc.getAmount(), cc.getQty());
 					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 						throw new AdempiereException("Cannot set "+idColumnName);
 					if (isSOTrx != null)
