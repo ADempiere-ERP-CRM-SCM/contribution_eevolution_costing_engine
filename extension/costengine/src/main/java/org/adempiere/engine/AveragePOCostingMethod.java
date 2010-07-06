@@ -13,32 +13,26 @@ import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
-import org.compiere.model.MCostElement;
 import org.compiere.util.CLogger;
 
 /**
  * @author anca_bradau
- *
+ * 
  */
-public class AveragePOCostingMethod implements ICostingMethod 
-{
+public class AveragePOCostingMethod implements ICostingMethod {
 	@Override
-	public void process(Properties ctx, I_M_CostDetail cd, String trxName)
-	{
-		MCost cost = ((MCostDetail)cd).getM_Cost();
-		CLogger s_log = CLogger.getCLogger (AveragePOCostingMethod.class);
-		if (cd.getC_OrderLine_ID() != 0)
-		{
+	public void process(Properties ctx, I_M_CostDetail cd, String trxName) {
+		MCost cost = ((MCostDetail) cd).getM_Cost();
+		CLogger s_log = CLogger.getCLogger(AveragePOCostingMethod.class);
+		if (cd.getC_OrderLine_ID() != 0) {
 			cost.setWeightedAverage(cd.getAmt(), cd.getQty());
 			s_log.finer("PO - AveragePO - " + cost);
-		}
-		else if (cd.getM_InOutLine_ID() != 0 		//	AR Shipment Detail Record  
-				|| cd.getM_MovementLine_ID() != 0 
+		} else if (cd.getM_InOutLine_ID() != 0 // AR Shipment Detail Record
+				|| cd.getM_MovementLine_ID() != 0
 				|| cd.getM_InventoryLine_ID() != 0
 				|| cd.getM_ProductionLine_ID() != 0
 				|| cd.getC_ProjectIssue_ID() != 0
-				|| cd.getPP_Cost_Collector_ID() != 0)
-		{
+				|| cd.getPP_Cost_Collector_ID() != 0) {
 			boolean addition = cd.getQty().signum() > 0;
 
 			if (addition)
@@ -53,15 +47,12 @@ public class AveragePOCostingMethod implements ICostingMethod
 
 	@Override
 	public List<CostComponent> getCostComponents(MAcctSchema as,
-			IDocumentLine model, I_M_Transaction mtrx, MCost cost) 
-			{
-		
+			IDocumentLine model, I_M_Transaction mtrx, MCost cost) {
+
 		List<CostComponent> list = new ArrayList<CostComponent>();
-        BigDecimal cc = cost.getCurrentCostPrice();
+		BigDecimal cc = cost.getCurrentCostPrice();
 		list.add(new CostComponent(mtrx.getMovementQty(), cc));
 
 		return list;
-			}
+	}
 }
-
-
