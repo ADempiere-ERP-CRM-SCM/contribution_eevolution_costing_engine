@@ -392,7 +392,7 @@ public class CostEngine
 			if (cd == null || model.isSOTrx())
 			{
 				final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-				List<CostComponent> ccs = method.getCostComponents(as, model, mtrx);
+				List<CostComponent> ccs = method.getCostComponents(as, model, mtrx, cost);
 				for (CostComponent cc1 : ccs)
 				{
 					cd = new MCostDetail(cost, model.getAD_Org_ID(),cc1.getAmount().negate(), cc1.getQty().negate());

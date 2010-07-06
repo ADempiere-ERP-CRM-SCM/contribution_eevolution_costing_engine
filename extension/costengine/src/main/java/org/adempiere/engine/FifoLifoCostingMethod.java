@@ -120,7 +120,7 @@ public class FifoLifoCostingMethod implements ICostingMethod //extends AbstractC
 	}
 
 	@Override
-	public List<CostComponent> getCostComponents(MAcctSchema as, IDocumentLine model, I_M_Transaction mtrx)
+	public List<CostComponent> getCostComponents(MAcctSchema as, IDocumentLine model, I_M_Transaction mtrx, MCost cost)
 	{
 		ProductCost pc = new ProductCost (model.getCtx(), 
 				model.getM_Product_ID(), model.getM_AttributeSetInstance_ID(),

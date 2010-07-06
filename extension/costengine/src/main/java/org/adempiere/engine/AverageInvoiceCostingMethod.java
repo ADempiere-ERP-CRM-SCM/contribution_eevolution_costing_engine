@@ -56,34 +56,21 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 			else
 				cost.setCurrentQty(cost.getCurrentQty().add(cd.getQty()));
 			s_log.finer("QtyAdjust - AverageInv - " + cost);
-			
+
 		}
 		cost.saveEx();
 		return;
 	}
 
-	@Override
 	public List<CostComponent> getCostComponents(MAcctSchema as,
-			IDocumentLine model, I_M_Transaction mtrx)
-			
-   {
-		MCost[] costs = MCost.getForProduct(as.getCtx(), model.getM_Product_ID(), model.getAD_Org_ID(), model.get_TrxName());
-		BigDecimal cc = null ;
-		List<CostComponent> list = new ArrayList<CostComponent>();
-		for (MCost cost : costs)
-		{
-			//TODO: need evaluate this!
-			if (MCostElement.COSTINGMETHOD_AverageInvoice.equals(cost.getCostingMethod())
-					&& cost.getCurrentCostPrice()!= Env.ZERO)
-			//if  (cost.getM_CostElement().getName().equals("Average Invoice")
-			//		&& cost.getM_CostType().getName().equals("Average Invoice")
+			IDocumentLine model, I_M_Transaction mtrx, MCost cost)
 			{
-				cc = cost.getCurrentCostPrice();
-				list.add(new CostComponent(model.getMovementQty(), cc));
-			}
-		}
+		List<CostComponent> list = new ArrayList<CostComponent>();
+		BigDecimal cc = cost.getCurrentCostPrice();
+		list.add(new CostComponent(model.getMovementQty(), cc));
+
 		return list;
-		}
+			}
 
 }
 

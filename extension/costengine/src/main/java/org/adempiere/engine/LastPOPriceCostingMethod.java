@@ -65,21 +65,11 @@ public class LastPOPriceCostingMethod implements ICostingMethod
 	}
 	@Override
 	public List<CostComponent> getCostComponents(MAcctSchema as,
-			IDocumentLine model, I_M_Transaction mtrx) 
-	{
-		MCost[] costs = MCost.getForProduct(as.getCtx(), mtrx.getM_Product_ID(), mtrx.getAD_Org_ID(), model.get_TrxName());
-		BigDecimal cc = null ;
-		List<CostComponent> list = new ArrayList<CostComponent>();
-		for (MCost cost : costs)
-		{
-			if (MCostElement.COSTINGMETHOD_LastPOPrice.equals(cost.getCostingMethod()))
-			/*if  (cost.getM_CostElement().getName().equals("Last PO Price")
-					&& cost.getM_CostType().getName().equals("Last PO Price"))*/
+			IDocumentLine model, I_M_Transaction mtrx, MCost cost) 
 			{
-				cc = cost.getCurrentCostPrice();
-				list.add(new CostComponent(mtrx.getMovementQty(), cc));
+		List<CostComponent> list = new ArrayList<CostComponent>();
+		BigDecimal cc = cost.getCurrentCostPrice();
+		list.add(new CostComponent(mtrx.getMovementQty(), cc));
+        return list;
 			}
-		}
-		return list;
-	}
 }

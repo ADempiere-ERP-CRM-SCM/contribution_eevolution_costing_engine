@@ -53,20 +53,15 @@ public class AveragePOCostingMethod implements ICostingMethod
 
 	@Override
 	public List<CostComponent> getCostComponents(MAcctSchema as,
-			IDocumentLine model, I_M_Transaction mtrx) 
-	{
-		MCost[] costs = MCost.getForProduct(as.getCtx(), mtrx.getM_Product_ID(), mtrx.getAD_Org_ID(), model.get_TrxName());
-		List<CostComponent> list = new ArrayList<CostComponent>();
-		for (MCost cost : costs)
-		{
-			if (MCostElement.COSTINGMETHOD_AveragePO.equals(cost.getCostingMethod()))
+			IDocumentLine model, I_M_Transaction mtrx, MCost cost) 
 			{
-				BigDecimal cc = cost.getCurrentCostPrice();
-				list.add(new CostComponent(mtrx.getMovementQty(), cc));
-			}
-		}
+		
+		List<CostComponent> list = new ArrayList<CostComponent>();
+        BigDecimal cc = cost.getCurrentCostPrice();
+		list.add(new CostComponent(mtrx.getMovementQty(), cc));
+
 		return list;
-	}
+			}
 }
 
 

@@ -9,6 +9,7 @@ import java.util.Properties;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
+import org.compiere.model.MCost;
 
 /**
  * @author ancu
@@ -17,5 +18,5 @@ import org.compiere.model.MAcctSchema;
 public interface ICostingMethod
 {
 	public void process(Properties ctx, I_M_CostDetail cd, String trxName);
-	public List<CostComponent> getCostComponents(MAcctSchema as, IDocumentLine model, I_M_Transaction mtrx);
+	public List<CostComponent> getCostComponents(MAcctSchema as, IDocumentLine model, I_M_Transaction mtrx, MCost cost);
 }

@@ -79,21 +79,11 @@ public class StandardCostingMethod implements ICostingMethod
 	}
 	@Override
 	public List<CostComponent> getCostComponents(MAcctSchema as,
-			IDocumentLine model, I_M_Transaction mtrx)
-	{
-
-		MCost[] costs = MCost.getForProduct(as.getCtx(), mtrx.getM_Product_ID(), mtrx.getAD_Org_ID(), model.get_TrxName());
-		BigDecimal cc = null ;
-		List<CostComponent> list = new ArrayList<CostComponent>();
-		for (MCost cost : costs)
-		{
-			if  (cost.getM_CostElement().getName().equals("Standard Costing")
-					&& cost.getM_CostType().getName().equals("Standard Costing"))
+			IDocumentLine model, I_M_Transaction mtrx, MCost cost)
 			{
-				cc = cost.getCurrentCostPrice();
-				list.add(new CostComponent(mtrx.getMovementQty(), cc));
-			}
-		}
+		List<CostComponent> list = new ArrayList<CostComponent>();
+		BigDecimal cc = cost.getCurrentCostPrice();
+		list.add(new CostComponent(mtrx.getMovementQty(), cc));
 		return list;
-	}
+			}
 }
