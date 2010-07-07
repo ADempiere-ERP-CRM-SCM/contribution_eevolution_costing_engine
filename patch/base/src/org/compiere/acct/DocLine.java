@@ -1191,7 +1191,7 @@ public class DocLine
 			+" AND M_CostType_ID=?" //ancabradau
 			+(Util.isEmpty(whereClause, true) ? "" : " AND "+whereClause)
 		;
-		List<MCostDetail> list = new Query(p_po.getCtx(), MCostDetail.Table_Name, whereClauseFinal, null)
+		List<MCostDetail> list = new Query(p_po.getCtx(), MCostDetail.Table_Name, whereClauseFinal, getTrxName())
 			.setParameters(new Object[]{AD_Org_ID,
 					getM_Product_ID(),
 					true, as.getC_AcctSchema_ID(),
