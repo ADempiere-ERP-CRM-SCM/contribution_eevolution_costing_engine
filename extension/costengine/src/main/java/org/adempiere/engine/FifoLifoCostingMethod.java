@@ -60,7 +60,8 @@ public class FifoLifoCostingMethod implements ICostingMethod //extends AbstractC
 				|| cd.getM_InventoryLine_ID() != 0
 				|| cd.getM_ProductionLine_ID() != 0
 				|| cd.getC_ProjectIssue_ID() != 0
-				|| cd.getPP_Cost_Collector_ID() != 0)
+				|| cd.getPP_Cost_Collector_ID() != 0
+				|| cd.getC_LandedCostAllocation_ID()!=0)
 		{
 		if (addition)
 			{
@@ -103,9 +104,15 @@ public class FifoLifoCostingMethod implements ICostingMethod //extends AbstractC
 			}
 			//	Get Costs - costing level Org/ASI
 			MCostQueue[] cQueue = MCostQueue.getQueue(product, M_ASI_ID, 
-					as, AD_Org_ID, ce, cd.getDateAcct(), trxName);
-			if (cQueue != null && cQueue.length > 0)
-				cost.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
+					as, AD_Org_ID, ce, cost.getCostingMethod(), cd.getDateAcct(), trxName);
+			//TODO: need evaluate this!
+			if (cQueue != null)
+			{
+				if (cQueue.length >0 && cost.getCostElement().isFifo())
+		           cost.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
+			    else if (cQueue.length > 0 && cost.getCostElement().isLandedCost())
+				  cost.setCurrentCostPrice(cQueue[1].getCurrentCostPrice());
+			}	
 			cost.setCurrentQty(cost.getCurrentQty().add(cd.getQty()));
 			// teo_sarca: Cumulate Amt & Qty
 			if (cQueue != null && cQueue.length > 0)
@@ -125,9 +132,9 @@ public class FifoLifoCostingMethod implements ICostingMethod //extends AbstractC
 		ProductCost pc = new ProductCost (model.getCtx(), 
 				model.getM_Product_ID(), model.getM_AttributeSetInstance_ID(),
 				model.get_TrxName());
-		pc.setQty(model.getMovementQty());
+		pc.setQty(mtrx.getMovementQty().negate());
 		//
-		List<CostComponent> ccs = pc.getProductCostsLayers(as, model.getAD_Org_ID(), null, 0, false);
+		List<CostComponent> ccs = pc.getProductCostsLayers(as, model.getAD_Org_ID(), cost.getCostingMethod(), 0, false, cost);
 		if (ccs == null || ccs.size() == 0)
 		{
 			MProduct product = MProduct.get(Env.getCtx(), model.getM_Product_ID());

@@ -577,7 +577,7 @@ public class ProductCost
 	}	//	toString
 
 	public List<CostComponent> getProductCostsLayers (MAcctSchema as, int AD_Org_ID, 
-			String costingMethod, int C_OrderLine_ID, boolean zeroCostsOK)
+			String costingMethod, int C_OrderLine_ID, boolean zeroCostsOK, MCost cost)
 	{
 		if (m_qty == null)
 		{
@@ -591,7 +591,7 @@ public class ProductCost
 			return null;
 		}
 		 List<CostComponent> list = MCost.getCurrentCostLayers (m_product, m_M_AttributeSetInstance_ID, 
-				as, AD_Org_ID, costingMethod, m_qty, C_OrderLine_ID, zeroCostsOK, m_trxName);
+				as, AD_Org_ID, costingMethod, m_qty, C_OrderLine_ID, zeroCostsOK, m_trxName, cost);
 		if (list == null)
 		{
 			log.fine("No Costs");

@@ -107,7 +107,7 @@ public class MCost extends X_M_Cost
 		return getCurrentCost (
 			product, M_AttributeSetInstance_ID, 
 			as, AD_Org_ID, as.getM_CostType_ID(), costingMethod, qty, 
-			C_OrderLine_ID, zeroCostsOK, trxName);
+			C_OrderLine_ID, zeroCostsOK, trxName, null);
 	}	//	getCurrentCost
 	
 	/**
@@ -127,7 +127,7 @@ public class MCost extends X_M_Cost
 	private static BigDecimal getCurrentCost (MProduct product, int M_ASI_ID, 
 		MAcctSchema as, int Org_ID, int M_CostType_ID,  
 		String costingMethod, BigDecimal qty, int C_OrderLine_ID, 
-		boolean zeroCostsOK, String trxName)
+		boolean zeroCostsOK, String trxName, MCost cost)
 	{
 		BigDecimal currentCostPrice = null;
 		BigDecimal currentCostPriceLL = null;
@@ -229,7 +229,7 @@ public class MCost extends X_M_Cost
 		{
 			MCostElement ce = MCostElement.getMaterialCostElement(as, costingMethod);
 			materialCost = MCostQueue.getCosts(product, M_ASI_ID, 
-				as, Org_ID, ce, qty, null, trxName);
+				as, Org_ID, ce, qty, null, trxName, cost);
 		}
 			
 		//	Other Costs
@@ -1761,7 +1761,7 @@ public class MCost extends X_M_Cost
 	private static List<CostComponent> getCurrentCostLayers (MProduct product, int M_ASI_ID, 
 			MAcctSchema as, int Org_ID, int M_CostType_ID,  
 			String costingMethod, BigDecimal qty, int C_OrderLine_ID, 
-			boolean zeroCostsOK, String trxName)
+			boolean zeroCostsOK, String trxName, MCost cost)
 	{
 		List<CostComponent> list = new ArrayList<CostComponent>();
 		BigDecimal currentCostPrice = null;
@@ -1775,7 +1775,7 @@ public class MCost extends X_M_Cost
 		BigDecimal percentage = Env.ZERO;
 		int count = 0;
 		//
-		String sql = "SELECT SUM(c.CurrentCostPrice), ce.CostElementType, ce.CostingMethod,"
+		String sql = "SELECT SUM(c.CurrentCostPrice), ce.CostElementType, c.CostingMethod,"
 			+ " c.Percent, c.M_CostElement_ID , SUM(c.CurrentCostPriceLL) "					//	4..5
 			+ "FROM M_Cost c"
 			+ " LEFT OUTER JOIN M_CostElement ce ON (c.M_CostElement_ID=ce.M_CostElement_ID) "
@@ -1783,8 +1783,9 @@ public class MCost extends X_M_Cost
 			+ " AND c.M_Product_ID=?"							//	#3
 			+ " AND (c.M_AttributeSetInstance_ID=? OR c.M_AttributeSetInstance_ID=0)"	//	#4
 			+ " AND c.M_CostType_ID=? AND c.C_AcctSchema_ID=?"	//	#5/6
-			+ " AND (ce.CostingMethod IS NULL OR ce.CostingMethod=?) "	//	#7
-			+ "GROUP BY ce.CostElementType, ce.CostingMethod, c.Percent, c.M_CostElement_ID";
+//			+ " AND (ce.CostingMethod IS NULL OR ce.CostingMethod=?) "	//	#7
+			+ " AND c.CostingMethod=? "	//	#7
+			+ "GROUP BY ce.CostElementType, c.CostingMethod, c.Percent, c.M_CostElement_ID";
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 		try
@@ -1861,8 +1862,7 @@ public class MCost extends X_M_Cost
 		if (MCostElement.COSTINGMETHOD_Fifo.equals(costingMethod)
 				|| MCostElement.COSTINGMETHOD_Lifo.equals(costingMethod))
 		{
-			MCostElement ce = MCostElement.getMaterialCostElement(as, costingMethod);
-			list = MCostQueue.getCostLayers(product, M_ASI_ID, as, Org_ID, ce, qty, null, trxName);
+			list = MCostQueue.getCostLayers(product, M_ASI_ID, as, Org_ID, costingMethod, qty, null, trxName, cost);
 		}
 		//
 		for (CostComponent cc : list)
@@ -1876,7 +1876,7 @@ public class MCost extends X_M_Cost
 			int M_AttributeSetInstance_ID,
 			MAcctSchema as, int AD_Org_ID, String costingMethod, 
 			BigDecimal qty, int C_OrderLine_ID,
-			boolean zeroCostsOK, String trxName)
+			boolean zeroCostsOK, String trxName, MCost cost)
 	{
 		String CostingLevel = product.getCostingLevel(as);
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
@@ -1904,15 +1904,7 @@ public class MCost extends X_M_Cost
 		return getCurrentCostLayers (
 				product, M_AttributeSetInstance_ID, 
 				as, AD_Org_ID, as.getM_CostType_ID(), costingMethod, qty, 
-				C_OrderLine_ID, zeroCostsOK, trxName);
-	}
-	
-	/**
-	 * get Costing Method based on Cost Element
-	 */
-	public String getCostingMethod()
-	{
-		return MCostElement.get(getCtx(), this.getM_CostElement_ID()).getCostingMethod();
+				C_OrderLine_ID, zeroCostsOK, trxName, cost);
 	}
 
 
