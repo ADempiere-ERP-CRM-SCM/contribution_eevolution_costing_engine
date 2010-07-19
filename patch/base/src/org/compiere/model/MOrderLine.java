@@ -19,6 +19,7 @@ package org.compiere.model;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -1074,6 +1075,11 @@ public class MOrderLine extends X_C_OrderLine implements IDocumentLine
 	public void setM_Locator_ID(int M_Locator_ID) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public Timestamp getDateAcct() {
+		return getParent().getDateAcct();
 	}
 	
 }	//	MOrderLine

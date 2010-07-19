@@ -18,6 +18,7 @@ package org.compiere.model;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Properties;
 
@@ -737,6 +738,11 @@ implements IDocumentLine
 	public boolean isSOTrx()
 	{
 		return getParent().isSOTrx();
+	}
+
+	@Override
+	public Timestamp getDateAcct() {
+		return getParent().getDateAcct();
 	}
 
 }	//	MInOutLine

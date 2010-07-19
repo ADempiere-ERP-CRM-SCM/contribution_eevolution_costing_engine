@@ -3,13 +3,10 @@
  */
 package org.adempiere.engine;
 
-import java.util.List;
-import java.util.Properties;
-
-import org.compiere.model.I_M_CostDetail;
-import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
+import org.compiere.model.MCostDetail;
+import org.compiere.model.MTransaction;
 
 /**
  * @author ancu
@@ -17,6 +14,7 @@ import org.compiere.model.MCost;
  */
 public interface ICostingMethod
 {
-	public void process(Properties ctx, I_M_CostDetail cd, String trxName);
-	public List<CostComponent> getCostComponents(MAcctSchema as, IDocumentLine model, I_M_Transaction mtrx, MCost cost);
+	public void setCostingMethod(MAcctSchema as,IDocumentLine model, MTransaction mtrx, MCost cost, Boolean isSOTrx);
+	public void process();
+	//public void processCostDetail(MCostDetail m_costdetail);
 }

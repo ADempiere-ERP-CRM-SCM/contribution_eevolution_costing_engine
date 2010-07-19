@@ -18,6 +18,7 @@ package org.compiere.model;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Properties;
 
@@ -369,5 +370,10 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine
 	public boolean isSOTrx() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public Timestamp getDateAcct() {
+		return getParent().getMovementDate();
 	}
 }	//	MMovementLine

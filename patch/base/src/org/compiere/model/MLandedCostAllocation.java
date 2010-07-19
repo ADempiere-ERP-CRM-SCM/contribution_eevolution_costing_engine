@@ -19,6 +19,7 @@ package org.compiere.model;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -194,6 +195,10 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 	public void setM_Locator_ID(int M_Locator_ID) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	public Timestamp getDateAcct() {
+		return getC_InvoiceLine().getC_Invoice().getDateAcct();
 	}
 	
 	

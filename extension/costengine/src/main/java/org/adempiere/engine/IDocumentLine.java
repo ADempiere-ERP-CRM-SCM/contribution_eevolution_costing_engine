@@ -17,6 +17,7 @@
 package org.adempiere.engine;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.Properties;
 
 /**
@@ -39,6 +40,7 @@ public interface IDocumentLine
 	public void setM_Locator_ID(int M_Locator_ID);
 	public int getM_AttributeSetInstance_ID();
 	public void setM_AttributeSetInstance_ID(int M_AttributeSetInstance_ID);
+	public Timestamp getDateAcct();
 	public BigDecimal getMovementQty();
 	public boolean isSOTrx();
 	public int getReversalLine_ID();

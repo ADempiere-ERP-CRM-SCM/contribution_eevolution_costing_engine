@@ -18,6 +18,7 @@ package org.compiere.model;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.Properties;
 
 import org.adempiere.engine.IDocumentLine;
@@ -412,5 +413,10 @@ public class MInventoryLine extends X_M_InventoryLine implements IDocumentLine
 	public BigDecimal getPriceActual() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public Timestamp getDateAcct() {
+		return getParent().getMovementDate();
 	}
 }	//	MInventoryLine

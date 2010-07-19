@@ -231,7 +231,8 @@ public class CostEngine
 		}
 		//Receipt
 		else if (!model.isSOTrx() && !(model instanceof MOrderLine) && !(model instanceof MInvoiceLine)
-	    		&& !(model instanceof MLandedCostAllocation))
+	    	&& !(model instanceof MLandedCostAllocation))
+		//if(MTransaction.MOVEMENTTYPE_VendorReceipts.equals(mtrx.getMovementType()))
 		{
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), mtrx.getAD_Client_ID()))
 			{
@@ -386,41 +387,11 @@ public class CostEngine
 					continue;
 				}
 			}
-			MCostDetail cd = getCostDetail(cost, model, isSOTrx);
-			if (cd == null || model.isSOTrx())
-			{
-				final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-				List<CostComponent> ccs = method.getCostComponents(as, model, mtrx, cost);
-				for (CostComponent cc1 : ccs)
-				{
-					cd = new MCostDetail(cost, model.getAD_Org_ID(),cc1.getAmount().negate(), cc1.getQty().negate());
-					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
-						throw new AdempiereException("Cannot set "+idColumnName);
-					if (isSOTrx != null)
-						cd.setIsSOTrx(isSOTrx);
-					else
-						cd.setIsSOTrx(model.isSOTrx());	
-					cd.setM_Transaction_ID(mtrx.get_ID());
-					cd.setDescription(description.toString());
-					if (setProcessed)
-						cd.setProcessed(true);
-					cd.saveEx();
-					//
-					if (!cd.isProcessed())
-					{
-						MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-						if (client.isCostImmediate())
-							cd.process();
-					}
-				}
-			}
-			//
-			if (!cd.isProcessed())
-			{
-				MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-				if (client.isCostImmediate())
-					cd.process();
-			}
+							
+			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
+			method.setCostingMethod(as, model, mtrx, cost, isSOTrx);
+			method.process();
+				
 		}
 	}
 
@@ -465,28 +436,10 @@ public class CostEngine
 				// skip landed costs
 				continue;
 			}
-			MCostDetail cd = getCostDetail(cost, model, isSOTrx);
-			if (cd == null)
-			{
-				cd = new MCostDetail(cost, model.getAD_Org_ID(), cc.getAmount(), cc.getQty());
-				if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
-					throw new AdempiereException("Cannot set "+idColumnName);
-				if (isSOTrx != null)
-					cd.setIsSOTrx(isSOTrx);
-				else
-					cd.setIsSOTrx(model.isSOTrx());	
-				cd.setM_Transaction_ID(model.get_ID());
-				cd.setDescription(description.toString());
-				if (setProcessed)
-					cd.setProcessed(true);
-				cd.saveEx();
-			}
-			if (!cd.isProcessed())
-			{
-				MClient client = MClient.get(as.getCtx(), as.getAD_Client_ID());
-				if (client.isCostImmediate())
-					cd.process();
-			}
+		
+			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
+			method.setCostingMethod(as, model, null, cost, isSOTrx);
+			method.process();
 		}
 	}
 	

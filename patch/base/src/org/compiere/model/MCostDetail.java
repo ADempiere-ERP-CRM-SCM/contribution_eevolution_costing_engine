@@ -25,6 +25,7 @@ import java.util.logging.Level;
 
 import org.adempiere.engine.CostingMethodFactory;
 import org.adempiere.engine.ICostingMethod;
+import org.adempiere.engine.IDocumentLine;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -546,17 +547,26 @@ public class MCostDetail extends X_M_CostDetail
 
 //		for (MCostType mc : mcost)
 //		{
-			MCostType mc = (MCostType)getM_CostType();
-			m_cost = MCost.get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(),
-					mc, null /*getCostingMethod()*/, get_TrxName());
-			
-			/*if (ce.isFifo() && mc.getName().equalsIgnoreCase("Fifo")   //TODO dont use this!
+		MCostType mc = (MCostType)getM_CostType();
+		m_cost = MCost.get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(),
+				mc, null /*getCostingMethod()*/, get_TrxName());
+		/*if (ce.isFifo() && mc.getName().equalsIgnoreCase("Fifo")   //TODO dont use this!
 				|| ce.isAverageInvoice() && mc.getName().equalsIgnoreCase("Average Invoice"))*/
-			{
-			CostingMethodFactory cmFactory = CostingMethodFactory.get();
+
+		/*CostingMethodFactory cmFactory = CostingMethodFactory.get();
 			ICostingMethod cm = cmFactory.getCostingMethod(ce, m_cost.getCostingMethod());
-			cm.process(getCtx(), this, get_TrxName());
-			}
+			cm.process();*/
+		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, m_cost.getCostingMethod());
+		method.setCostingMethod(as, null, null, m_cost, this.isSOTrx());
+
+		/*if (this.isSOTrx()== false)
+		{
+			method.processCostDetail(this);
+		}
+		else
+		{
+		*/	method.process();
+	//	}
 			//else if (ce.isLandedCost())
 			//	{
 

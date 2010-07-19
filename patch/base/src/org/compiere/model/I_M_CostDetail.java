@@ -150,6 +150,32 @@ public interface I_M_CostDetail
 
 	public org.compiere.model.I_C_ProjectIssue getC_ProjectIssue() throws RuntimeException;
 
+    /** Column name CostAdjustment */
+    public static final String COLUMNNAME_CostAdjustment = "CostAdjustment";
+
+	/** Set Cost Adjustment.
+	  * Product Cost Adjustment
+	  */
+	public void setCostAdjustment (BigDecimal CostAdjustment);
+
+	/** Get Cost Adjustment.
+	  * Product Cost Adjustment
+	  */
+	public BigDecimal getCostAdjustment();
+
+    /** Column name CostAdjustmentDate */
+    public static final String COLUMNNAME_CostAdjustmentDate = "CostAdjustmentDate";
+
+	/** Set Cost Adjustment Date.
+	  * Product Cost Adjustment
+	  */
+	public void setCostAdjustmentDate (Timestamp CostAdjustmentDate);
+
+	/** Get Cost Adjustment Date.
+	  * Product Cost Adjustment
+	  */
+	public Timestamp getCostAdjustmentDate();
+
     /** Column name CostingMethod */
     public static final String COLUMNNAME_CostingMethod = "CostingMethod";
 

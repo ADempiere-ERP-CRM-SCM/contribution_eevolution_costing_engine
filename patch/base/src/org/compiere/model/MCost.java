@@ -228,8 +228,7 @@ public class MCost extends X_M_Cost
 			|| MCostElement.COSTINGMETHOD_Lifo.equals(costingMethod))
 		{
 			MCostElement ce = MCostElement.getMaterialCostElement(as, costingMethod);
-			materialCost = MCostQueue.getCosts(product, M_ASI_ID, 
-				as, Org_ID, ce, qty, null, trxName, cost);
+			materialCost = MCostQueue.getCosts(cost, qty, null, trxName);
 		}
 			
 		//	Other Costs
@@ -268,6 +267,18 @@ public class MCost extends X_M_Cost
 	 *	@param C_OrderLine_ID optional order line
 	 *	@return price or null
 	 */
+	
+	public static BigDecimal getSeedCosts (MCost cost)
+	{
+		return getSeedCosts(
+				MProduct.get(cost.getCtx(), cost.getM_Product_ID()),
+				cost.getM_AttributeSetInstance_ID(),
+				MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID()),
+				cost.getAD_Org_ID(),
+				cost.getCostingMethod(),
+				0 // C_OrderLine_ID
+		);
+	}
 	public static BigDecimal getSeedCosts (MProduct product, int M_ASI_ID,
 		MAcctSchema as, int Org_ID, String costingMethod, int C_OrderLine_ID)
 	{
@@ -1862,7 +1873,7 @@ public class MCost extends X_M_Cost
 		if (MCostElement.COSTINGMETHOD_Fifo.equals(costingMethod)
 				|| MCostElement.COSTINGMETHOD_Lifo.equals(costingMethod))
 		{
-			list = MCostQueue.getCostLayers(product, M_ASI_ID, as, Org_ID, costingMethod, qty, null, trxName, cost);
+			list = MCostQueue.getCostLayers(cost, qty, null, trxName);
 		}
 		//
 		for (CostComponent cc : list)
@@ -1872,12 +1883,16 @@ public class MCost extends X_M_Cost
 		}
 		return list;
 	}
-	public static List<CostComponent> getCurrentCostLayers (MProduct product,
-			int M_AttributeSetInstance_ID,
-			MAcctSchema as, int AD_Org_ID, String costingMethod, 
+	public static List<CostComponent> getCurrentCostLayers (MCost cost, 
 			BigDecimal qty, int C_OrderLine_ID,
-			boolean zeroCostsOK, String trxName, MCost cost)
+			boolean zeroCostsOK, String trxName)
 	{
+		MProduct product = MProduct.get(cost.getCtx(), cost.getM_Product_ID());
+		MAcctSchema as = MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID());
+		int AD_Org_ID = cost.getAD_Org_ID();
+		int M_AttributeSetInstance_ID = cost.getM_AttributeSetInstance_ID();
+		String costingMethod = cost.getCostingMethod(); 
+		
 		String CostingLevel = product.getCostingLevel(as);
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 		{
@@ -1899,7 +1914,7 @@ public class MCost extends X_M_Cost
 		}
 
 		//	Create/Update Costs
-		MCostDetail.processProduct (product, trxName);
+	//	MCostDetail.processProduct (product, trxName);
 
 		return getCurrentCostLayers (
 				product, M_AttributeSetInstance_ID, 

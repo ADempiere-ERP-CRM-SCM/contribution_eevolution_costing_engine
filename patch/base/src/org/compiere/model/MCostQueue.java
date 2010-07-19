@@ -78,32 +78,11 @@ public class MCostQueue extends X_M_CostQueue
 		return costQ;
 	}	//	get
 
-	/**
-	 * 	Get Cost Queue Records in Lifo/Fifo order
-	 *	@param product product
-	 *	@param M_ASI_ID costing level ASI
-	 *	@param as accounting schema
-	 *	@param Org_ID costing level org
-	 *	@param ce Cost Element
-	 *	@param trxName transaction
-	 *	@return cost queue or null
-	 */
-	@Deprecated
-	public static MCostQueue[] getQueue (MProduct product, int M_ASI_ID,
-			MAcctSchema as, int Org_ID, MCostElement ce, Timestamp dateAcct, String trxName)
+	public static MCostQueue[] getQueue (MCost cost, Timestamp dateAcct, String trxName)
 	{
-		return getQueue(product, M_ASI_ID, as, Org_ID,
-				ce,
-				null, // costingMethod
-				dateAcct,
-				trxName);
-	}
-	public static MCostQueue[] getQueue (MProduct product, int M_ASI_ID,
-		MAcctSchema as, int Org_ID,
-		MCostElement ce, String costingMethod,
-		Timestamp dateAcct,
-		String trxName)
-	{
+		final String costingMethod = cost.getCostingMethod();
+		final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
+		
 		String orderByFlag = null;
 		if (costingMethod != null)
 		{
@@ -135,26 +114,27 @@ public class MCostQueue extends X_M_CostQueue
 		StringBuffer whereClause = new StringBuffer();
 		
 		whereClause.append("AD_Client_ID=? AND AD_Org_ID=?");
-		params.add(product.getAD_Client_ID());
-		params.add(Org_ID);
+		params.add(cost.getAD_Client_ID());
+		params.add(cost.getAD_Org_ID());
 		
 		whereClause.append(" AND "+COLUMNNAME_M_Product_ID+"=?");
-		params.add(product.get_ID());
+		params.add(cost.getM_Product_ID());
 		
+		final MAcctSchema as = MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID());
 		whereClause.append(" AND "+COLUMNNAME_M_CostType_ID+"=? AND "+COLUMNNAME_C_AcctSchema_ID+"=?");
 		params.add(as.getM_CostType_ID());
 		params.add(as.get_ID());
 		
-		/*whereClause.append(" AND "+COLUMNNAME_M_CostElement_ID+"=?");
-		params.add(ce.get_ID());*/
+		whereClause.append(" AND "+COLUMNNAME_M_CostElement_ID+"=?");
+		params.add(ce.get_ID());
 		
-		if (M_ASI_ID != 0)
+		if (cost.getM_AttributeSetInstance_ID() > 0)
 		{
 			whereClause.append(" AND "+COLUMNNAME_M_AttributeSetInstance_ID+"=?");
-			params.add(M_ASI_ID);
+			params.add(cost.getM_AttributeSetInstance_ID());
 		}
 		
-		List<MCostQueue> list = new Query(product.getCtx(), Table_Name, whereClause.toString(), trxName)
+		List<MCostQueue> list = new Query(cost.getCtx(), Table_Name, whereClause.toString(), trxName)
 				.setParameters(params)
 				.setOrderBy(orderBy)
 				.list();
@@ -174,62 +154,56 @@ public class MCostQueue extends X_M_CostQueue
 	 *	@param trxName transaction
 	 *	@return cost for qty reduced or null of error
 	 */
-	public static BigDecimal adjustQty (MProduct product, int M_ASI_ID,
-			MAcctSchema as, int Org_ID, MCostElement ce, BigDecimal Qty, 
-			MCostDetail cd,
-			String trxName)
+	public static BigDecimal adjustQty (MCost cost, BigDecimal Qty, Timestamp dateAcct, String trxName)
 	{
 		if (Qty.signum() == 0)
 			return Env.ZERO;
 		//
-		MCostQueue[] costQ = getQueue(product, M_ASI_ID, as, Org_ID, ce, cd.getDateAcct(), trxName);
-		BigDecimal cost = Env.ZERO;
+		MCostQueue[] costQ = getQueue(cost, dateAcct, trxName);
+		BigDecimal costAmt = Env.ZERO;
 		BigDecimal remainingQty = Qty;
 		for (int i = 0; i < costQ.length; i++)
 		{
 			MCostQueue queue = costQ[i];
 			//	Negative Qty i.e. add
-			if (ce.get_ID() == queue.getM_CostElement_ID())
-			{	
-				if (remainingQty.signum() < 0)
-				{
-					BigDecimal oldQty = queue.getCurrentQty();
-					BigDecimal newQty = oldQty.subtract(remainingQty);
-					queue.setCurrentQty(newQty);
-					queue.saveEx();
-					s_log.fine("Qty=" + remainingQty 
-							+ "(!), ASI=" + queue.getM_AttributeSetInstance_ID()
-							+ " - " + oldQty + " -> " + newQty);
-					BigDecimal lastPrice = queue.getCurrentCostPrice();
-					cost = cost.add(lastPrice.multiply(remainingQty));
-					return cost;
-				}
+			if (remainingQty.signum() < 0)
+			{
+				BigDecimal oldQty = queue.getCurrentQty();
+				BigDecimal newQty = oldQty.subtract(remainingQty);
+				queue.setCurrentQty(newQty);
+				queue.saveEx();
+				s_log.fine("Qty=" + remainingQty 
+						+ "(!), ASI=" + queue.getM_AttributeSetInstance_ID()
+						+ " - " + oldQty + " -> " + newQty);
+				BigDecimal lastPrice = queue.getCurrentCostPrice();
+				costAmt = costAmt.add(lastPrice.multiply(remainingQty));
+				return costAmt;
+			}
 
-				//	Positive queue
-				if (queue.getCurrentQty().signum() > 0)
+			//	Positive queue
+			if (queue.getCurrentQty().signum() > 0)
+			{
+				BigDecimal reduction = remainingQty;
+				if (reduction.compareTo(queue.getCurrentQty()) > 0)
+					reduction = queue.getCurrentQty();
+				BigDecimal oldQty = queue.getCurrentQty();
+				BigDecimal newQty = oldQty.subtract(reduction);
+				queue.setCurrentQty(newQty);
+				queue.saveEx();
+				s_log.fine("Qty=" + reduction 
+						+ ", ASI=" + queue.getM_AttributeSetInstance_ID()
+						+ " - " + oldQty + " -> " + newQty);
+				remainingQty = remainingQty.subtract(reduction);
+				//
+				// arhipac: teo_sarca: begin --------------------------------------------------------------------------------------
+				//MCostDetailAlloc.create(cd, queue, reduction.negate());
+				BigDecimal lastPrice = queue.getCurrentCostPrice();
+				costAmt = costAmt.add(reduction.multiply(lastPrice));
+				// arhipac: teo_sarca: end ----------------------------------------------------------------------------------------
+				//
+				if (remainingQty.signum() == 0)
 				{
-					BigDecimal reduction = remainingQty;
-					if (reduction.compareTo(queue.getCurrentQty()) > 0)
-						reduction = queue.getCurrentQty();
-					BigDecimal oldQty = queue.getCurrentQty();
-					BigDecimal newQty = oldQty.subtract(reduction);
-					queue.setCurrentQty(newQty);
-					queue.saveEx();
-					s_log.fine("Qty=" + reduction 
-							+ ", ASI=" + queue.getM_AttributeSetInstance_ID()
-							+ " - " + oldQty + " -> " + newQty);
-					remainingQty = remainingQty.subtract(reduction);
-					//
-					// arhipac: teo_sarca: begin --------------------------------------------------------------------------------------
-					//MCostDetailAlloc.create(cd, queue, reduction.negate());
-					BigDecimal lastPrice = queue.getCurrentCostPrice();
-					cost = cost.add(reduction.multiply(lastPrice));
-					// arhipac: teo_sarca: end ----------------------------------------------------------------------------------------
-					//
-					if (remainingQty.signum() == 0)
-					{
-						return cost;
-					}
+					return costAmt;
 				}
 			}
 		}	//	for queue	
@@ -238,7 +212,7 @@ public class MCostQueue extends X_M_CostQueue
 		// arhipac: teo_sarca: begin
 		if (remainingQty.signum() != 0)
 		{
-			throw new CostInsufficientQtyException(product.get_ID(), M_ASI_ID, Qty, remainingQty); 
+			throw new CostInsufficientQtyException(cost.getM_Product_ID(), cost.getM_AttributeSetInstance_ID(), Qty, remainingQty); 
 		}
 		// arhipac: teo_sarca: end
 		return null;
@@ -255,12 +229,9 @@ public class MCostQueue extends X_M_CostQueue
 	 *	@param trxName transaction
 	 *	@return cost for qty or null of error
 	 */
-	public static BigDecimal getCosts (MProduct product, int M_ASI_ID,
-			MAcctSchema as, int Org_ID, MCostElement ce, BigDecimal Qty,
-			Timestamp dateAcct,
-			String trxName, MCost Cost)
+	public static BigDecimal getCosts (MCost cost, BigDecimal Qty, Timestamp dateAcct, String trxName)
 	{
-		List<CostComponent> list = getCostLayers(product, M_ASI_ID, as, Org_ID, ce.getCostingMethod(), Qty, dateAcct, trxName, Cost);
+		List<CostComponent> list = getCostLayers(cost, Qty, dateAcct, trxName);
 		if (list == null)
 			return null;
 		//
@@ -277,17 +248,15 @@ public class MCostQueue extends X_M_CostQueue
 		}
 		return costs;
 	}
-	public static List<CostComponent> getCostLayers (MProduct product, int M_ASI_ID,
-			MAcctSchema as, int Org_ID, String costingMethod, BigDecimal Qty,
-			Timestamp dateAcct,
-			String trxName, MCost Cost)
+	public static List<CostComponent> getCostLayers (MCost cost, BigDecimal Qty,
+			Timestamp dateAcct, String trxName)
 			{
 		ArrayList<CostComponent> list = new ArrayList<CostComponent>();
 		if (Qty.signum() == 0)
 			return list;
-		MCostQueue[] costQ = getQueue(product, M_ASI_ID, as, Org_ID, null, costingMethod, dateAcct, trxName);
+		MCostQueue[] costQ = getQueue(cost, dateAcct, trxName);
 		//
-		BigDecimal cost = Env.ZERO;
+		BigDecimal costAmt = Env.ZERO;
 		BigDecimal remainingQty = Qty;
 		//		BigDecimal firstPrice = null;
 		BigDecimal lastPrice = null;
@@ -296,8 +265,6 @@ public class MCostQueue extends X_M_CostQueue
 		for (int i = 0; i < costQ.length; i++)
 		{
 			MCostQueue queue = costQ[i];
-			if (Cost.getM_CostElement_ID() == queue.getM_CostElement_ID())
-			{
 				//	Negative Qty i.e. add
 				/*if (remainingQty.signum() <= 0 && queue.getCurrentQty().signum() != 0)
 			{
@@ -328,7 +295,7 @@ public class MCostQueue extends X_M_CostQueue
 					lastPrice = queue.getCurrentCostPrice();
 					BigDecimal costBatch = lastPrice.multiply(reduction);
 					list.add(new CostComponent(reduction, lastPrice));
-					cost = cost.add(costBatch);
+					costAmt = costAmt.add(costBatch);
 					s_log.fine("ASI=" + queue.getM_AttributeSetInstance_ID()
 							+ " - Cost=" + lastPrice + " * Qty=" + reduction + " = " + costBatch);
 					remainingQty = remainingQty.subtract(reduction);
@@ -341,14 +308,13 @@ public class MCostQueue extends X_M_CostQueue
 					//				if (firstPrice == null)
 					//					firstPrice = lastPrice;
 				}
-			}
 		}
 		//	for queue
 
 		// TODO: arhipac: teo_sarca: implement "Insufficient Qty Cost Option"
 		if (lastPrice == null)
 		{
-			lastPrice = MCost.getSeedCosts(product, M_ASI_ID, as, Org_ID, costingMethod, 0);
+			lastPrice = MCost.getSeedCosts(cost);
 			if (lastPrice == null)
 			{
 				s_log.info("No Price found");
@@ -358,7 +324,7 @@ public class MCostQueue extends X_M_CostQueue
 		}
 		BigDecimal costBatch = lastPrice.multiply(remainingQty);
 		s_log.fine("RemainingQty=" + remainingQty + " * LastPrice=" + lastPrice + " = " + costBatch);
-		cost = cost.add(costBatch);
+		costAmt = costAmt.add(costBatch);
 		list.add(new CostComponent(remainingQty, lastPrice));
 		s_log.config("Cost=" + cost);
 		return list;

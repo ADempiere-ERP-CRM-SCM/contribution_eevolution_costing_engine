@@ -1346,4 +1346,8 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 		// TODO Auto-generated method stub
 		
 	}
+	
+	public Timestamp getDateAcct() {
+		return getParent().getDateAcct();
+	}
 }	//	MInvoiceLine
