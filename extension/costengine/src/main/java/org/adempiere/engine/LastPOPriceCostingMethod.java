@@ -35,7 +35,8 @@ public class LastPOPriceCostingMethod implements ICostingMethod
 	BigDecimal m_CumulatedQty;
 	BigDecimal m_CurrentCostPrice;
 	
-	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost, Boolean isSOTrx)
+	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx,
+			MCost cost, Boolean isSOTrx, Boolean setProcessed)
 	{
 		m_as = as;
 		m_model = model;
@@ -82,6 +83,12 @@ public class LastPOPriceCostingMethod implements ICostingMethod
 			cost.saveEx();
 		}
 		return;
+	}
+
+	@Override
+	public void processCostDetail(MCostDetail mCostdetail) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 

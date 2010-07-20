@@ -35,7 +35,8 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 	BigDecimal m_CumulatedQty;
 	BigDecimal m_CurrentCostPrice;
 	
-	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost, Boolean isSOTrx)
+	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost,
+			Boolean isSOTrx, Boolean setProcessed)
 	{
 		m_as = as;
 		m_model = model;
@@ -48,14 +49,14 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 	{
 		//Calculate Average Cost
 		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_model.getPriceActual());
-		m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
+		m_CumulatedQty = m_cost.getCumulatedQty().add(m_model.getMovementQty());
 		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
 	}
 	
 	private void createCostDetail()
 	{
 		final String idColumnName = m_model.get_TableName()+"_ID";			
-		m_costdetail = new MCostDetail(m_cost, m_model.getAD_Org_ID(),m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty());
+		m_costdetail = new MCostDetail(m_cost, m_model.getAD_Org_ID(),m_CurrentCostPrice.multiply(m_model.getMovementQty()) , m_model.getMovementQty());
 		if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, m_model.get_ID()))
 			throw new AdempiereException("Cannot set "+idColumnName);
 		if (m_isSOTrx != null)
@@ -73,7 +74,8 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 		{
 			description.append(m_isSOTrx ? "(|->)" : "(|<-)");
 		}
-		m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
+		if (m_trx != null)
+		   m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
 		m_costdetail.setDescription(description.toString());
 		m_costdetail.saveEx();
 		return;
@@ -98,29 +100,32 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 	public void createCostAdjutment()
 	{
 		//Create Adjustment
-		if(m_trx.getMovementType().endsWith("+") 
-		&& m_CumulatedQty.signum() == 0  
-		&& m_CumulatedAmt.signum() < 0)
-		{	//Create Adjustment Cost 
-			if(m_as.isAdjustCOGS())	
-			{
-				BigDecimal totalQty = Env.ZERO;
-				for(MCostDetail cd : getCostDetail())
+		if (m_trx != null)
+		{
+			if(m_trx.getMovementType().endsWith("+") 
+					&& m_CumulatedQty.signum() == 0  
+					&& m_CumulatedAmt.signum() < 0)
+			{	//Create Adjustment Cost 
+				if(m_as.isAdjustCOGS())	
 				{
-					totalQty = totalQty.add(cd.getQty());
-				}
-				
-				for(MCostDetail cd : getCostDetail())
-				{
-					// Update and set Adjustment Cost
-					BigDecimal ration = (totalQty.divide(cd.getQty()));					
-					cd.setCostAdjustment(m_CumulatedAmt.divide(ration));
-					cd.setCostAdjustmentDate(m_trx.getMovementDate());
-					cd.setProcessed(false);
-					cd.saveEx();
+					BigDecimal totalQty = Env.ZERO;
+					for(MCostDetail cd : getCostDetail())
+					{
+						totalQty = totalQty.add(cd.getQty());
+					}
+
+					for(MCostDetail cd : getCostDetail())
+					{
+						// Update and set Adjustment Cost
+						BigDecimal ration = (totalQty.divide(cd.getQty()));					
+						cd.setCostAdjustment(m_CumulatedAmt.divide(ration));
+						cd.setCostAdjustmentDate(m_trx.getMovementDate());
+						cd.setProcessed(false);
+						cd.saveEx();
+					}
 				}
 			}
-		}	
+		}
 	}	
 
 	
@@ -150,6 +155,12 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 		.setParameters(m_trx.getMovementDate(), m_model.getDateAcct())
 		.setOrderBy(I_M_CostDetail.COLUMNNAME_DateAcct + " DESC")
 		.list();
+	}
+
+	@Override
+	public void processCostDetail(MCostDetail mCostdetail) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

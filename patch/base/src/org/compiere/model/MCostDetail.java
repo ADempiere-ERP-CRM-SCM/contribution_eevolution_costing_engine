@@ -557,16 +557,9 @@ public class MCostDetail extends X_M_CostDetail
 			ICostingMethod cm = cmFactory.getCostingMethod(ce, m_cost.getCostingMethod());
 			cm.process();*/
 		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, m_cost.getCostingMethod());
-		method.setCostingMethod(as, null, null, m_cost, this.isSOTrx());
+		method.setCostingMethod(as, null, null, m_cost, this.isSOTrx(), false);
+     	method.processCostDetail(this);
 
-		/*if (this.isSOTrx()== false)
-		{
-			method.processCostDetail(this);
-		}
-		else
-		{
-		*/	method.process();
-	//	}
 			//else if (ce.isLandedCost())
 			//	{
 

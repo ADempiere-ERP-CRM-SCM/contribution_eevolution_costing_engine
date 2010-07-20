@@ -9,6 +9,8 @@ import java.util.List;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
+import org.compiere.model.MInventoryLine;
+import org.compiere.model.MMovementLine;
 import org.compiere.model.MTransaction;
 import org.compiere.util.CLogger;
 import org.compiere.util.Util;
@@ -28,7 +30,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	{ 
 		final String idColumnName = model.get_TableName()+"_ID";
 		List<MCostDetail> list = new ArrayList<MCostDetail>();
-		if (model.isSOTrx()== true)
+		if (model.isSOTrx()== true || model instanceof MInventoryLine || model instanceof MMovementLine)
 		{
 			List<CostComponent> ccs = getCalculatedCosts();
 			for (CostComponent cc : ccs)

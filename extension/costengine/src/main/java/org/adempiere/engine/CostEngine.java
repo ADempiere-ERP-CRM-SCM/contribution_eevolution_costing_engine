@@ -226,6 +226,7 @@ public class CostEngine
 					MClient client = MClient.get(cdnew.getCtx(), cdnew.getAD_Client_ID());
 					if (client.isCostImmediate())
 						cdnew.process();
+					
 				}
 			}
 		}
@@ -322,11 +323,11 @@ public class CostEngine
 				final boolean sameCostDimension = CostDimension.isSameCostDimension(as, trxFrom, trxTo);
 				createCostDetail(model, trxFrom, as,
 						null, // CostComponent will be automatically fetched in this method
-						true, // IsSOTrx = null
+						false, // IsSOTrx = null
 						sameCostDimension); // setProcessed = false
 				createCostDetail(model, trxTo, as,
 						null, //cc.reverseQty() CostComponent will be automatically fetched in this method
-						false, // IsSOTrx = null
+						true, // IsSOTrx = null
 						sameCostDimension); // setProcessed = false
 			}
 		}
@@ -389,7 +390,7 @@ public class CostEngine
 			}
 							
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-			method.setCostingMethod(as, model, mtrx, cost, isSOTrx);
+			method.setCostingMethod(as, model, mtrx, cost, isSOTrx, setProcessed);
 			method.process();
 				
 		}
@@ -438,7 +439,7 @@ public class CostEngine
 			}
 		
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-			method.setCostingMethod(as, model, null, cost, isSOTrx);
+			method.setCostingMethod(as, model, null, cost, isSOTrx, setProcessed);
 			method.process();
 		}
 	}

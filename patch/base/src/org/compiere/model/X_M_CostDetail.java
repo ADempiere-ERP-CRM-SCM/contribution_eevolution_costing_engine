@@ -32,7 +32,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100705L;
+	private static final long serialVersionUID = 20100709L;
 
     /** Standard Constructor */
     public X_M_CostDetail (Properties ctx, int M_CostDetail_ID, String trxName)
@@ -237,6 +237,43 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
+	}
+
+	/** Set Cost Adjustment.
+		@param CostAdjustment 
+		Product Cost Adjustment
+	  */
+	public void setCostAdjustment (BigDecimal CostAdjustment)
+	{
+		set_Value (COLUMNNAME_CostAdjustment, CostAdjustment);
+	}
+
+	/** Get Cost Adjustment.
+		@return Product Cost Adjustment
+	  */
+	public BigDecimal getCostAdjustment () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CostAdjustment);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Cost Adjustment Date.
+		@param CostAdjustmentDate 
+		Product Cost Adjustment
+	  */
+	public void setCostAdjustmentDate (Timestamp CostAdjustmentDate)
+	{
+		set_Value (COLUMNNAME_CostAdjustmentDate, CostAdjustmentDate);
+	}
+
+	/** Get Cost Adjustment Date.
+		@return Product Cost Adjustment
+	  */
+	public Timestamp getCostAdjustmentDate () 
+	{
+		return (Timestamp)get_Value(COLUMNNAME_CostAdjustmentDate);
 	}
 
 	/** CostingMethod AD_Reference_ID=122 */
