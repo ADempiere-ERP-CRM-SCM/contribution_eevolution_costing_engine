@@ -53,7 +53,7 @@ import org.compiere.util.Env;
  * 			<li> FR [ 2520591 ] Support multiples calendar for Org 
  *			@see http://sourceforge.net/tracker2/?func=detail&atid=879335&aid=2520591&group_id=176962 
  */
-public class MMatchPO extends X_M_MatchPO
+public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 {
 	/**
 	 * 
@@ -624,12 +624,13 @@ public class MMatchPO extends X_M_MatchPO
 		if (newRecord || m_isInOutLineChange)
 		{	
 			// Elaine 2008/6/20	
-			String err = createMatchPOCostDetail();
+			/*String err = createMatchPOCostDetail();
 			if(err != null && err.length() > 0) 
 			{
 				s_log.warning(err);
 				return false;
-			}
+			}*/
+			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(this);
 		}
 		
 		return true;
@@ -856,7 +857,7 @@ public class MMatchPO extends X_M_MatchPO
 	}	//	consolidate
 	
 	// Elaine 2008/6/20	
-	private String createMatchPOCostDetail()
+	/*private String createMatchPOCostDetail()
 	{
 		if (getM_InOutLine_ID() != 0)
 		{
@@ -947,17 +948,17 @@ public class MMatchPO extends X_M_MatchPO
 						tAmt = tAmt.setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);			
 				}
 				// Set Total Amount and Total Quantity from Matched PO 
-				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(oLine, null);
+				//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(oLine, null);
 				/*MCostDetail.createOrder(as, oLine.getAD_Org_ID(), 
 						getM_Product_ID(), getM_AttributeSetInstance_ID(),
 						oLine.getC_OrderLine_ID(), 0,		//	no cost element
 						tAmt, tQty,			//	Delivered
 						oLine.getDescription(), get_TrxName(), oLine.get_ID());*/
 				// end MZ
-			}
-		}
-		return "";
-	}
+		//	}
+		//}
+		//return "";
+	//}
 	
 	//AZ Goodwill
 	private String deleteMatchPOCostDetail()
@@ -1004,6 +1005,36 @@ public class MMatchPO extends X_M_MatchPO
 		}
 		
 		return "";
+	}
+
+	@Override
+	public int getM_Locator_ID() {
+	 return -1;
+	}
+
+	@Override
+	public BigDecimal getMovementQty() {
+		return getQty();
+	}
+
+	@Override
+	public BigDecimal getPriceActual() {
+		return getInvoicePriceActual();
+	}
+
+	@Override
+	public int getReversalLine_ID() {
+			return -1;
+	}
+
+	@Override
+	public boolean isSOTrx() {
+		return false;
+	}
+
+	@Override
+	public void setM_Locator_ID(int M_Locator_ID) {
+		;		
 	}
 	
 }	//	MMatchPO

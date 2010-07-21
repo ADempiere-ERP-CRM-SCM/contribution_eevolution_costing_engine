@@ -107,23 +107,6 @@ public class X_M_Cost extends PO implements I_M_Cost, I_Persistent
 		return ii.intValue();
 	}
 
-	/** Set Costing Method.
-		@param CostingMethod 
-		Indicates how Costs will be calculated
-	  */
-	public void setCostingMethod (String CostingMethod)
-	{
-		set_Value (COLUMNNAME_CostingMethod, CostingMethod);
-	}
-
-	/** Get Costing Method.
-		@return Indicates how Costs will be calculated
-	  */
-	public String getCostingMethod () 
-	{
-		return (String)get_Value(COLUMNNAME_CostingMethod);
-	}
-
 	/** Set Accumulated Amt.
 		@param CumulatedAmt 
 		Total Amount

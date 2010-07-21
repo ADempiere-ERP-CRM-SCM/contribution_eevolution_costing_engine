@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.adempiere.engine.CostEngineFactory;
+import org.adempiere.engine.IDocumentLine;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -45,7 +46,7 @@ import org.compiere.util.Env;
  * 			<li>BF [ 2240484 ] Re MatchingPO, MMatchPO doesn't contains Invoice info
  * 
  */
-public class MMatchInv extends X_M_MatchInv
+public class MMatchInv extends X_M_MatchInv implements IDocumentLine
 {
 	/**
 	 * 
@@ -234,12 +235,13 @@ public class MMatchInv extends X_M_MatchInv
 		if (newRecord && success)
 		{				
 			// Elaine 2008/6/20	
-			String err = createMatchInvCostDetail();
+			/*String err = createMatchInvCostDetail();
 			if(err != null && err.length() > 0) 
 			{
 				s_log.warning(err);
 				return false;
-			}
+			}*/
+			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(this);
 		}
 		//
 		return success;
@@ -332,6 +334,7 @@ public class MMatchInv extends X_M_MatchInv
 	
 
 	// Elaine 2008/6/20	
+	/*
 	private String createMatchInvCostDetail()
 	{
 		MInvoiceLine invoiceLine = new MInvoiceLine (getCtx(), getC_InvoiceLine_ID(), get_TrxName());
@@ -396,16 +399,18 @@ public class MMatchInv extends X_M_MatchInv
 				tQty = tQty.add(getQty());
 			
 			// Set Total Amount and Total Quantity from Matched Invoice 
-			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(invoiceLine, null);
+			//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(invoiceLine, null);
+			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(receiptLine);
 			/*MCostDetail.createInvoice(as, getAD_Org_ID(), 
 					getM_Product_ID(), getM_AttributeSetInstance_ID(),
 					invoiceLine.getC_InvoiceLine_ID(), 0,		//	No cost element
 					tAmt, tQty,	getDescription(), get_TrxName(),invoiceLine.get_ID());*/
 			// end MZ
-		}
+		//}
 		
-		return "";
-	}
+		//return "";
+	//}
+	
 	//
 	//AZ Goodwill
 	private String deleteMatchInvCostDetail()
@@ -482,6 +487,36 @@ public class MMatchInv extends X_M_MatchInv
 		return list.toArray (new MMatchInv[list.size()]);
 	}	//	getInOutLine
 	// end Bayu
+
+	@Override
+	public int getM_Locator_ID() {
+		return -1;
+	}
+
+	@Override
+	public BigDecimal getMovementQty() {
+		return getQty();
+	}
+
+	@Override
+	public BigDecimal getPriceActual() {
+		return getC_InvoiceLine().getPriceActual();
+	}
+
+	@Override
+	public int getReversalLine_ID() {
+		return -1;
+	}
+
+	@Override
+	public boolean isSOTrx() {
+		return false;
+	}
+
+	@Override
+	public void setM_Locator_ID(int M_Locator_ID) {
+	;
+	}
 	
 	
 }	//	MMatchInv

@@ -77,19 +77,6 @@ public interface I_M_Cost
 
 	public org.compiere.model.I_C_AcctSchema getC_AcctSchema() throws RuntimeException;
 
-    /** Column name CostingMethod */
-    public static final String COLUMNNAME_CostingMethod = "CostingMethod";
-
-	/** Set Costing Method.
-	  * Indicates how Costs will be calculated
-	  */
-	public void setCostingMethod (String CostingMethod);
-
-	/** Get Costing Method.
-	  * Indicates how Costs will be calculated
-	  */
-	public String getCostingMethod();
-
     /** Column name Created */
     public static final String COLUMNNAME_Created = "Created";
 

@@ -25,8 +25,11 @@ import java.util.Properties;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.acct.DocLine;
 import org.compiere.model.I_AD_WF_Node;
+import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
+import org.compiere.model.I_M_InOutLine;
+import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MClient;
 import org.compiere.model.MCost;
@@ -36,6 +39,8 @@ import org.compiere.model.MCostType;
 import org.compiere.model.MInventoryLine;
 import org.compiere.model.MInvoiceLine;
 import org.compiere.model.MLandedCostAllocation;
+import org.compiere.model.MMatchInv;
+import org.compiere.model.MMatchPO;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
@@ -180,8 +185,12 @@ public class CostEngine
 		.firstOnly();
 	}	
 	
-	public void createCostDetail (IDocumentLine model , MTransaction mtrx)
+	public void createCostDetail (IDocumentLine model)
 	{
+		MTransaction mtrx = getTransaction(model);
+		if(mtrx == null)
+			throw new AdempiereException("Transaction do not exist");
+		
 		//Physical Inventory
 		if(model instanceof MInventoryLine && model.getReversalLine_ID() <= 0)
 		{	
@@ -232,14 +241,14 @@ public class CostEngine
 			}
 		}
 		//Receipt
-		else if (!model.isSOTrx() && !(model instanceof MOrderLine) && !(model instanceof MInvoiceLine)
-	    	&& !(model instanceof MLandedCostAllocation))
-		//if(MTransaction.MOVEMENTTYPE_VendorReceipts.equals(mtrx.getMovementType()))
+		/*else if (!model.isSOTrx() && !(model instanceof MOrderLine) && !(model instanceof MInvoiceLine)
+	    	&& !(model instanceof MLandedCostAllocation))*/
+		if(MTransaction.MOVEMENTTYPE_VendorReceipts.equals(mtrx.getMovementType()))
 		{
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), mtrx.getAD_Client_ID()))
 			{
 				CostComponent cc = new CostComponent(mtrx.getMovementQty(), model.getPriceActual());
-				createCostDetail(model, as, cc, null, false);
+				createCostDetail(model, mtrx ,as, cc, false, false);
 			}
 		}
 	    //Shipment
@@ -339,11 +348,11 @@ public class CostEngine
 			MAcctSchema as, CostComponent cc,
 			Boolean isSOTrx, boolean setProcessed)
 	{
-		final String idColumnName = model.get_TableName()+"_ID";
+		final String idColumnName = CostEngine.getIDColumnName(model);
 		final String trxName = model.get_TrxName();
 		
 		//	Delete Unprocessed zero Differences
-		String sql = "DELETE M_CostDetail "
+		/*String sql = "DELETE M_CostDetail "
 			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
 			+ " AND "+idColumnName+"=?"
 			+ " AND C_AcctSchema_ID=?"
@@ -357,7 +366,7 @@ public class CostEngine
 				trxName);
 		if (no != 0)
 			log.config("Deleted #" + no);
-		
+		*/
 		// Build Description string
 		StringBuilder description = new StringBuilder();
 		if (!Util.isEmpty(model.getDescription(), true))
@@ -368,6 +377,10 @@ public class CostEngine
 		}
 		
 		List<MCost> costs = MCost.getForProduct(as, model);
+		
+		//Validate if exist Cost for Cost Type defined in Account Schema
+		validateCostType(model , costs, as);
+		
 		for (MCost cost : costs)
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
@@ -936,6 +949,23 @@ public class CostEngine
 		}
 	}
 
+
+	public void validateCostType(IDocumentLine model , List<MCost> costs, MAcctSchema as)
+	{
+		for(MCost cost : costs)
+		{
+			if(as.getM_CostType_ID() == cost.getM_CostType_ID())
+				return;
+		}
+		
+		//throw new AdempiereException("Do not exist cost for Cost Type defined in Account Schema");
+		MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
+		MCostType costtype = new  MCostType(model.getCtx() , as.getM_CostType_ID() , model.get_TrxName());
+		MCostElement costelement = MCostElement.getMaterialCostElement(model.getCtx(), costtype.getCostingMethod());
+		MCost  cost = new MCost(product, model.getM_AttributeSetInstance_ID(), as , model.getAD_Org_ID() , costelement.getM_CostElement_ID() ,costtype);
+		cost.saveEx();
+	}
+
 	public MCostDetail[] getCostDetails (DocLine docLine, MAcctSchema as, int AD_Org_ID, String whereClause)
 	{
 		final String whereClauseFinal = "AD_Org_ID=?" 
@@ -954,4 +984,43 @@ public class CostEngine
 		return list.toArray(new MCostDetail[list.size()]);
 	}
 
+
+	public MTransaction getTransaction(IDocumentLine model)
+	{
+		String idColumnName = getIDColumnName(model);
+		int idColumn = getIDColumn(model);		
+		final String whereClause = idColumnName + "=?";
+		return new Query(model.getCtx(), I_M_Transaction.Table_Name,whereClause, model.get_TrxName())
+		.setClient_ID().setParameters(idColumn)
+		.firstOnly();
+	}
+	
+	static public String getIDColumnName(IDocumentLine model)
+	{
+		String idColumnName = model.get_TableName()+"_ID";			
+		if( model instanceof MMatchPO)
+		{
+			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
+		}
+		if( model instanceof MMatchInv)
+		{
+			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
+		}
+		return idColumnName;		
+	}
+	
+	static public int getIDColumn(IDocumentLine model)
+	{
+		int id = model.get_ID();
+			
+		if( model instanceof MMatchPO)
+		{
+			id = ((MMatchPO) model).getM_InOutLine_ID();			
+		}
+		if( model instanceof MMatchInv)
+		{
+			id = ((MMatchInv) model).getM_InOutLine_ID();
+		}
+		return id ;
+	}
 }

@@ -327,6 +327,8 @@ public class MCostDetail extends X_M_CostDetail
 		setCostingMethod(element.getCostingMethod()); 
 		setCurrentCostPrice(cost.getCurrentCostPrice());
 		setCurrentCostPriceLL(cost.getCurrentCostPriceLL());
+		setCumulatedQty(cost.getCumulatedQty());
+		setCumulatedAmt(cost.getCumulatedAmt());
 		//
 		setAmt(amt);
 		setQty(qty);
@@ -549,7 +551,7 @@ public class MCostDetail extends X_M_CostDetail
 //		{
 		MCostType mc = (MCostType)getM_CostType();
 		m_cost = MCost.get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(),
-				mc, null /*getCostingMethod()*/, get_TrxName());
+				mc, get_TrxName());
 		/*if (ce.isFifo() && mc.getName().equalsIgnoreCase("Fifo")   //TODO dont use this!
 				|| ce.isAverageInvoice() && mc.getName().equalsIgnoreCase("Average Invoice"))*/
 
