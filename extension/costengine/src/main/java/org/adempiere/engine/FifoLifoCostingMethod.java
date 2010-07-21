@@ -172,7 +172,6 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			m_costdetail.setCumulatedAmt(m_cost.getCumulatedQty());	
 			m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
 			updateCurrentCost(m_costdetail);
-			m_costdetail.setProcessed(true);
 			m_costdetail.saveEx();
 		}
 	}

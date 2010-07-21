@@ -18,9 +18,9 @@ package org.compiere.acct;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Properties;
 
+import org.adempiere.engine.CostEngine;
 import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCharge;
@@ -28,11 +28,9 @@ import org.compiere.model.MCostDetail;
 import org.compiere.model.MProduct;
 import org.compiere.model.PO;
 import org.compiere.model.ProductCost;
-import org.compiere.model.Query;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
-import org.compiere.util.Util;
 
 /**
  *  Standard Document Line
@@ -760,20 +758,23 @@ public class DocLine
 		}
 		BigDecimal costs = Env.ZERO;
 		BigDecimal qty = Env.ZERO;
-		boolean isSOTrx = false; 
 		for (MCostDetail cd : details)
 		{
-			costs = costs.add(cd.getAmt());
+			if (cd.isProcessed())
+			{
+				// TODO: re-process + cost adjustments
+			}
+			if (cd.isSOTrx())
+				costs = costs.subtract(cd.getAmt());
+			else
+				costs = costs.add(cd.getAmt());
 			qty = qty.add(cd.getQty());
 		
-			if (cd.isSOTrx())
+			if (!cd.isProcessed())
 			{
-				isSOTrx = true; 
+				cd.setProcessed(true);//ancabradau 
+				cd.saveEx();
 			}
-		}
-		if (isSOTrx)
-		{
-			costs = costs.negate(); 
 		}
 		// Check if Qty is same
 		// TODO: check if it's needed
@@ -782,7 +783,6 @@ public class DocLine
 //		{
 //			throw new AdempiereException("Qty not match - LineQty="+lineQty+", CostsQty="+qty);
 //		}
-		
 		return costs;
 	}   //  getProductCosts
 
@@ -1172,33 +1172,8 @@ public class DocLine
 	 */
 	protected MCostDetail[] getCostDetail(MAcctSchema as, int AD_Org_ID)
 	{
-		return getCostDetail(as, AD_Org_ID, p_po.get_TableName() + "_ID=" + p_po.get_ID());
-	}
-	/**
-	 * @return cost detail or null if not found
-	 */
-	private MCostDetail[] getCostDetail(MAcctSchema as, int AD_Org_ID, String whereClause)
-	{
-		// TODO: is this needed?
-//		if (p_po == null)
-//		{
-//			return null;
-//		}
-		final String whereClauseFinal = "AD_Org_ID=?" 
-			+" AND M_Product_ID=?"
-			+" AND Processed=?"
-			+" AND C_AcctSchema_ID=?"
-			+" AND M_CostType_ID=?" //ancabradau
-			+(Util.isEmpty(whereClause, true) ? "" : " AND "+whereClause)
-		;
-		List<MCostDetail> list = new Query(p_po.getCtx(), MCostDetail.Table_Name, whereClauseFinal, getTrxName())
-			.setParameters(new Object[]{AD_Org_ID,
-					getM_Product_ID(),
-					true, as.getC_AcctSchema_ID(),
-					as.getM_CostType_ID()}) //ancabradau
-			.setOrderBy("IsSOTrx ASC") // Receipt First (IsSOTrx=N)
-			.list();
-		return list.toArray(new MCostDetail[list.size()]);
+		CostEngine engine = new CostEngine();
+		return engine.getCostDetails(this, as, AD_Org_ID, p_po.get_TableName() + "_ID=" + p_po.get_ID());
 	}
 
 	public boolean isSOTrx()

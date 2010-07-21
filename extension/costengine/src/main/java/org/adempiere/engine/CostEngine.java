@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.acct.DocLine;
 import org.compiere.model.I_AD_WF_Node;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
@@ -935,5 +936,22 @@ public class CostEngine
 		}
 	}
 
+	public MCostDetail[] getCostDetails (DocLine docLine, MAcctSchema as, int AD_Org_ID, String whereClause)
+	{
+		final String whereClauseFinal = "AD_Org_ID=?" 
+			+" AND M_Product_ID=?"
+			+" AND C_AcctSchema_ID=?"
+			+" AND M_CostType_ID=?" //ancabradau
+			+(Util.isEmpty(whereClause, true) ? "" : " AND "+whereClause)
+		;
+		List<MCostDetail> list = new Query(docLine.getCtx(), MCostDetail.Table_Name, whereClauseFinal, docLine.getTrxName())
+			.setParameters(new Object[]{AD_Org_ID,
+					docLine.getM_Product_ID(),
+					as.getC_AcctSchema_ID(),
+					as.getM_CostType_ID()}) //ancabradau
+			.setOrderBy("IsSOTrx ASC") // Receipt First (IsSOTrx=N)
+			.list();
+		return list.toArray(new MCostDetail[list.size()]);
+	}
 
 }
