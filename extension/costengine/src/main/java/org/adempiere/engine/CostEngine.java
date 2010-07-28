@@ -349,9 +349,6 @@ public class CostEngine
 			MAcctSchema as, CostComponent cc,
 			Boolean isSOTrx, boolean setProcessed)
 	{
-		final String idColumnName = CostEngine.getIDColumnName(model);
-		final String trxName = model.get_TrxName();
-		
 		//	Delete Unprocessed zero Differences
 		/*String sql = "DELETE M_CostDetail "
 			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
@@ -978,14 +975,14 @@ public class CostEngine
 			}
 		}
 		
-		final String whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND"
-								 + I_M_Cost.COLUMNNAME_C_AcctSchema_ID + "=? AND"
-								 + I_M_Cost.COLUMNNAME_M_Product_ID + "=? AND"
-								 + I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID + "=? AND"
-								 + I_M_Cost.COLUMNNAME_M_CostElement_ID + "=? AND"
-								 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=? AND"
+		final String whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_C_AcctSchema_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_M_Product_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_M_CostElement_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=? AND "
 								 + "EXISTS (SELECT 1 FROM M_CostElement ce "
-								 + "WHERE ce.M_CostElement_ID=M_Cost.M_CostElement_ID AND ce.CostingMethod=? AND ce.CostElementType=? ";
+								 + "WHERE ce.M_CostElement_ID=M_Cost.M_CostElement_ID AND ce.CostingMethod=? AND ce.CostElementType=? )";
 		
 			for(MCostElement ce : MCostElement.getByCostingMethod(model.getCtx(), costingMethod))
 			{	

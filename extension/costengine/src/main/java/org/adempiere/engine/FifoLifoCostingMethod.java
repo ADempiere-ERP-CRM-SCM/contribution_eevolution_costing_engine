@@ -6,6 +6,7 @@ package org.adempiere.engine;
 import java.math.BigDecimal;
 import java.util.List;
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
@@ -13,6 +14,7 @@ import org.compiere.model.MCostQueue;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.ProductCost;
+import org.compiere.model.Query;
 import org.compiere.util.Env;
 
 /**
@@ -32,6 +34,11 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 	CostComponent ccs;
 	MCostDetail m_costdetail;
 	Boolean m_setProcessed;
+	BigDecimal m_CumulatedAmt;
+	BigDecimal m_CumulatedQty;
+	BigDecimal m_CurrentCostPrice;
+	BigDecimal m_Amount;
+	BigDecimal m_AdjustCost = Env.ZERO;
 
 	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost,
 			Boolean isSOTrx, Boolean setProcessed)
@@ -42,10 +49,19 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		m_cost = cost;
 		m_isSOTrx = isSOTrx;
 		m_setProcessed = setProcessed;
+		m_costdetail = getCostDetail();
 	}
 
 	public void calculate()
 	{
+		if(m_costdetail != null)
+		{
+			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
+			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
+			m_CumulatedQty = m_cost.getCumulatedQty();
+			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
+			return;
+		}
 		ProductCost pc = new ProductCost (m_model.getCtx(), 
 				m_model.getM_Product_ID(), m_model.getM_AttributeSetInstance_ID(),
 				m_model.get_TrxName());
@@ -78,8 +94,8 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		{
 			if (cQueue.length >0 && m_cost.getCostElement().isFifo())
 				m_cost.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
-			else if (cQueue.length > 1 && m_cost.getCostElement().isLandedCost())
-				m_cost.setCurrentCostPrice(cQueue[1].getCurrentCostPrice());
+			else if (cQueue.length > 0 && m_cost.getCostElement().isLandedCost())
+				m_cost.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
 		}	
 		m_cost.setCurrentQty(m_cost.getCurrentQty().add(m_costdetail.getQty()));
 
@@ -100,11 +116,25 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 
 	public void processCostDetail()
 	{
-		for (MCostDetail m_costdetail : createCostDetails(m_cost, m_model, m_trx, m_setProcessed))
+		if(m_costdetail == null)
 		{
-			if (m_setProcessed)
-				continue;
-		 processCostDetail(m_costdetail);	
+			for (MCostDetail m_costdetail : createCostDetails(m_cost, m_model, m_trx, m_setProcessed))
+			{
+				if (m_setProcessed)
+					continue;
+				processCostDetail(m_costdetail);	
+			}
+		}
+		else {
+			if(!m_AdjustCost.equals(Env.ZERO))
+			{
+				m_costdetail.setCostAdjustment(m_AdjustCost);
+				m_costdetail.setProcessed(false);
+				m_costdetail.setDescription("Adjust Cost");
+				m_costdetail.saveEx();
+				return;
+			}
+			return;
 		}
 	}
 
@@ -174,6 +204,17 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			updateCurrentCost(m_costdetail);
 			m_costdetail.saveEx();
 		}
+	}
+	private MCostDetail getCostDetail()
+	{
+	
+		final String whereClause = MCostDetail.COLUMNNAME_M_Transaction_ID + "=? AND "
+								 + MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+								 + MCostDetail.COLUMNNAME_M_CostElement_ID+ "=?";
+		return new Query (m_model.getCtx(), I_M_CostDetail.Table_Name, whereClause , m_model.get_TrxName())
+		.setParameters(m_trx.getM_Transaction_ID(),m_cost.getCostingMethod(), m_cost.getM_CostElement_ID())
+		.setClient_ID()
+		.firstOnly();
 	}
 }
 
