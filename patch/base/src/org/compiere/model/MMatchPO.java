@@ -1019,7 +1019,7 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 
 	@Override
 	public BigDecimal getPriceActual() {
-		return getInvoicePriceActual();
+		return getOrderLine().getPriceActual();
 	}
 
 	@Override

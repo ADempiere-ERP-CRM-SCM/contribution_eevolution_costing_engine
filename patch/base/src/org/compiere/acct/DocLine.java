@@ -751,7 +751,10 @@ public class DocLine
 	 */
 	public BigDecimal getProductCosts (MAcctSchema as, int AD_Org_ID, boolean zeroCostsOK)
 	{
-		MCostDetail[] details = getCostDetail(as, AD_Org_ID);
+		
+		final String whereClause = null;
+		return Env.ZERO;
+		/*MCostDetail[] details = getCostDetail(as, AD_Org_ID);
 		if (zeroCostsOK && details.length == 0)
 		{
 			return Env.ZERO;
@@ -783,7 +786,8 @@ public class DocLine
 //		{
 //			throw new AdempiereException("Qty not match - LineQty="+lineQty+", CostsQty="+qty);
 //		}
-		return costs;
+		return costs;*/
+		
 	}   //  getProductCosts
 
 	/**

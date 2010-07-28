@@ -26,6 +26,7 @@ import org.adempiere.exceptions.AdempiereException;
 import org.compiere.acct.DocLine;
 import org.compiere.model.I_AD_WF_Node;
 import org.compiere.model.I_C_OrderLine;
+import org.compiere.model.I_M_Cost;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
 import org.compiere.model.I_M_InOutLine;
@@ -952,19 +953,63 @@ public class CostEngine
 
 	public void validateCostType(IDocumentLine model , List<MCost> costs, MAcctSchema as)
 	{
-		for(MCost cost : costs)
+		MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
+		String CostingLevel = product.getCostingLevel(as);
+		int AD_Org_ID = model.getAD_Org_ID();
+		int M_AttributeSetInstance_ID = model.getM_AttributeSetInstance_ID();
+		String costingMethod = as.getCostingMethod();
+		
+		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 		{
-			if(as.getM_CostType_ID() == cost.getM_CostType_ID())
-				return;
+			AD_Org_ID = 0;
+			M_AttributeSetInstance_ID = 0;
+		}
+		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+			M_AttributeSetInstance_ID = 0;
+		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
+			AD_Org_ID = 0;
+		//	Costing Method
+		if (costingMethod == null)
+		{
+			costingMethod = product.getCostingMethod(as);
+			if (costingMethod == null)
+			{
+				throw new IllegalArgumentException("No Costing Method");
+			}
 		}
 		
-		//throw new AdempiereException("Do not exist cost for Cost Type defined in Account Schema");
-		MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
-		MCostType costtype = new  MCostType(model.getCtx() , as.getM_CostType_ID() , model.get_TrxName());
-		MCostElement costelement = MCostElement.getMaterialCostElement(model.getCtx(), costtype.getCostingMethod());
-		MCost  cost = new MCost(product, model.getM_AttributeSetInstance_ID(), as , model.getAD_Org_ID() , costelement.getM_CostElement_ID() ,costtype);
-		cost.saveEx();
+		final String whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND"
+								 + I_M_Cost.COLUMNNAME_C_AcctSchema_ID + "=? AND"
+								 + I_M_Cost.COLUMNNAME_M_Product_ID + "=? AND"
+								 + I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID + "=? AND"
+								 + I_M_Cost.COLUMNNAME_M_CostElement_ID + "=? AND"
+								 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=? AND"
+								 + "EXISTS (SELECT 1 FROM M_CostElement ce "
+								 + "WHERE ce.M_CostElement_ID=M_Cost.M_CostElement_ID AND ce.CostingMethod=? AND ce.CostElementType=? ";
+		
+			for(MCostElement ce : MCostElement.getByCostingMethod(model.getCtx(), costingMethod))
+			{	
+				boolean exists = new Query(model.getCtx(), I_M_Cost.Table_Name, whereClause , model.get_TrxName())
+				.setParameters(
+				AD_Org_ID, as.getC_AcctSchema_ID(), model.getM_Product_ID(), 
+				M_AttributeSetInstance_ID, ce.getM_CostElement_ID(),as.getM_CostType_ID(), 
+				costingMethod ,MCostElement.COSTELEMENTTYPE_Material).match();
+				if (exists)
+					return;
+			}					
+		
+			MCostType costtype = new  MCostType(model.getCtx() , as.getM_CostType_ID() , model.get_TrxName());
+			MCostElement costelement = MCostElement.getMaterialCostElement(model.getCtx(), costingMethod);
+			if(costelement == null)
+			{	
+				throw new AdempiereException("Error do not exist material cost element for method cost " + as.getCostingMethod());
+			}	
+			
+			MCost  cost = new MCost(product, model.getM_AttributeSetInstance_ID(), as , model.getAD_Org_ID() , costelement.getM_CostElement_ID(),costtype);
+			cost.saveEx();
+			return;
 	}
+
 
 	public MCostDetail[] getCostDetails (DocLine docLine, MAcctSchema as, int AD_Org_ID, String whereClause)
 	{

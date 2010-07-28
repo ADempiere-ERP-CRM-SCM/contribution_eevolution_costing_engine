@@ -57,6 +57,7 @@ public class StandardCostingMethod implements ICostingMethod {
 		
 		m_Amount = m_model.getMovementQty().multiply(m_cost.getCurrentCostPrice());
 		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
+		m_CumulatedQty = m_cost.getCumulatedQty().add( m_model.getMovementQty());
 		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
 	
 		
@@ -161,8 +162,8 @@ public class StandardCostingMethod implements ICostingMethod {
 
 	public void process() {
 		calculate();
-		createCostDetail();
 		createCostAdjutment();
+		createCostDetail();		
 		updateCurrentCost();
 	}
 	/*

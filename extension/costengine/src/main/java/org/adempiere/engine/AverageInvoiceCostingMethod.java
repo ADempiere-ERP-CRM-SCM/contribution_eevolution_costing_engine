@@ -48,16 +48,17 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 	
 	public void calculate()
 	{
-		m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
+		
 		if(m_costdetail != null)
 		{
+			m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
 			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
-			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
+			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_costdetail.getAmt()).add(m_AdjustCost);
 			m_CumulatedQty = m_cost.getCumulatedQty();
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
 			return;
 		}
-		
+		m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
 		m_CumulatedQty = m_cost.getCumulatedQty().add(m_model.getMovementQty());
 		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
 		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
