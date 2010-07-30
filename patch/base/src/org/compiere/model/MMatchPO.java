@@ -630,7 +630,7 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 				s_log.warning(err);
 				return false;
 			}*/
-			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(this);
+			
 		}
 		
 		return true;
@@ -648,6 +648,7 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 	{
 		//	Purchase Order Delivered/Invoiced
 		//	(Reserved in VMatch and MInOut.completeIt)
+		CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(this);
 		if (success && getC_OrderLine_ID() != 0)
 		{
 			MOrderLine orderLine = getOrderLine();

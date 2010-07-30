@@ -54,14 +54,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 
 	public void calculate()
 	{
-		if(m_costdetail != null)
-		{
-			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
-			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
-			m_CumulatedQty = m_cost.getCumulatedQty();
-			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
-			return;
-		}
+
 		ProductCost pc = new ProductCost (m_model.getCtx(), 
 				m_model.getM_Product_ID(), m_model.getM_AttributeSetInstance_ID(),
 				m_model.get_TrxName());
@@ -125,8 +118,15 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				processCostDetail(m_costdetail);	
 			}
 		}
-		else {
-			if(!m_AdjustCost.equals(Env.ZERO))
+		else 
+		{
+			m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
+			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
+			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
+			m_CumulatedQty = m_cost.getCumulatedQty();
+			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
+
+			if (m_AdjustCost.compareTo(Env.ZERO) != 0 )
 			{
 				m_costdetail.setCostAdjustment(m_AdjustCost);
 				m_costdetail.setProcessed(false);
