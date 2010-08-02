@@ -25,6 +25,7 @@ import java.util.Properties;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.acct.DocLine;
 import org.compiere.model.I_AD_WF_Node;
+import org.compiere.model.I_C_InvoiceLine;
 import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_M_Cost;
 import org.compiere.model.I_M_CostDetail;
@@ -37,6 +38,7 @@ import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
+import org.compiere.model.MInOutLine;
 import org.compiere.model.MInventoryLine;
 import org.compiere.model.MInvoiceLine;
 import org.compiere.model.MLandedCostAllocation;
@@ -374,11 +376,11 @@ public class CostEngine
 			description.append(isSOTrx ? "(|->)" : "(|<-)");
 		}
 		
-		List<MCost> costs = MCost.getForProduct(as, model);
-		
 		//Validate if exist Cost for Cost Type defined in Account Schema
-		validateCostType(model , costs, as);
+		validateCostType(model , as);
 		
+		List<MCost> costs = MCost.getForProduct(as, model);
+
 		for (MCost cost : costs)
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
@@ -948,9 +950,9 @@ public class CostEngine
 	}
 
 
-	public void validateCostType(IDocumentLine model , List<MCost> costs, MAcctSchema as)
+	public void validateCostType(IDocumentLine model , MAcctSchema as)
 	{
-		MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
+		MProduct product = new MProduct(model.getCtx(), model.getM_Product_ID(), model.get_TrxName());
 		String CostingLevel = product.getCostingLevel(as);
 		int AD_Org_ID = model.getAD_Org_ID();
 		int M_AttributeSetInstance_ID = model.getM_AttributeSetInstance_ID();
@@ -975,36 +977,45 @@ public class CostEngine
 			}
 		}
 		
-		final String whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND "
+		String whereClause = I_M_CostElement.COLUMNNAME_CostElementType + "=?";
+		MCostElement ce = new Query(model.getCtx(), I_M_CostElement.Table_Name, whereClause, model.get_TrxName())
+		.setClient_ID()
+		.setOnlyActiveRecords(true)
+		.setParameters(MCostElement.COSTELEMENTTYPE_Material)
+		.setOrderBy(MCostElement.COLUMNNAME_M_CostElement_ID +","+MCostElement.COLUMNNAME_CostElementType)
+		.first();
+		 
+		 if(ce == null)
+			 throw new IllegalArgumentException("No Costing Elemnt Material Type"); 
+		 
+		MCostType costtype = new  MCostType(model.getCtx() , as.getM_CostType_ID() , model.get_TrxName());
+		if(costtype== null)
+		{	
+			throw new AdempiereException("Error do not exist material cost element for method cost " + as.getCostingMethod());
+		}	
+		
+		whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND "
 								 + I_M_Cost.COLUMNNAME_C_AcctSchema_ID + "=? AND "
 								 + I_M_Cost.COLUMNNAME_M_Product_ID + "=? AND "
 								 + I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID + "=? AND "
 								 + I_M_Cost.COLUMNNAME_M_CostElement_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=? AND "
-								 + "EXISTS (SELECT 1 FROM M_CostElement ce "
-								 + "WHERE ce.M_CostElement_ID=M_Cost.M_CostElement_ID AND ce.CostingMethod=? AND ce.CostElementType=? )";
-		
-			for(MCostElement ce : MCostElement.getByCostingMethod(model.getCtx(), costingMethod))
-			{	
-				boolean exists = new Query(model.getCtx(), I_M_Cost.Table_Name, whereClause , model.get_TrxName())
-				.setParameters(
-				AD_Org_ID, as.getC_AcctSchema_ID(), model.getM_Product_ID(), 
-				M_AttributeSetInstance_ID, ce.getM_CostElement_ID(),as.getM_CostType_ID(), 
-				costingMethod ,MCostElement.COSTELEMENTTYPE_Material).match();
-				if (exists)
-					return;
-			}					
-		
-			MCostType costtype = new  MCostType(model.getCtx() , as.getM_CostType_ID() , model.get_TrxName());
-			MCostElement costelement = MCostElement.getMaterialCostElement(model.getCtx(), costingMethod);
-			if(costelement == null)
-			{	
-				throw new AdempiereException("Error do not exist material cost element for method cost " + as.getCostingMethod());
-			}	
-			
-			MCost  cost = new MCost(product, model.getM_AttributeSetInstance_ID(), as , model.getAD_Org_ID() , costelement.getM_CostElement_ID(),costtype);
+								 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=?";
+
+		MCost cost = new Query(model.getCtx(), I_M_Cost.Table_Name, whereClause, model.get_TrxName())
+		.setClient_ID()
+		.setParameters(AD_Org_ID, 
+		as.getC_AcctSchema_ID(), 
+		model.getM_Product_ID(), 
+		M_AttributeSetInstance_ID, 
+		ce.getM_CostElement_ID(), 
+		as.getM_CostType_ID())	
+		.first();
+		if(cost == null)
+		{	
+			cost = new MCost(product, M_AttributeSetInstance_ID, as , AD_Org_ID , ce.getM_CostElement_ID() , costtype);
 			cost.saveEx();
-			return;
+		}	
+		return;
 	}
 
 
@@ -1029,8 +1040,29 @@ public class CostEngine
 
 	public MTransaction getTransaction(IDocumentLine model)
 	{
-		String idColumnName = getIDColumnName(model);
-		int idColumn = getIDColumn(model);		
+		String idColumnName = null;
+		int idColumn = 0;
+		if( model instanceof MInOutLine)
+		{
+			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
+			idColumn = ((MInOutLine) model).getM_InOutLine_ID();	
+		}
+		else if (model instanceof MMatchPO)
+		{
+			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
+			idColumn = ((MMatchPO) model).getM_InOutLine_ID();	
+		}
+		else if(model instanceof MMatchInv)
+		{
+			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
+			idColumn = ((MMatchInv) model).getM_InOutLine_ID();	
+		}
+		else if(model instanceof MInvoiceLine)
+		{
+			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
+			idColumn = ((MInvoiceLine) model).getM_InOutLine_ID();	
+		}
+	
 		final String whereClause = idColumnName + "=?";
 		return new Query(model.getCtx(), I_M_Transaction.Table_Name,whereClause, model.get_TrxName())
 		.setClient_ID().setParameters(idColumn)
@@ -1042,11 +1074,11 @@ public class CostEngine
 		String idColumnName = model.get_TableName()+"_ID";			
 		if( model instanceof MMatchPO)
 		{
-			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
+			idColumnName = I_C_OrderLine.COLUMNNAME_C_OrderLine_ID;
 		}
 		if( model instanceof MMatchInv)
 		{
-			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
+			idColumnName = I_C_InvoiceLine.COLUMNNAME_C_InvoiceLine_ID;
 		}
 		return idColumnName;		
 	}
@@ -1057,11 +1089,11 @@ public class CostEngine
 			
 		if( model instanceof MMatchPO)
 		{
-			id = ((MMatchPO) model).getM_InOutLine_ID();			
+			id = ((MMatchPO) model).getC_OrderLine_ID();			
 		}
 		if( model instanceof MMatchInv)
 		{
-			id = ((MMatchInv) model).getM_InOutLine_ID();
+			id = ((MMatchInv) model).getC_InvoiceLine_ID();
 		}
 		return id ;
 	}

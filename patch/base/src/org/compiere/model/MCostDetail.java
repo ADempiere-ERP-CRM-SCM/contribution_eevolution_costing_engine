@@ -323,8 +323,8 @@ public class MCostDetail extends X_M_CostDetail
 		//
 		setM_CostType_ID(cost.getM_CostType_ID());
 		setM_CostElement_ID(cost.getM_CostElement_ID());
-		MCostElement element = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
-		setCostingMethod(element.getCostingMethod()); 
+		MCostType ct = new MCostType(cost.getCtx(), cost.getM_CostType_ID(), cost.get_TrxName());
+		setCostingMethod(ct.getCostingMethod()); 
 		setCurrentCostPrice(cost.getCurrentCostPrice());
 		setCurrentCostPriceLL(cost.getCurrentCostPriceLL());
 		setCumulatedQty(cost.getCumulatedQty());

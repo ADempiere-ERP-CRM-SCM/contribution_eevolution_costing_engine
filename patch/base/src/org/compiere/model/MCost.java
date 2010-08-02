@@ -1918,7 +1918,7 @@ public class MCost extends X_M_Cost
 	}
 
 	public String getCostingMethod() {
-		return getM_CostElement().getCostingMethod();
+		return getM_CostType().getCostingMethod();
 	}
 
 }	//	MCost

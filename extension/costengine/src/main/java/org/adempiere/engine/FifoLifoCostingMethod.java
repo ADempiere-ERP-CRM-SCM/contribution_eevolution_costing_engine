@@ -5,8 +5,8 @@ package org.adempiere.engine;
 
 import java.math.BigDecimal;
 import java.util.List;
+
 import org.adempiere.exceptions.AdempiereException;
-import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
@@ -14,7 +14,6 @@ import org.compiere.model.MCostQueue;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.ProductCost;
-import org.compiere.model.Query;
 import org.compiere.util.Env;
 
 /**
@@ -24,21 +23,7 @@ import org.compiere.util.Env;
 public class FifoLifoCostingMethod extends AbstractCostingMethod
 {
 
-
-	MAcctSchema m_as;
-	IDocumentLine m_model;
-	MTransaction m_trx; 
-	MCost m_cost;
-	Boolean m_isSOTrx;
-	CostComponent m_CurrentCost;
-	CostComponent ccs;
-	MCostDetail m_costdetail;
 	Boolean m_setProcessed;
-	BigDecimal m_CumulatedAmt;
-	BigDecimal m_CumulatedQty;
-	BigDecimal m_CurrentCostPrice;
-	BigDecimal m_Amount;
-	BigDecimal m_AdjustCost = Env.ZERO;
 
 	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost,
 			Boolean isSOTrx, Boolean setProcessed)
@@ -141,7 +126,6 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 	//	need this for reversal documents
 	public void processCostDetail(MCostDetail m_costdetail)
 	{
-		
 		boolean addition = m_costdetail.getQty().signum() > 0;
 		MAcctSchema as =  MAcctSchema.get(m_costdetail.getCtx(), m_costdetail.getC_AcctSchema_ID());
 		int precision = as.getCostingPrecision();
@@ -205,18 +189,4 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			m_costdetail.saveEx();
 		}
 	}
-	private MCostDetail getCostDetail()
-	{
-	
-		final String whereClause = MCostDetail.COLUMNNAME_M_Transaction_ID + "=? AND "
-								 + MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-								 + MCostDetail.COLUMNNAME_M_CostElement_ID+ "=?";
-		return new Query (m_model.getCtx(), I_M_CostDetail.Table_Name, whereClause , m_model.get_TrxName())
-		.setParameters(m_trx.getM_Transaction_ID(),m_cost.getCostingMethod(), m_cost.getM_CostElement_ID())
-		.setClient_ID()
-		.firstOnly();
-	}
 }
-
-
-		

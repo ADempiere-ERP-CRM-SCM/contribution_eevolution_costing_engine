@@ -21,19 +21,7 @@ import org.compiere.util.Util;
  * @author victor.perez@e-evolution.com, www.e-evolution.com
  * 
  */
-public class AverageInvoiceCostingMethod implements ICostingMethod {
-
-	MAcctSchema m_as;
-	IDocumentLine m_model;
-	MTransaction m_trx; 
-	MCost m_cost;
-	Boolean m_isSOTrx;
-	MCostDetail m_costdetail;
-	BigDecimal m_CumulatedAmt;
-	BigDecimal m_CumulatedQty;
-	BigDecimal m_CurrentCostPrice;
-	BigDecimal m_Amount;
-	BigDecimal m_AdjustCost = Env.ZERO;
+public class AverageInvoiceCostingMethod extends AbstractCostingMethod implements ICostingMethod {
 	
 	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost,
 			Boolean isSOTrx, Boolean setProcessed)
@@ -48,28 +36,28 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 	
 	public void calculate()
 	{
-		
 		if(m_costdetail != null)
 		{
 			m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
-			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
-			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_costdetail.getAmt()).add(m_AdjustCost);
-			m_CumulatedQty = m_cost.getCumulatedQty();
-			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
+			m_CumulatedQty = m_costdetail.getCumulatedQty().add(m_model.getMovementQty());
+			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount);
+			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			m_AdjustCost = m_CurrentCostPrice.multiply(m_cost.getCumulatedQty()).subtract(m_cost.getCumulatedAmt());	
 			return;
 		}
 		m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
 		m_CumulatedQty = m_cost.getCumulatedQty().add(m_model.getMovementQty());
-		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
-		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
+		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount);
+		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 	}
 	
 	private void createCostDetail()
 	{
-		final String idColumnName = m_model.get_TableName()+"_ID";			
+		final String idColumnName = CostEngine.getIDColumnName(m_model);			
 		if(m_costdetail == null)
 		{				
-			m_costdetail = new MCostDetail(m_cost, m_model.getAD_Org_ID(), m_Amount , m_model.getMovementQty());
+			m_costdetail = new MCostDetail(m_cost, m_model.getAD_Org_ID(), m_CurrentCostPrice.multiply(m_model.getMovementQty()) , m_model.getMovementQty());
+			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
 		}		
 		else
 		{
@@ -78,9 +66,9 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 				m_costdetail.setCostAdjustment(m_AdjustCost);
 				m_costdetail.setProcessed(false);
 				m_costdetail.setDescription("Adjust Cost");
-				m_costdetail.saveEx();
-				return;
 			}
+			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
+			m_costdetail.saveEx();
 			return;
 		}
 		if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, m_model.get_ID()))
@@ -89,8 +77,9 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 			m_costdetail.setIsSOTrx(m_isSOTrx);
 		else
 			m_costdetail.setIsSOTrx(m_model.isSOTrx());	
+		
 		m_costdetail.setCumulatedQty(m_cost.getCumulatedQty());
-		m_costdetail.setCumulatedAmt(m_cost.getCumulatedQty());	
+		m_costdetail.setCumulatedAmt(m_cost.getCumulatedAmt());	
 		m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
 		
 		StringBuilder description = new StringBuilder();
@@ -186,17 +175,11 @@ public class AverageInvoiceCostingMethod implements ICostingMethod {
 		// TODO Auto-generated method stub
 		
 	}
-	
-	
-	private MCostDetail getCostDetail()
-	{
-	
-		final String whereClause = MCostDetail.COLUMNNAME_M_Transaction_ID + "=? AND "
-								 + MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-								 + MCostDetail.COLUMNNAME_M_CostElement_ID+ "=?";
-		return new Query (m_model.getCtx(), I_M_CostDetail.Table_Name, whereClause , m_model.get_TrxName())
-		.setParameters(m_trx.getM_Transaction_ID(),m_cost.getCostingMethod(), m_cost.getM_CostElement_ID())
-		.setClient_ID()
-		.firstOnly();
+
+	@Override
+	protected List<CostComponent> getCalculatedCosts() {
+		// TODO Auto-generated method stub
+		return null;
 	}
+
 }

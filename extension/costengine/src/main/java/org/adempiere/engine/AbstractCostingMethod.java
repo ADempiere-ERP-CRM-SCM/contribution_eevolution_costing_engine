@@ -3,12 +3,15 @@
  */
 package org.adempiere.engine;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.I_C_OrderLine;
+import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_InOutLine;
+import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MInventoryLine;
@@ -16,7 +19,9 @@ import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.MTransaction;
+import org.compiere.model.Query;
 import org.compiere.util.CLogger;
+import org.compiere.util.Env;
 import org.compiere.util.Util;
 
 
@@ -28,10 +33,21 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 {
 	protected final CLogger log = CLogger.getCLogger (getClass());
 
+	MAcctSchema m_as;
+	IDocumentLine m_model;
+	MTransaction m_trx; 
+	MCost m_cost;
+	Boolean m_isSOTrx;
+	MCostDetail m_costdetail = null;
+	BigDecimal m_CumulatedAmt = Env.ZERO;
+	BigDecimal m_CumulatedQty = Env.ZERO;
+	BigDecimal m_CurrentCostPrice = Env.ZERO;
+	BigDecimal m_Amount= Env.ZERO;
+	BigDecimal m_AdjustCost = Env.ZERO;
 
 	protected List<MCostDetail> createCostDetails(MCost cost, IDocumentLine model,
 			MTransaction mtrx, boolean setProcessed)
-			{ 
+	{ 
 		final String idColumnName;
 		if (model instanceof MMatchPO)
 		{
@@ -109,4 +125,16 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			}
 	
 	protected abstract List<CostComponent> getCalculatedCosts();
+	
+	public MCostDetail getCostDetail()
+	{
+		final String whereClause = MCostDetail.COLUMNNAME_M_Transaction_ID + "=? AND "
+								 + MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+								 + MCostDetail.COLUMNNAME_M_CostType_ID+ "=? AND "
+								 + MCostDetail.COLUMNNAME_M_CostElement_ID+ "=?";
+		return new Query (m_model.getCtx(), I_M_CostDetail.Table_Name, whereClause , m_model.get_TrxName())
+		.setParameters(m_trx.getM_Transaction_ID(),m_cost.getCostingMethod(), m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID())
+		.setClient_ID()
+		.firstOnly();
+	}
 }

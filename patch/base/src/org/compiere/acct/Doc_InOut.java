@@ -24,6 +24,7 @@ import java.util.logging.Level;
 
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
+import org.compiere.model.I_M_CostType;
 import org.compiere.model.I_M_InOutLine;
 import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
@@ -517,11 +518,12 @@ public class Doc_InOut extends Doc
 	{
 		final String whereClause = I_M_CostDetail.COLUMNNAME_M_InOutLine_ID + "=? AND "
 								 + I_M_CostDetail.COLUMNNAME_M_Product_ID   + "=? AND "
+								 + I_M_CostDetail.COLUMNNAME_M_CostType_ID	+ "=? AND "
 								 + I_M_CostDetail.COLUMNNAME_CostingMethod  + "=?";
 		
 		return new Query(getCtx(), I_M_CostDetail.Table_Name , whereClause , getTrxName())
 		.setClient_ID()
-		.setParameters(line.get_ID() , line.getM_Product_ID(), as.getCostingMethod())
+		.setParameters(line.get_ID() , line.getM_Product_ID(), as.getM_CostType_ID(), as.getCostingMethod())
 		.list();
 	}
 
