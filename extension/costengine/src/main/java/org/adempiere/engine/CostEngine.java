@@ -1063,10 +1063,14 @@ public class CostEngine
 			idColumn = ((MInvoiceLine) model).getM_InOutLine_ID();	
 		}
 	
-		final String whereClause = idColumnName + "=?";
-		return new Query(model.getCtx(), I_M_Transaction.Table_Name,whereClause, model.get_TrxName())
+		final String whereClause = idColumnName + "=?" ;
+		List<MTransaction> list = new Query(model.getCtx(), I_M_Transaction.Table_Name,whereClause, model.get_TrxName())
 		.setClient_ID().setParameters(idColumn)
-		.firstOnly();
+		.list();
+		MTransaction[] mtrx = list.toArray(new MTransaction[list.size()]);
+		if (mtrx.length == 1)
+			return mtrx[0];
+		else return mtrx[mtrx.length-1];
 	}
 	
 	static public String getIDColumnName(IDocumentLine model)
