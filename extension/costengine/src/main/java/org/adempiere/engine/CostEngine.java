@@ -251,17 +251,17 @@ public class CostEngine
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), mtrx.getAD_Client_ID()))
 			{
 				CostComponent cc = new CostComponent(mtrx.getMovementQty(), model.getPriceActual());
-				createCostDetail(model, mtrx ,as, cc, false, false);
+				createCostDetail(model, mtrx ,as, cc, model.isSOTrx(), false);
 			}
 		}
 	    //Shipment
-		else if (model.isSOTrx())
+		else if (MTransaction.MOVEMENTTYPE_CustomerShipment.equals(mtrx.getMovementType()))
 		{
 			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), model.getAD_Client_ID()))
 			{
 				createCostDetail(model, mtrx, as,
 						null, // CostComponent will be automatically fetched in this method
-						null, // IsSOTrx = null
+						model.isSOTrx(), // IsSOTrx = null
 						false); // setProcessed = false
 
 			}
@@ -351,23 +351,6 @@ public class CostEngine
 			MAcctSchema as, CostComponent cc,
 			Boolean isSOTrx, boolean setProcessed)
 	{
-		//	Delete Unprocessed zero Differences
-		/*String sql = "DELETE M_CostDetail "
-			+ "WHERE Processed='N' AND COALESCE(DeltaAmt,0)=0 AND COALESCE(DeltaQty,0)=0"
-			+ " AND "+idColumnName+"=?"
-			+ " AND C_AcctSchema_ID=?"
-			+ " AND M_AttributeSetInstance_ID=?";
-		if (isSOTrx != null)
-		{
-			sql += " AND "+I_M_CostDetail.COLUMNNAME_IsSOTrx+"="+(isSOTrx ? "'Y'" : "'N'");
-		}
-		int no = DB.executeUpdateEx(sql,
-				new Object[]{model.get_ID(), as.getC_AcctSchema_ID(), mtrx.getM_AttributeSetInstance_ID()},
-				trxName);
-		if (no != 0)
-			log.config("Deleted #" + no);
-		*/
-		// Build Description string
 		StringBuilder description = new StringBuilder();
 		if (!Util.isEmpty(model.getDescription(), true))
 			description.append(model.getDescription());
@@ -1037,7 +1020,7 @@ public class CostEngine
 		return list.toArray(new MCostDetail[list.size()]);
 	}
 
-
+	//TODO: validate the implementation of ASI
 	public MTransaction getTransaction(IDocumentLine model)
 	{
 		String idColumnName = null;

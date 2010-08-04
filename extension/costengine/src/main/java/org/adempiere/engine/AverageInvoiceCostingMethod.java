@@ -36,17 +36,26 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	
 	public void calculate()
 	{
+		if(m_trx.getMovementType().endsWith("-"))
+		{	
+			m_CurrentCostPrice = m_cost.getCurrentCostPrice();
+			m_Amount = m_trx.getMovementQty().multiply(m_CurrentCostPrice);
+			m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
+			m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount);
+			return;
+		}	
+		
 		if(m_costdetail != null)
 		{
-			m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
-			m_CumulatedQty = m_costdetail.getCumulatedQty().add(m_model.getMovementQty());
+			m_Amount = m_trx.getMovementQty().multiply(m_model.getPriceActual());	
+			m_CumulatedQty = m_costdetail.getCumulatedQty().add(m_trx.getMovementQty());
 			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount);
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			m_AdjustCost = m_CurrentCostPrice.multiply(m_cost.getCumulatedQty()).subtract(m_cost.getCumulatedAmt());	
 			return;
 		}
-		m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
-		m_CumulatedQty = m_cost.getCumulatedQty().add(m_model.getMovementQty());
+		m_Amount = m_trx.getMovementQty().multiply(m_model.getPriceActual());	
+		m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
 		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount);
 		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 	}
@@ -56,7 +65,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		final String idColumnName = CostEngine.getIDColumnName(m_model);			
 		if(m_costdetail == null)
 		{				
-			m_costdetail = new MCostDetail(m_cost, m_model.getAD_Org_ID(), m_CurrentCostPrice.multiply(m_model.getMovementQty()) , m_model.getMovementQty());
+			m_costdetail = new MCostDetail(m_cost, m_model.getAD_Org_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty());
 			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
 		}		
 		else
@@ -96,7 +105,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		return;
 	}
 	
-	private void updateCurrentCost()
+	private void updateInventoryValue()
 	{
 		m_cost.setCurrentCostPrice(m_CurrentCostPrice);
 		m_cost.setCumulatedQty(m_CumulatedQty);
@@ -105,10 +114,11 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	}
 
 	public void process() {
+
 		calculate();
 		createCostAdjutment();
-		createCostDetail();
-		updateCurrentCost();
+		createCostDetail();		
+		updateInventoryValue();
 	}
 	
 	public void createCostAdjutment()
