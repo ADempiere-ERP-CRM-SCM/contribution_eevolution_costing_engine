@@ -180,6 +180,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		invoice.saveEx();
 		
 		assertCostInvoice(product, receiptLine, as, trxName);
+		
+		//Reverse Material Receipt
+		receipt.processIt(DocAction.ACTION_Reverse_Correct);
+		receipt.saveEx();
+		
 	}
 	
 	/**

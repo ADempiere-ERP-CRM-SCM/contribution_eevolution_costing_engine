@@ -4,6 +4,8 @@
 package org.adempiere.engine;
 
 import java.math.BigDecimal;
+import java.util.List;
+
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
@@ -14,28 +16,23 @@ import org.compiere.util.CLogger;
  * @author anca_bradau
  * 
  */
-public class AveragePOCostingMethod implements ICostingMethod {
+public class AveragePOCostingMethod extends  AbstractCostingMethod implements ICostingMethod {
 
-	MAcctSchema m_as;
-	IDocumentLine m_model;
-	MTransaction m_trx; 
-	MCost m_cost;
-	Boolean m_isSOTrx;
-	CostComponent m_CurrentCost;
-	CostComponent cc;
-	MCostDetail m_costdetail;
-	BigDecimal m_CumulatedAmt;
-	BigDecimal m_CumulatedQty;
-	BigDecimal m_CurrentCostPrice;
 	
-	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx,
-			MCost cost, Boolean isSOTrx, Boolean setProcessed)
+	public void setCostingMethod (MAcctSchema as,MTransaction mtrx,
+			MCost cost, BigDecimal price , Boolean isSOTrx)
 	{
 		m_as = as;
-		m_model = model;
+		m_model = mtrx.getDocumentLine();
 		m_trx  = mtrx;
 		m_cost = cost;
+		m_price = price;
 		m_isSOTrx = isSOTrx;
+	}
+	
+	public void setDocumentLine(IDocumentLine docLine)
+	{
+		m_model = docLine;
 	}
 	
 	public void process()
@@ -69,6 +66,12 @@ public class AveragePOCostingMethod implements ICostingMethod {
 	public void processCostDetail(MCostDetail mCostdetail) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	protected List<CostComponent> getCalculatedCosts() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 		

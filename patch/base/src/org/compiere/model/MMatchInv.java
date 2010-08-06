@@ -234,14 +234,11 @@ public class MMatchInv extends X_M_MatchInv implements IDocumentLine
 	{
 		if (newRecord && success)
 		{				
-			// Elaine 2008/6/20	
-			/*String err = createMatchInvCostDetail();
-			if(err != null && err.length() > 0) 
+			MInOutLine inout_line = (MInOutLine) getM_InOutLine();
+			for (MTransaction trx: MTransaction.getByInOutLine(inout_line))
 			{
-				s_log.warning(err);
-				return false;
-			}*/
-			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(this);
+				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx, this);
+			}
 		}
 		//
 		return success;
@@ -518,5 +515,9 @@ public class MMatchInv extends X_M_MatchInv implements IDocumentLine
 	;
 	}
 	
+
+	public IDocumentLine getReversalDocumentLine() {
+		return null;
+	}
 	
 }	//	MMatchInv

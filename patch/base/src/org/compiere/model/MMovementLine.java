@@ -376,4 +376,9 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine
 	public Timestamp getDateAcct() {
 		return getParent().getMovementDate();
 	}
+	
+
+	public IDocumentLine getReversalDocumentLine() {
+		return (IDocumentLine) getReversalLine();
+	}
 }	//	MMovementLine

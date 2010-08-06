@@ -23,19 +23,25 @@ import org.compiere.util.Util;
  */
 public class AverageInvoiceCostingMethod extends AbstractCostingMethod implements ICostingMethod {
 	
-	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost,
-			Boolean isSOTrx, Boolean setProcessed)
+	public void setCostingMethod (MAcctSchema as, MTransaction mtrx, MCost cost,BigDecimal price,
+			Boolean isSOTrx)
 	{
-		m_as = as;
-		m_model = model;
+		m_as = as;		
 		m_trx  = mtrx;
 		m_cost = cost;
+		m_price = price;
 		m_isSOTrx = isSOTrx;
-		m_costdetail = getCostDetail();
+		m_model = mtrx.getDocumentLine();
+		m_costdetail = getCostDetail(mtrx);
 	}
 	
+
 	public void calculate()
-	{
+	{	
+		if(m_model.getReversalLine_ID() > 0)
+			return;
+		
+		
 		if(m_trx.getMovementType().endsWith("-"))
 		{	
 			m_CurrentCostPrice = m_cost.getCurrentCostPrice();
@@ -47,14 +53,14 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		
 		if(m_costdetail != null)
 		{
-			m_Amount = m_trx.getMovementQty().multiply(m_model.getPriceActual());	
+			m_Amount = m_trx.getMovementQty().multiply(m_price);	
 			m_CumulatedQty = m_costdetail.getCumulatedQty().add(m_trx.getMovementQty());
 			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount);
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			m_AdjustCost = m_CurrentCostPrice.multiply(m_cost.getCumulatedQty()).subtract(m_cost.getCumulatedAmt());	
 			return;
 		}
-		m_Amount = m_trx.getMovementQty().multiply(m_model.getPriceActual());	
+		m_Amount = m_trx.getMovementQty().multiply(m_price);	
 		m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
 		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount);
 		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
@@ -62,6 +68,12 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	
 	private void createCostDetail()
 	{
+		if(m_model.getReversalLine_ID() > 0)
+		{	
+			createReveralCostDetail(m_model);
+			return;
+		}
+		
 		final String idColumnName = CostEngine.getIDColumnName(m_model);			
 		if(m_costdetail == null)
 		{				

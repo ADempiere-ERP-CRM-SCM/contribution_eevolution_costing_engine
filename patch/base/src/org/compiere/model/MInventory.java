@@ -459,19 +459,6 @@ public class MInventory extends X_M_Inventory implements DocAction
 							m_processMsg = "Transaction not inserted(2)";
 							return DocAction.STATUS_Invalid;
 						}
-						if (!isReversal())
-						{	
-							//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line, mtrx);
-							CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line);
-							//	   createCostDetail(mtrx);
-						}
-						else 
-						{
-							//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line, mtrx);
-							CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line);
-							//   createCostDetail(mtrx, line.getReversalLine_ID());						
-						}
-
 						qtyDiff = QtyNew;						
 
 					}	
@@ -521,18 +508,8 @@ public class MInventory extends X_M_Inventory implements DocAction
 						m_processMsg = "Transaction not inserted(2)";
 						return DocAction.STATUS_Invalid;
 					}
-					if (!isReversal())
-					{	
-						//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line, mtrx);
-						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line);
-						//createCostDetail(mtrx);
-					}
-					else
-					{
-						//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line, mtrx);
-						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line);
-						// createCostDetail(mtrx, line.getReversalLine_ID());						
-					}
+
+					//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(mtrx);
 				}	//	Fallback
 			}	//	stock movement
 

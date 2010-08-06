@@ -48,45 +48,6 @@ public class MCostDetail extends X_M_CostDetail
 	 * 
 	 */
 	private static final long serialVersionUID = 5452006110417178583L;
-
-
-	/*public static boolean createOrder (MAcctSchema as, int AD_Org_ID, 
-			int M_Product_ID, int M_AttributeSetInstance_ID,
-			int C_OrderLine_ID, int M_CostElement_ID, 
-			BigDecimal Amt, BigDecimal Qty,
-			String Description, String trxName, int mtrxID)*/
-	
-	/*public static boolean createInvoice (MAcctSchema as, int AD_Org_ID, 
-			int M_Product_ID, int M_AttributeSetInstance_ID,
-			int C_InvoiceLine_ID, int M_CostElement_ID, 
-			BigDecimal Amt, BigDecimal Qty,
-			String Description, String trxName, int mtrxID)*/
-	
-	/*public static boolean createShipment (MAcctSchema as, int AD_Org_ID, 
-			int M_Product_ID, int M_AttributeSetInstance_ID,
-			int M_InOutLine_ID, int M_CostElement_ID, 
-			BigDecimal Amt, BigDecimal Qty,
-			String Description, boolean IsSOTrx, String trxName, int mtrxID)*/
-	
-
-	/*public static boolean createInventory (MAcctSchema as, int AD_Org_ID, 
-			int M_Product_ID, int M_AttributeSetInstance_ID,
-			int M_InventoryLine_ID, int M_CostElement_ID, 
-			BigDecimal Amt, BigDecimal Qty,
-			String Description, String trxName, int mtrxID)*/
-	
-	/*public static boolean createMovement (MAcctSchema as, int AD_Org_ID, 
-			int M_Product_ID, int M_AttributeSetInstance_ID,
-			int M_MovementLine_ID, int M_CostElement_ID, 
-			BigDecimal Amt, BigDecimal Qty, boolean from,
-			String Description, String trxName)*/
-
-	/*public static boolean createMovement (MAcctSchema as, int AD_Org_ID, 
-			int M_Product_ID, int M_AttributeSetInstance_ID,
-			int M_MovementLine_ID, int M_CostElement_ID, 
-			BigDecimal Amt, BigDecimal Qty, boolean from,
-			boolean autoProcess, // anca_bradau
-			String Description, String trxName)*/
 	
 	/**
 	 * 	Create New Order Cost Detail for Production.
@@ -429,6 +390,9 @@ public class MCostDetail extends X_M_CostDetail
 	{
 		StringBuffer sb = new StringBuffer ("MCostDetail[");
 		sb.append (get_ID());
+		sb.append(", Product="+ getM_Product().getName());
+		sb.append(", Cost Element="+ getM_CostElement().getName());
+		sb.append(", Costing Method="+ getCostingMethod());
 		if (getC_OrderLine_ID() != 0)
 			sb.append (",C_OrderLine_ID=").append (getC_OrderLine_ID());
 		if (getM_InOutLine_ID() != 0)
@@ -559,7 +523,7 @@ public class MCostDetail extends X_M_CostDetail
 			ICostingMethod cm = cmFactory.getCostingMethod(ce, m_cost.getCostingMethod());
 			cm.process();*/
 		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, m_cost.getCostingMethod());
-		method.setCostingMethod(as, null, null, m_cost, this.isSOTrx(), false);
+		method.setCostingMethod(as, null, m_cost, null, this.isSOTrx());
      	method.processCostDetail(this);
 
 			//else if (ce.isLandedCost())

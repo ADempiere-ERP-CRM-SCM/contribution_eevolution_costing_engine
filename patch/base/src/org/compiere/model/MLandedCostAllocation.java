@@ -201,5 +201,10 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 		return getC_InvoiceLine().getC_Invoice().getDateAcct();
 	}
 	
+
+	public IDocumentLine getReversalDocumentLine() {
+		return null;
+	}
+	
 	
 }	//	MLandedCostAllocation

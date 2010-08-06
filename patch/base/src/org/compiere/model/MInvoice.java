@@ -1750,9 +1750,11 @@ public class MInvoice extends X_C_Invoice implements DocAction
 			for (int j = 0; j < lcas.length; j++)
 			{
 				MLandedCostAllocation lca = lcas[j];
-
-				//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(lca, null);
-				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(lca);
+				MInOutLine inout_line = (MInOutLine) line.getM_InOutLine();
+				for (MTransaction trx: MTransaction.getByInOutLine(inout_line))
+				{
+					CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx);
+				}			
 			}
 		}
 		if (matchInv > 0)

@@ -449,8 +449,6 @@ public class MMovement extends X_M_Movement implements DocAction
 							m_processMsg = "Transaction To not inserted (MA)";
 							return DocAction.STATUS_Invalid;
 						}
-						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line, trxFrom, trxTo);
-				    	//	createCostDetail(trxFrom, trxTo, line); //anca.bradau
 					}
 				}
 				//	Fallback - We have ASI
@@ -500,10 +498,7 @@ public class MMovement extends X_M_Movement implements DocAction
 					{
 						m_processMsg = "Transaction To not inserted";
 						return DocAction.STATUS_Invalid;
-					}
-					//anca.bradau: create CostDetail
-					CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(line, trxFrom, trxTo);
-					//createCostDetail(trxFrom, trxTo, line); 
+					} 
 				}	//	Fallback
 			} // product stock	
 		}	//	for all lines

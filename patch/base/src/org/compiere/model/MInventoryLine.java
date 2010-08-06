@@ -419,4 +419,9 @@ public class MInventoryLine extends X_M_InventoryLine implements IDocumentLine
 	public Timestamp getDateAcct() {
 		return getParent().getMovementDate();
 	}
+	
+
+	public IDocumentLine getReversalDocumentLine() {
+		return (IDocumentLine) getReversalLine();
+	}
 }	//	MInventoryLine

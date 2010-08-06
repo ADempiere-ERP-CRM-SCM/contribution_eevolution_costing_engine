@@ -21,28 +21,19 @@ import org.compiere.util.CLogger;
  * @author anca_bradau
  * 
  */
-public class LastInvoiceCostingMethod implements ICostingMethod {
+public class LastInvoiceCostingMethod extends AbstractCostingMethod implements ICostingMethod {
 
-	MAcctSchema m_as;
-	IDocumentLine m_model;
-	MTransaction m_trx; 
-	MCost m_cost;
-	Boolean m_isSOTrx;
-	CostComponent m_CurrentCost;
-	CostComponent cc;
-	MCostDetail m_costdetail;
-	BigDecimal m_CumulatedAmt;
-	BigDecimal m_CumulatedQty;
-	BigDecimal m_CurrentCostPrice;
+
 	
-	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx,
-			MCost cost, Boolean isSOTrx, Boolean setProcessed)
+	public void setCostingMethod (MAcctSchema as,MTransaction mtrx,
+			MCost cost,BigDecimal price, Boolean isSOTrx)
 	{
 		m_as = as;
-		m_model = model;
 		m_trx  = mtrx;
 		m_cost = cost;
+		m_price = price;
 		m_isSOTrx = isSOTrx;
+		m_model = mtrx.getDocumentLine();
 	}
 	
 	public void process() {
@@ -87,6 +78,12 @@ public class LastInvoiceCostingMethod implements ICostingMethod {
 	public void processCostDetail(MCostDetail mCostdetail) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	protected List<CostComponent> getCalculatedCosts() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	/*@Override

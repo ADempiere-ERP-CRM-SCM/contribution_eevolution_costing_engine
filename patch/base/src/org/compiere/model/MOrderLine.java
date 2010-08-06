@@ -1082,4 +1082,8 @@ public class MOrderLine extends X_C_OrderLine implements IDocumentLine
 		return getParent().getDateAcct();
 	}
 	
+
+	public IDocumentLine getReversalDocumentLine() {
+		return null;
+	}
 }	//	MOrderLine

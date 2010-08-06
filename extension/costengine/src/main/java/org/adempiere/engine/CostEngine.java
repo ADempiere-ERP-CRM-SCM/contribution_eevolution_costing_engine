@@ -30,22 +30,15 @@ import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_M_Cost;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
-import org.compiere.model.I_M_InOutLine;
-import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MClient;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
-import org.compiere.model.MInOutLine;
-import org.compiere.model.MInventoryLine;
-import org.compiere.model.MInvoiceLine;
-import org.compiere.model.MLandedCostAllocation;
 import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
 import org.compiere.model.MMovementLine;
-import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.PO;
@@ -187,170 +180,25 @@ public class CostEngine
 		.setParameters(params)
 		.firstOnly();
 	}	
-	
-	public void createCostDetail (IDocumentLine model)
+
+	public void createCostDetail (MTransaction mtrx)
 	{
-		MTransaction mtrx = getTransaction(model);
-		if(mtrx == null)
-			throw new AdempiereException("Transaction do not exist");
+		createCostDetail(mtrx , mtrx.getDocumentLine());
+	}
+	
+	public void createCostDetail (MTransaction mtrx ,IDocumentLine model)
+	{
+		for(MAcctSchema as : MAcctSchema.getClientAcctSchema(mtrx.getCtx(), mtrx.getAD_Client_ID()))
+		{
+				createCostDetail(mtrx, model , as,model.isSOTrx());
+		}	
+	}
+	
+	public void createCostDetail (MTransaction mtrx , IDocumentLine model ,
+			MAcctSchema as,
+			Boolean isSOTrx)
+	{
 		
-		//Physical Inventory
-		if(model instanceof MInventoryLine && model.getReversalLine_ID() <= 0)
-		{	
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(mtrx.getCtx(), mtrx.getAD_Client_ID()))
-			{
-					createCostDetail(model, mtrx, as,
-							null, // CostComponent will be automatically fetched in this method
-							null, // IsSOTrx = null
-							false); // setProcessed = false
-				}
-		}
-		// Reverse all documents
-		else if (model.getReversalLine_ID() > 0)
-		{
-			//anca.bradau begin
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(mtrx.getCtx(), mtrx.getAD_Client_ID()))
-			{
-				MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
-				String CostingLevel = product.getCostingLevel(as);
-
-				int M_ASI_ID = model.getM_AttributeSetInstance_ID();
-
-				if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
-					M_ASI_ID = 0;
-				// end
-				final String whereClause = model.get_TableName()+"_ID=?"
-				+" AND "+MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+"=?";
-
-
-				List<MCostDetail> list = new Query(mtrx.getCtx(), MCostDetail.Table_Name, whereClause, mtrx.get_TrxName())
-				.setParameters(new Object[]{model.getReversalLine_ID(), M_ASI_ID})
-				.list();
-				for (MCostDetail cd : list)
-				{
-					MCostDetail cdnew = new MCostDetail(mtrx.getCtx(), 0, mtrx.get_TrxName());
-					PO.copyValues(cd, cdnew);
-					cdnew.setProcessed(false);
-					//cdnew.setM_InOutLine_ID(mtrx.getM_InOutLine_ID());
-					cdnew.setAmt(cd.getAmt().negate());
-					cdnew.setQty(cd.getQty().negate());
-					cdnew.saveEx();
-					//
-					MClient client = MClient.get(cdnew.getCtx(), cdnew.getAD_Client_ID());
-					if (client.isCostImmediate())
-						cdnew.process();
-					
-				}
-			}
-		}
-		//Receipt
-		/*else if (!model.isSOTrx() && !(model instanceof MOrderLine) && !(model instanceof MInvoiceLine)
-	    	&& !(model instanceof MLandedCostAllocation))*/
-		if(MTransaction.MOVEMENTTYPE_VendorReceipts.equals(mtrx.getMovementType()))
-		{
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), mtrx.getAD_Client_ID()))
-			{
-				CostComponent cc = new CostComponent(mtrx.getMovementQty(), model.getPriceActual());
-				createCostDetail(model, mtrx ,as, cc, model.isSOTrx(), false);
-			}
-		}
-	    //Shipment
-		else if (MTransaction.MOVEMENTTYPE_CustomerShipment.equals(mtrx.getMovementType()))
-		{
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), model.getAD_Client_ID()))
-			{
-				createCostDetail(model, mtrx, as,
-						null, // CostComponent will be automatically fetched in this method
-						model.isSOTrx(), // IsSOTrx = null
-						false); // setProcessed = false
-
-			}
-		}
-		// Order, Invoice
-		else if (model instanceof MOrderLine || (model instanceof MInvoiceLine &&
-				!(model instanceof MLandedCostAllocation)))
-		{
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), model.getAD_Client_ID()))
-			{
-				CostComponent cc = new CostComponent(model.getMovementQty(), model.getPriceActual());
-				createCostDetail(model, as, cc, null, false);
-			}
-		}
-	    // Landed cost
-		else if (model instanceof MLandedCostAllocation)
-		{
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(model.getCtx(), model.getAD_Client_ID()))
-			{
-				CostComponent cc = new CostComponent(model.getMovementQty(), model.getPriceActual());
-				createCostDetailForLandedCost(model, as, cc, null, false);	
-			}
-		}
-	}
-	public void createCostDetail (IDocumentLine model , MTransaction trxTo, MTransaction trxFrom)
-	{
-		if (trxFrom.getMovementQty().compareTo(trxTo.getMovementQty().negate()) != 0)
-		{
-			throw new AdempiereException("Same qty is needed - "+trxFrom+", "+trxTo);
-		}
-		if (model.getReversalLine_ID() > 0)
-		{
-			//anca.bradau begin
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(trxTo.getCtx(), trxTo.getAD_Client_ID()))
-			{
-				MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
-				String CostingLevel = product.getCostingLevel(as);
-
-				int M_ASI_ID = model.getM_AttributeSetInstance_ID();
-
-				if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
-					M_ASI_ID = 0;
-				// end
-				final String whereClause = model.get_TableName()+"_ID=?"
-				+" AND "+MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+"=?";
-
-
-				List<MCostDetail> list = new Query(trxTo.getCtx(), MCostDetail.Table_Name, whereClause, trxTo.get_TrxName())
-				.setParameters(new Object[]{model.getReversalLine_ID(), M_ASI_ID})
-				.list();
-				for (MCostDetail cd : list)
-				{
-					MCostDetail cdnew = new MCostDetail(trxTo.getCtx(), 0, trxTo.get_TrxName());
-					PO.copyValues(cd, cdnew);
-					cdnew.setProcessed(false);
-					cdnew.setM_InOutLine_ID(trxTo.getM_InOutLine_ID());
-					cdnew.setAmt(cd.getAmt().negate());
-					cdnew.setQty(cd.getQty().negate());
-					cdnew.saveEx();
-					//
-					MClient client = MClient.get(cdnew.getCtx(), cdnew.getAD_Client_ID());
-					if (client.isCostImmediate())
-						cdnew.setProcessed(true);
-					cdnew.process();
-				}
-			}
-		}
-		else if (model instanceof MMovementLine && model.getReversalLine_ID() <= 0)
-		{
-			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(trxTo.getCtx(), trxFrom.getAD_Client_ID()))
-			{
-				final boolean sameCostDimension = CostDimension.isSameCostDimension(as, trxFrom, trxTo);
-				createCostDetail(model, trxFrom, as,
-						null, // CostComponent will be automatically fetched in this method
-						false, // IsSOTrx = null
-						sameCostDimension); // setProcessed = false
-				createCostDetail(model, trxTo, as,
-						null, //cc.reverseQty() CostComponent will be automatically fetched in this method
-						true, // IsSOTrx = null
-						sameCostDimension); // setProcessed = false
-			}
-		}
-	}
-
-	
-	public void createCostDetail (IDocumentLine model , MTransaction mtrx,
-			MAcctSchema as, CostComponent cc,
-			Boolean isSOTrx, boolean setProcessed)
-	{
 		StringBuilder description = new StringBuilder();
 		if (!Util.isEmpty(model.getDescription(), true))
 			description.append(model.getDescription());
@@ -387,9 +235,8 @@ public class CostEngine
 			}
 							
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-			method.setCostingMethod(as, model, mtrx, cost, isSOTrx, setProcessed);
-			method.process();
-				
+			method.setCostingMethod(as, mtrx, cost, model.getPriceActual(),  isSOTrx);
+			method.process();				
 		}
 	}
 
@@ -436,7 +283,7 @@ public class CostEngine
 			}
 		
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-			method.setCostingMethod(as, model, null, cost, isSOTrx, setProcessed);
+			method.setCostingMethod(as, null, cost, model.getPriceActual(), isSOTrx);
 			method.process();
 		}
 	}
@@ -1020,41 +867,6 @@ public class CostEngine
 		return list.toArray(new MCostDetail[list.size()]);
 	}
 
-	//TODO: validate the implementation of ASI
-	public MTransaction getTransaction(IDocumentLine model)
-	{
-		String idColumnName = null;
-		int idColumn = 0;
-		if( model instanceof MInOutLine)
-		{
-			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
-			idColumn = ((MInOutLine) model).getM_InOutLine_ID();	
-		}
-		else if (model instanceof MMatchPO)
-		{
-			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
-			idColumn = ((MMatchPO) model).getM_InOutLine_ID();	
-		}
-		else if(model instanceof MMatchInv)
-		{
-			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
-			idColumn = ((MMatchInv) model).getM_InOutLine_ID();	
-		}
-		else if(model instanceof MInvoiceLine)
-		{
-			idColumnName = I_M_InOutLine.COLUMNNAME_M_InOutLine_ID;
-			idColumn = ((MInvoiceLine) model).getM_InOutLine_ID();	
-		}
-	
-		final String whereClause = idColumnName + "=?" ;
-		List<MTransaction> list = new Query(model.getCtx(), I_M_Transaction.Table_Name,whereClause, model.get_TrxName())
-		.setClient_ID().setParameters(idColumn)
-		.list();
-		MTransaction[] mtrx = list.toArray(new MTransaction[list.size()]);
-		if (mtrx.length == 1)
-			return mtrx[0];
-		else return mtrx[mtrx.length-1];
-	}
 	
 	static public String getIDColumnName(IDocumentLine model)
 	{

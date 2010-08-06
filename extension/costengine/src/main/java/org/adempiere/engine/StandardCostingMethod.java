@@ -21,19 +21,22 @@ import org.compiere.util.Util;
  */
 public class StandardCostingMethod extends AbstractCostingMethod implements ICostingMethod {
 	
-	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost, Boolean isSOTrx,Boolean setProcessed)
+	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost cost,BigDecimal price, Boolean isSOTrx)
 	{
 		m_as = as;
-		m_model = model;
 		m_trx  = mtrx;
 		m_cost = cost;
+		m_price = price;
 		m_isSOTrx = isSOTrx;
-		m_costdetail = getCostDetail();
+		m_model = mtrx.getDocumentLine();
+		m_costdetail = getCostDetail(mtrx);
 	}
-	
 
 	private void calculate()
 	{	
+		if(m_model.getReversalLine_ID() > 0)
+			return;
+		
 		if(m_trx.getMovementType().endsWith("-"))
 		{	
 			m_CurrentCostPrice = m_cost.getCurrentCostPrice();
@@ -62,8 +65,12 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 	
 	private void createCostDetail()
 	{
-		
 		final String idColumnName = CostEngine.getIDColumnName(m_model);
+		if(m_model.getReversalLine_ID() > 0)
+		{	
+			createReveralCostDetail(m_model);
+			return;
+		}
 		
 		if(m_costdetail == null)
 		{	

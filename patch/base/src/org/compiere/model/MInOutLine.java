@@ -745,4 +745,9 @@ implements IDocumentLine
 		return getParent().getDateAcct();
 	}
 
+
+	public IDocumentLine getReversalDocumentLine() {
+		return (IDocumentLine) getReversalLine();
+	}
+
 }	//	MInOutLine

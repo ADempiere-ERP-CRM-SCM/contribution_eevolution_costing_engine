@@ -648,7 +648,12 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 	{
 		//	Purchase Order Delivered/Invoiced
 		//	(Reserved in VMatch and MInOut.completeIt)
-		CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(this);
+		MInOutLine inout_line = (MInOutLine) getM_InOutLine();
+		for (MTransaction trx: MTransaction.getByInOutLine(inout_line))
+		{
+			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx,this);
+		}
+		
 		if (success && getC_OrderLine_ID() != 0)
 		{
 			MOrderLine orderLine = getOrderLine();
@@ -1036,6 +1041,11 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 	@Override
 	public void setM_Locator_ID(int M_Locator_ID) {
 		;		
+	}
+	
+
+	public IDocumentLine getReversalDocumentLine() {
+		return null;
 	}
 	
 }	//	MMatchPO

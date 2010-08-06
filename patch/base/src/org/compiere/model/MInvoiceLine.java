@@ -1350,4 +1350,9 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 	public Timestamp getDateAcct() {
 		return getParent().getDateAcct();
 	}
+	
+
+	public IDocumentLine getReversalDocumentLine() {
+		return null;
+	}
 }	//	MInvoiceLine

@@ -3,6 +3,8 @@
  */
 package org.adempiere.engine;
 
+import java.math.BigDecimal;
+
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
@@ -14,9 +16,8 @@ import org.compiere.model.MTransaction;
  */
 public interface ICostingMethod
 {
-	public void setCostingMethod(MAcctSchema as,IDocumentLine model, MTransaction mtrx,
-			MCost cost, Boolean isSOTrx, Boolean setProcessed);
-	//need setProcessed at MMovement, if is samecostdimension dont touch queue
+	public void setCostingMethod(MAcctSchema as,MTransaction mtrx,
+			MCost cost, BigDecimal price, Boolean isSOTrx);
 	public void process();
 	public void processCostDetail(MCostDetail m_costdetail);//for reversal documents
 }

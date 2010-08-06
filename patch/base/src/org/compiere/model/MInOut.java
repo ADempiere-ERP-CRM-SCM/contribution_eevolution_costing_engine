@@ -1347,9 +1347,6 @@ public class MInOut extends X_M_InOut implements DocAction
 							m_processMsg = "Could not create Material Transaction (MA)";
 							return DocAction.STATUS_Invalid;
 						}
-						//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(sLine, mtrx);
-						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(sLine);
-						
 					}
 				}
 				//	sLine.getM_AttributeSetInstance_ID() != 0
@@ -1392,10 +1389,6 @@ public class MInOut extends X_M_InOut implements DocAction
 						m_processMsg = CLogger.retrieveErrorString("Could not create Material Transaction");
 						return DocAction.STATUS_Invalid;
 					}
-					
-					//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(sLine, mtrx);
-					CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(sLine);
-					//createCostDetail(mtrx, sLine); //  anca_bradau
 				}	
 			}	//	stock movement
 			

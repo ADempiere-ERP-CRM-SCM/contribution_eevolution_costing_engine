@@ -25,18 +25,17 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 
 	Boolean m_setProcessed;
 
-	public void setCostingMethod (MAcctSchema as,IDocumentLine model,MTransaction mtrx, MCost cost,
-			Boolean isSOTrx, Boolean setProcessed)
+	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost cost,
+			BigDecimal price , Boolean isSOTrx)
 	{
 		m_as = as;
-		m_model = model;
 		m_trx  = mtrx;
 		m_cost = cost;
 		m_isSOTrx = isSOTrx;
-		m_setProcessed = setProcessed;
-		m_costdetail = getCostDetail();
+		m_model = mtrx.getDocumentLine();
+		m_costdetail = getCostDetail(mtrx);
 	}
-
+	
 	public void calculate()
 	{
 
@@ -96,7 +95,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 	{
 		if(m_costdetail == null)
 		{
-			for (MCostDetail m_costdetail : createCostDetails(m_cost, m_model, m_trx, m_setProcessed))
+			for (MCostDetail m_costdetail : createCostDetails(m_cost, m_trx, m_setProcessed))
 			{
 				if (m_setProcessed)
 					continue;
