@@ -4,11 +4,18 @@ import java.util.ArrayList;
 import java.util.Properties;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.I_M_InOutLine;
+import org.compiere.model.I_M_Locator;
 import org.compiere.model.MAcctSchema;
+import org.compiere.model.MInOutLine;
+import org.compiere.model.MLocator;
+import org.compiere.model.MMovementLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTable;
 import org.compiere.model.MTransaction;
 import org.compiere.model.Query;
+import org.compiere.model.X_M_Locator;
+import org.compiere.model.X_M_Transaction;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
 
@@ -286,6 +293,35 @@ public class CostDimension
 		int Org_ID_To = trxTo.getAD_Org_ID();
 		int ASI_ID = trxFrom.getM_AttributeSetInstance_ID();
 		int ASI_ID_To = trxTo.getM_AttributeSetInstance_ID();
+		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
+		{
+			Org_ID = 0;
+			Org_ID_To = 0;
+			ASI_ID = 0;
+			ASI_ID_To = 0;
+		}
+		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+		{
+			ASI_ID = 0;
+			ASI_ID_To = 0;
+		}
+		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
+		{
+			Org_ID = 0;
+			Org_ID_To = 0;
+		}
+		//
+		return Org_ID == Org_ID_To && ASI_ID == ASI_ID_To;
+	}
+	public static boolean isSameCostDimension(MAcctSchema as, IDocumentLine model)
+	{
+		MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
+		MLocator locator = MLocator.get(model.getCtx(), model.getM_LocatorTo_ID());
+		String CostingLevel = product.getCostingLevel(as);
+		int Org_ID = model.getAD_Org_ID();
+		int Org_ID_To = locator.getAD_Org_ID();
+		int ASI_ID = model.getM_AttributeSetInstance_ID();
+		int ASI_ID_To = model.getM_AttributeSetInstance_ID();
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 		{
 			Org_ID = 0;

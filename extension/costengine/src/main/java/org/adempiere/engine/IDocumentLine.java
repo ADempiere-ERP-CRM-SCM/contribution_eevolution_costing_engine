@@ -37,8 +37,10 @@ public interface IDocumentLine
 	public int getM_Product_ID();
 	public String getDescription();
 	public int getM_Locator_ID();
+	public int getM_LocatorTo_ID();
 	public void setM_Locator_ID(int M_Locator_ID);
 	public int getM_AttributeSetInstance_ID();
+	public int getM_AttributeSetInstanceTo_ID();
 	public void setM_AttributeSetInstance_ID(int M_AttributeSetInstance_ID);
 	public Timestamp getDateAcct();
 	public BigDecimal getMovementQty();

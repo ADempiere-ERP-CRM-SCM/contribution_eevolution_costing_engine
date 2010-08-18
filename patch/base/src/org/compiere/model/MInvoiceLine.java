@@ -1355,4 +1355,16 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 	public IDocumentLine getReversalDocumentLine() {
 		return null;
 	}
+
+	@Override
+	public int getM_AttributeSetInstanceTo_ID() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
+
+	@Override
+	public int getM_LocatorTo_ID() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
 }	//	MInvoiceLine

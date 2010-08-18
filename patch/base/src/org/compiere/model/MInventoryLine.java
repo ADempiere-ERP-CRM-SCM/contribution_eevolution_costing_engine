@@ -424,4 +424,16 @@ public class MInventoryLine extends X_M_InventoryLine implements IDocumentLine
 	public IDocumentLine getReversalDocumentLine() {
 		return (IDocumentLine) getReversalLine();
 	}
+
+	@Override
+	public int getM_AttributeSetInstanceTo_ID() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
+
+	@Override
+	public int getM_LocatorTo_ID() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
 }	//	MInventoryLine

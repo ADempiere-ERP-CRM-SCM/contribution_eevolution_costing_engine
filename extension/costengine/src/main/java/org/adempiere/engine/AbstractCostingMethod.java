@@ -26,7 +26,7 @@ import org.compiere.util.Util;
 
 
 /**
- * @author ancu
+ * @author anca_bradau
  *
  */
 public abstract class AbstractCostingMethod implements ICostingMethod
@@ -47,7 +47,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	BigDecimal m_AdjustCost = Env.ZERO;
 
 	protected List<MCostDetail> createCostDetails(MCost cost,
-			MTransaction mtrx, boolean setProcessed)
+			MTransaction mtrx)
 	{ 
 		IDocumentLine model = mtrx.getDocumentLine();
 		
@@ -89,8 +89,6 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 					cd.setIsSOTrx(model.isSOTrx());	
 				cd.setM_Transaction_ID(mtrx.get_ID());
 				cd.setDescription(description.toString());
-				if (setProcessed)
-					cd.setProcessed(true);
 				cd.saveEx();
 				list.add(cd);
 			}
@@ -119,8 +117,6 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			else
 				cd.setIsSOTrx(model.isSOTrx());	
 			cd.setM_Transaction_ID(mtrx.get_ID());
-			if (setProcessed)
-				cd.setProcessed(true);
 			cd.saveEx();
 			list.add(cd);
 		}

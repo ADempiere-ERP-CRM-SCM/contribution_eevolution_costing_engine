@@ -235,7 +235,7 @@ public class CostEngine
 			}
 							
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-			method.setCostingMethod(as, mtrx, cost, model.getPriceActual(),  isSOTrx);
+			method.setCostingMethod(as, mtrx, cost, model.getPriceActual(), isSOTrx);
 			method.process();				
 		}
 	}

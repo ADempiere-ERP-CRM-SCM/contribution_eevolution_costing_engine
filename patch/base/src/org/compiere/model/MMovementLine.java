@@ -381,4 +381,8 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine
 	public IDocumentLine getReversalDocumentLine() {
 		return (IDocumentLine) getReversalLine();
 	}
+	public int getM_LocatorTo_ID ()
+	{
+		return super.getM_LocatorTo_ID();
+	}	
 }	//	MMovementLine

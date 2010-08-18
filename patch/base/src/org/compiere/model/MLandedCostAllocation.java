@@ -205,6 +205,18 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 	public IDocumentLine getReversalDocumentLine() {
 		return null;
 	}
+
+	@Override
+	public int getM_AttributeSetInstanceTo_ID() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
+
+	@Override
+	public int getM_LocatorTo_ID() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
 	
 	
 }	//	MLandedCostAllocation

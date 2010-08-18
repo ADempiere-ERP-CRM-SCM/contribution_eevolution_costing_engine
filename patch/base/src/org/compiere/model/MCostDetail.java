@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -145,7 +146,26 @@ public class MCostDetail extends X_M_CostDetail
 		.first();
 		return retValue;
 	}	//	get
-
+	
+	public static MCostDetail[] getAfterCostAdjustmentDate (MCostDetail cd, String trxName)
+	{
+		final String whereClause = MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+		//+ MCostDetail.COLUMNNAME_CostAdjustmentDate+ ">='?' AND "
+		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">=?"
+		;
+		List <MCostDetail> list = new Query(cd.getCtx(), Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(new Object[]{cd.getAD_Org_ID(), cd.getM_Product_ID(), 
+				cd.getM_AttributeSetInstance_ID(), /*cd.getCostAdjustmentDate(),*/ cd.getCostingMethod(), cd.get_ID()})
+		//.setOrderBy(COLUMNNAME_CostAdjustmentDate+" DESC, "+COLUMNNAME_M_CostDetail_ID+" DESC")
+		.setOrderBy(COLUMNNAME_M_CostDetail_ID+" DESC")
+		.list();
+		return list.toArray(new MCostDetail[list.size()]);
+	}
+	
 	/**
 	 * 	Process Cost Details for product
 	 *	@param product product

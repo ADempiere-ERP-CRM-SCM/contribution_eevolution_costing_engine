@@ -519,5 +519,17 @@ public class MMatchInv extends X_M_MatchInv implements IDocumentLine
 	public IDocumentLine getReversalDocumentLine() {
 		return null;
 	}
+
+	@Override
+	public int getM_AttributeSetInstanceTo_ID() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
+
+	@Override
+	public int getM_LocatorTo_ID() {
+		// TODO Auto-generated method stub
+		return -1;
+	}
 	
 }	//	MMatchInv

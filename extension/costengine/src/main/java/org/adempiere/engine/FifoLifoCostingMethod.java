@@ -4,16 +4,22 @@
 package org.adempiere.engine;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.I_M_InOutLine;
+import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostQueue;
+import org.compiere.model.MInOutLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.ProductCost;
+import org.compiere.model.Query;
 import org.compiere.util.Env;
 
 /**
@@ -23,14 +29,13 @@ import org.compiere.util.Env;
 public class FifoLifoCostingMethod extends AbstractCostingMethod
 {
 
-	Boolean m_setProcessed;
-
 	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost cost,
 			BigDecimal price , Boolean isSOTrx)
 	{
 		m_as = as;
 		m_trx  = mtrx;
 		m_cost = cost;
+        m_price = price;
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
 		m_costdetail = getCostDetail(mtrx);
@@ -93,18 +98,20 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 
 	public void processCostDetail()
 	{
+		final String idColumnName = CostEngine.getIDColumnName(m_model);			
 		if(m_costdetail == null)
 		{
-			for (MCostDetail m_costdetail : createCostDetails(m_cost, m_trx, m_setProcessed))
+			for (MCostDetail cd : createCostDetails(m_cost, m_trx))
 			{
-				if (m_setProcessed)
+				if (CostDimension.isSameCostDimension(m_as, m_model) && 
+					(m_trx.getMovementType().equals("M+") || m_trx.getMovementType().equals("M-")))
 					continue;
-				processCostDetail(m_costdetail);	
+				processCostDetail(cd);	
 			}
 		}
 		else 
 		{
-			m_Amount = m_model.getMovementQty().multiply(m_model.getPriceActual());	
+			m_Amount = m_model.getMovementQty().multiply(m_price);	
 			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
 			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
 			m_CumulatedQty = m_cost.getCumulatedQty();
@@ -115,65 +122,74 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				m_costdetail.setCostAdjustment(m_AdjustCost);
 				m_costdetail.setProcessed(false);
 				m_costdetail.setDescription("Adjust Cost");
+				m_costdetail.setCostAdjustmentDate(m_model.getDateAcct());
 				m_costdetail.saveEx();
-				return;
+			}
+			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
+			m_costdetail.saveEx();
+			if (m_costdetail.getCostAdjustmentDate()!= null)
+			{
+				if(m_as.isAdjustCOGS())	
+				{
+					adjustementQueue(m_costdetail);
+				}		
 			}
 			return;
 		}
 	}
 
 	//	need this for reversal documents
-	public void processCostDetail(MCostDetail m_costdetail)
+	public void processCostDetail(MCostDetail cd)
 	{
-		boolean addition = m_costdetail.getQty().signum() > 0;
-		MAcctSchema as =  MAcctSchema.get(m_costdetail.getCtx(), m_costdetail.getC_AcctSchema_ID());
+		boolean addition = cd.getQty().signum() > 0;
+		MAcctSchema as =  MAcctSchema.get(cd.getCtx(), cd.getC_AcctSchema_ID());
 		int precision = as.getCostingPrecision();
-		MProduct product = MProduct.get(m_costdetail.getCtx(), m_costdetail.getM_Product_ID());
-		BigDecimal price = m_costdetail.getAmt();
+		MProduct product = MProduct.get(cd.getCtx(), cd.getM_Product_ID());
+		BigDecimal price = cd.getAmt();
 
-		if (m_costdetail.getQty().signum() != 0)
-			price = m_costdetail.getAmt().divide(m_costdetail.getQty(), precision, BigDecimal.ROUND_HALF_UP);
+		if (cd.getQty().signum() != 0)
+			price = cd.getAmt().divide(cd.getQty(), precision, BigDecimal.ROUND_HALF_UP);
 
-		int AD_Org_ID = m_costdetail.getAD_Org_ID();
-		int M_ASI_ID = m_costdetail.getM_AttributeSetInstance_ID();
+		int AD_Org_ID = cd.getAD_Org_ID();
+		int M_ASI_ID = cd.getM_AttributeSetInstance_ID();
 		
-		if (m_costdetail.getC_OrderLine_ID() != 0)
+		if (cd.getC_OrderLine_ID() != 0)
 		{
-			log.finer("Inv - FiFo/LiFo - amt=" + m_costdetail.getAmt() + ", qty=" + m_costdetail.getQty() + " [NOTHING TO DO]");	
+			log.finer("Inv - FiFo/LiFo - amt=" + cd.getAmt() + ", qty=" + cd.getQty() + " [NOTHING TO DO]");	
 		}
 
-		else if (m_costdetail.getM_InOutLine_ID() != 0 		//	AR Shipment Detail Record  
-				|| m_costdetail.getM_MovementLine_ID() != 0 
-				|| m_costdetail.getM_InventoryLine_ID() != 0
-				|| m_costdetail.getM_ProductionLine_ID() != 0
-				|| m_costdetail.getC_ProjectIssue_ID() != 0
-				|| m_costdetail.getPP_Cost_Collector_ID() != 0
-				|| m_costdetail.getC_LandedCostAllocation_ID()!=0)
+		else if (cd.getM_InOutLine_ID() != 0 		//	AR Shipment Detail Record  
+				|| cd.getM_MovementLine_ID() != 0 
+				|| cd.getM_InventoryLine_ID() != 0
+				|| cd.getM_ProductionLine_ID() != 0
+				|| cd.getC_ProjectIssue_ID() != 0
+				|| cd.getPP_Cost_Collector_ID() != 0
+				|| cd.getC_LandedCostAllocation_ID()!=0)
 		{
 			if (addition)
 			{
 				MCostQueue.add(product, M_ASI_ID,
-						as, AD_Org_ID, m_costdetail.getM_CostElement_ID(),
-						m_costdetail.getAmt(), m_costdetail.getQty(), precision,
-						(MCostDetail) m_costdetail, m_costdetail.get_TrxName());
+						as, AD_Org_ID, cd.getM_CostElement_ID(),
+						cd.getAmt(), cd.getQty(), precision,
+						(MCostDetail) cd, cd.get_TrxName());
 			}
 			else
 			{
 				BigDecimal amtQueue = MCostQueue.adjustQty(m_cost,
-						m_costdetail.getQty().negate(), m_costdetail.getDateAcct(), m_costdetail.get_TrxName());
+						cd.getQty().negate(), cd.getDateAcct(), cd.get_TrxName());
 				amtQueue = amtQueue.negate(); // outgoing amt should be negative
-				if (m_costdetail.getAmt().compareTo(amtQueue) != 0)
+				if (cd.getAmt().compareTo(amtQueue) != 0)
 				{
 					BigDecimal priceQueue = Env.ZERO;
-					if (m_costdetail.getQty().signum() != 0)
-						priceQueue = amtQueue.divide(m_costdetail.getQty(), precision, BigDecimal.ROUND_HALF_UP);
+					if (cd.getQty().signum() != 0)
+						priceQueue = amtQueue.divide(cd.getQty(), precision, BigDecimal.ROUND_HALF_UP);
 					log.warning("Amt not match "+this+": price="+price+", priceQueue="+priceQueue+" [ADJUSTED]");
 					// FIXME: teo_sarca: should not happen
-					if ("Y".equals(Env.getContext(m_costdetail.getCtx(), "#M_CostDetail_CorrectAmt")))
+					if ("Y".equals(Env.getContext(cd.getCtx(), "#M_CostDetail_CorrectAmt")))
 					{
-						m_costdetail.setAmt(amtQueue);
-						m_costdetail.setAmt(amtQueue);
-						m_costdetail.setPrice(priceQueue);
+						cd.setAmt(amtQueue);
+						cd.setAmt(amtQueue);
+						cd.setPrice(priceQueue);
 					}
 					else
 					{
@@ -181,11 +197,67 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 					}
 				}
 			}
-			m_costdetail.setCumulatedQty(m_cost.getCumulatedQty());
-			m_costdetail.setCumulatedAmt(m_cost.getCumulatedQty());	
-			m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
-			updateCurrentCost(m_costdetail);
-			m_costdetail.saveEx();
+			cd.setCumulatedQty(m_cost.getCumulatedQty());
+			cd.setCumulatedAmt(m_cost.getCumulatedQty());	
+			cd.setCurrentCostPrice(m_cost.getCurrentCostPrice());
+			updateCurrentCost(cd);
+			cd.saveEx();
 		}
 	}
+	
+	public void adjustementQueue (MCostDetail costDetail)
+	{
+		final MCostDetail[] cds = MCostDetail.getAfterCostAdjustmentDate(costDetail, m_model.get_TrxName());
+		List<Object> list = new ArrayList<Object>();
+		
+		for (MCostDetail cd : cds)
+		{
+			if (cd == null)
+				throw new AdempiereException("Error do not exist adjustment");
+			MCostQueue cq = MCostQueue.getQueueForAdjustment(cd, m_cost, m_model.get_TrxName());
+			MTransaction trx = get(cd);
+			
+			if (!(cq.getCurrentQty().compareTo(Env.ZERO) == 0) && 
+				 trx.getMovementType().equals("C-") && trx.getMovementType().equals("I+") &&
+				 trx.getMovementType().equals("I-"))
+			{ 
+				cq.addCurrentQty(cd.getQty().negate());
+				cq.saveEx();
+				cd.setAmt(cd.getQty().multiply(m_price));
+				cd.saveEx();
+				list.add(cd);
+			}
+			else if (trx.getMovementType().equals("V+"))
+			{
+				cd.setAmt(m_Amount);
+				cd.saveEx();
+				cq.setCurrentCostPrice(cd.getAmt().divide(cd.getQty()));
+				cq.saveEx();
+				break;
+			}
+			else if (trx.getMovementType().equals("M+") || trx.getMovementType().equals("M-"))
+			{
+				//TODO: need implement what happend when isSameCostdimension
+			}
+			else 
+				continue;
+
+		}
+		for (MCostDetail cd : list.toArray(new MCostDetail[list.size()]) )
+		{
+			processCostDetail(cd);
+		}
+	} 	
+	static public MTransaction get(MCostDetail cd)
+	{
+		final String whereClause = I_M_Transaction.COLUMNNAME_M_Product_ID + "=? AND "
+	                               + I_M_Transaction.COLUMNNAME_M_Transaction_ID+ "=? AND "
+	                               + I_M_Transaction.COLUMNNAME_MovementQty + "=?";
+		MTransaction trx = new Query(cd.getCtx(), MTransaction.Table_Name, whereClause, cd.get_TrxName())
+		.setClient_ID()
+		.setParameters(cd.getM_Product_ID(),cd.getM_Transaction_ID(), cd.getQty())
+		.firstOnly();
+		return trx;
+	}
+	
 }

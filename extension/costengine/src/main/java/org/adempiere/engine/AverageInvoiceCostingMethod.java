@@ -60,6 +60,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			m_AdjustCost = m_CurrentCostPrice.multiply(m_cost.getCumulatedQty()).subtract(m_cost.getCumulatedAmt());	
 			return;
 		}
+	    if (m_price == null) //m_price is null at physical inventory
+	    	m_price = m_cost.getCurrentCostPrice();
 		m_Amount = m_trx.getMovementQty().multiply(m_price);	
 		m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
 		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount);

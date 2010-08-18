@@ -77,7 +77,55 @@ public class MCostQueue extends X_M_CostQueue
 		}
 		return costQ;
 	}	//	get
-
+	
+    public static MCostQueue getQueueForAdjustment (MCostDetail cd, MCost cost, String trxName)
+    {
+		final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
+		
+    	List<Object> params = new ArrayList<Object>();
+		StringBuffer whereClause = new StringBuffer();
+		
+		whereClause.append("AD_Client_ID=? AND AD_Org_ID=?");
+		params.add(cost.getAD_Client_ID());
+		params.add(cost.getAD_Org_ID());
+		
+		whereClause.append(" AND "+COLUMNNAME_M_Product_ID+"=?");
+		params.add(cost.getM_Product_ID());
+		
+		final MAcctSchema as = MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID());
+		whereClause.append(" AND "+COLUMNNAME_M_CostType_ID+"=? AND "+COLUMNNAME_C_AcctSchema_ID+"=?");
+		params.add(as.getM_CostType_ID());
+		params.add(as.get_ID());
+		
+		whereClause.append(" AND "+COLUMNNAME_M_CostElement_ID+"=?");
+		params.add(ce.get_ID());
+		
+		whereClause.append("AND " +COLUMNNAME_CurrentCostPrice+"=?");
+		params.add(cd.getPrice());
+		
+		whereClause.append("AND " +COLUMNNAME_DateAcct+"=?");
+		params.add(cd.getDateAcct());
+		
+		if (cost.getM_AttributeSetInstance_ID() > 0)
+		{
+			whereClause.append(" AND "+COLUMNNAME_M_AttributeSetInstance_ID+"=?");
+			params.add(cost.getM_AttributeSetInstance_ID());
+		}
+		
+		MCostQueue cq = new Query(cost.getCtx(), Table_Name, whereClause.toString(), trxName)
+				.setParameters(params)
+				.setOrderBy(COLUMNNAME_M_CostQueue_ID+ " DESC")
+				.first();
+		if (cq == null)
+		{
+			s_log.warning("Not found cost queue for "+cost);
+			MProduct product = MProduct.get(cost.getCtx(), cost.getM_Product_ID());
+			cq = new MCostQueue (product, cost.getM_AttributeSetInstance_ID(), as,
+					cost.getAD_Org_ID(), cost.getM_CostElement_ID(), trxName);
+			cq.setDateAcct(cd.getDateAcct());
+		}
+		return cq;
+    }
 	public static MCostQueue[] getQueue (MCost cost, Timestamp dateAcct, String trxName)
 	{
 		final String costingMethod = cost.getCostingMethod();

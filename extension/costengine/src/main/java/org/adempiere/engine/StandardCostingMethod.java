@@ -21,7 +21,8 @@ import org.compiere.util.Util;
  */
 public class StandardCostingMethod extends AbstractCostingMethod implements ICostingMethod {
 	
-	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost cost,BigDecimal price, Boolean isSOTrx)
+	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost cost,
+			BigDecimal price, Boolean isSOTrx)
 	{
 		m_as = as;
 		m_trx  = mtrx;
