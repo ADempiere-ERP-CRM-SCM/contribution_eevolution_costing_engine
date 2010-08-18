@@ -289,8 +289,10 @@ public class CostDimension
 		}
 		MProduct product = MProduct.get(trxFrom.getCtx(), trxFrom.getM_Product_ID());
 		String CostingLevel = product.getCostingLevel(as);
-		int Org_ID = trxFrom.getAD_Org_ID();
-		int Org_ID_To = trxTo.getAD_Org_ID();
+		MLocator locatorFrom = MLocator.get(trxFrom.getCtx(), trxFrom.getM_Locator_ID());
+		MLocator locatorTo = MLocator.get(trxTo.getCtx(), trxTo.getM_Locator_ID());
+		int Org_ID = locatorFrom.getAD_Org_ID();
+		int Org_ID_To = locatorTo.getAD_Org_ID();
 		int ASI_ID = trxFrom.getM_AttributeSetInstance_ID();
 		int ASI_ID_To = trxTo.getM_AttributeSetInstance_ID();
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))

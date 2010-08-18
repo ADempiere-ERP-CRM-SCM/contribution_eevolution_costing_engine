@@ -237,10 +237,29 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			}
 			else if (trx.getMovementType().equals("M+") || trx.getMovementType().equals("M-"))
 			{
-				//TODO: need implement what happend when isSameCostdimension
+				MTransaction trxTo;
+				if (trx.getMovementType().equals("M+"))	
+				    trxTo = getPrevious(trx);
+				else 
+				    trxTo = getNext(trx);
+				if (CostDimension.isSameCostDimension(m_as, trx, trxTo))
+				{
+					cd.setAmt(cd.getQty().multiply(m_price));
+					cd.saveEx();
+				}
+				else 
+				{
+					cd.setAmt(cd.getQty().multiply(m_price));
+					cd.saveEx();
+					if (trx.getMovementType().equals("M+"))
+					    cq.setCurrentCostPrice(cd.getAmt().divide(cd.getQty()));
+					cq.addCurrentQty(cd.getQty().negate());
+					cq.saveEx();
+					list.add(cd);
+				}
 			}
 			else 
-				continue;
+		        continue;
 
 		}
 		for (MCostDetail cd : list.toArray(new MCostDetail[list.size()]) )
@@ -258,6 +277,27 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		.setParameters(cd.getM_Product_ID(),cd.getM_Transaction_ID(), cd.getQty())
 		.firstOnly();
 		return trx;
+		
+	}
+	static public MTransaction getPrevious(MTransaction trx)
+	{
+		final String whereClause = I_M_Transaction.COLUMNNAME_M_Transaction_ID+ "<? AND "
+	                               + I_M_Transaction.COLUMNNAME_M_Product_ID + "=? AND "
+	                               + I_M_Transaction.COLUMNNAME_MovementQty + "=?";
+		return new Query(trx.getCtx(), MTransaction.Table_Name, whereClause, trx.get_TrxName())
+		.setClient_ID()
+		.setParameters(trx.getM_Transaction_ID(), trx.getM_Product_ID(), trx.getMovementQty().negate())
+		.first();
+	}
+	static public MTransaction getNext(MTransaction trx)
+	{
+		final String whereClause = I_M_Transaction.COLUMNNAME_M_Transaction_ID+ ">? AND "
+		                         + I_M_Transaction.COLUMNNAME_M_Product_ID + "=? AND "
+	                             + I_M_Transaction.COLUMNNAME_MovementQty + "=?";
+		return new Query(trx.getCtx(), MTransaction.Table_Name, whereClause, trx.get_TrxName())
+		.setClient_ID()
+		.setParameters(trx.getM_Transaction_ID(), trx.getM_Product_ID(), trx.getMovementQty().negate())
+		.first();
 	}
 	
 }
