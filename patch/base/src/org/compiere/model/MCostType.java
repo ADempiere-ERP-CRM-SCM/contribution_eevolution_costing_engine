@@ -98,15 +98,14 @@ public class MCostType extends X_M_CostType
 		return true;
 	}	//	beforeDelete
 	//added by anca
-	public static MCostType[] get (Properties ctx, String trxName)
+	public static List<MCostType> get (Properties ctx, String trxName)
 	{
 		// TODO: anca_bradau: do caching
-		List<MCostType> list = new Query(ctx, Table_Name, null, trxName)
+		return new Query(ctx, Table_Name, null, trxName)
 		.setOnlyActiveRecords(true)
 		.setClient_ID()
 		.setOrderBy(COLUMNNAME_M_CostType_ID)
 		.list();
-        return list.toArray(new MCostType[list.size()]);
 	}
 	
 }	//	MCostType

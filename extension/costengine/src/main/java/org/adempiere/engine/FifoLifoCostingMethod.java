@@ -4,18 +4,15 @@
 package org.adempiere.engine;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.adempiere.exceptions.AdempiereException;
-import org.compiere.model.I_M_InOutLine;
 import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostQueue;
-import org.compiere.model.MInOutLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.ProductCost;
@@ -31,7 +28,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 
 	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost cost,
 			BigDecimal price , Boolean isSOTrx)
-	{
+	{ 
 		m_as = as;
 		m_trx  = mtrx;
 		m_cost = cost;
@@ -207,7 +204,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 	
 	public void adjustementQueue (MCostDetail costDetail)
 	{
-		final MCostDetail[] cds = MCostDetail.getAfterCostAdjustmentDate(costDetail, m_model.get_TrxName());
+		final List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(costDetail, m_model.get_TrxName());
 		List<Object> list = new ArrayList<Object>();
 		
 		for (MCostDetail cd : cds)

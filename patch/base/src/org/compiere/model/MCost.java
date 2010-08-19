@@ -336,9 +336,8 @@ public class MCost extends X_M_Cost
 		if (!MCostElement.COSTINGMETHOD_StandardCosting.equals(costingMethod))
 		{
 			MCostElement ce = MCostElement.getMaterialCostElement(as, MCostElement.COSTINGMETHOD_StandardCosting);
-			MCostType[] mcost = null;
-			mcost = MCostType.get(product.getCtx(), product.get_TrxName()); 
-			for (MCostType mc : mcost)
+			List<MCostType> costtypes = MCostType.get(product.getCtx(), product.get_TrxName()); 
+			for (MCostType mc : costtypes)
 			{
 			MCost cost = get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(), mc);
 			if (cost != null && cost.getCurrentCostPrice().signum() != 0)
@@ -818,10 +817,8 @@ public class MCost extends X_M_Cost
 					for(MCostElement ce : ces)
 					{	
 						//get MCost for all MCostType added by anca
-						MCostType[] mcost = null;
-						mcost = MCostType.get(product.getCtx(), product.get_TrxName()); 
-
-						for (MCostType mc : mcost)
+						List<MCostType> costtypes = MCostType.get(product.getCtx(), product.get_TrxName()); 
+						for (MCostType mc : costtypes)
 						{
 							MCost cost = MCost.get (product, M_ASI_ID, 
 									as, 0, ce.getM_CostElement_ID(), product.get_TrxName(),mc);
@@ -839,10 +836,8 @@ public class MCost extends X_M_Cost
 						for(MCostElement ce : ces)
 						{	
 							//get MCost for all MCostType added by anca
-							MCostType[] mcost = null;
-							mcost = MCostType.get(product.getCtx(), product.get_TrxName());
-
-							for (MCostType mc : mcost)
+							List<MCostType> costtypes = MCostType.get(product.getCtx(), product.get_TrxName()); 
+							for (MCostType mc : costtypes)
 							{
 								MCost cost = MCost.get (product, M_ASI_ID, 
 										as, o.getAD_Org_ID(), ce.getM_CostElement_ID(), product.get_TrxName(),mc);

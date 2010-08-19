@@ -404,9 +404,8 @@ public class CostEngine
 				MCostDetail cd = getCostDetail(model, mtrx ,as, element.get_ID());
 				if (cd == null)		//	createNew
 				{	
-					MCostType[] mcost = null;
-					mcost = MCostType.get(as.getCtx(), as.get_TrxName());
-	                for (MCostType mc : mcost)
+					List<MCostType> costtypes = MCostType.get(as.getCtx(), as.get_TrxName());
+	                for (MCostType mc : costtypes)
 					{	
 	                int M_CostType_ID = mc.get_ID();
 					cd = new MCostDetail (as, mtrx.getAD_Org_ID(), 
@@ -605,9 +604,8 @@ public class CostEngine
 				if (costs.scale() > as.getCostingPrecision())
 					costs = costs.setScale(as.getCostingPrecision(), RoundingMode.HALF_UP);
 				//
-				MCostType[] mcost = null;
-				mcost = MCostType.get(as.getCtx(), as.get_TrxName());
-				for (MCostType mc : mcost)
+				List<MCostType> costtypes = MCostType.get(as.getCtx(), as.get_TrxName());
+				for (MCostType mc : costtypes)
 				{	
 					int M_CostType_ID = mc.get_ID();
 					MCostDetail cd = new MCostDetail(as,
