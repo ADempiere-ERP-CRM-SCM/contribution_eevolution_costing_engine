@@ -51,6 +51,33 @@ public class MCostDetail extends X_M_CostDetail
 	private static final long serialVersionUID = 5452006110417178583L;
 	
 	/**
+	 * get the cost detail record after of date account
+	 * @param ctx Context
+	 * @param AD_Org_ID Organization ID
+	 * @param M_Product_ID Product ID
+	 * @param M_CostElement_ID Cost Element ID
+	 * @param CostingMethod Costing Method
+	 * @param DateAcct Date Accounting
+	 * @param trxName Transaction Name
+	 * @return List the MCostDetail 
+	 */
+	public static List<MCostDetail> getAfterDateAcct (Properties ctx , int AD_Org_ID, int M_Product_ID, int M_CostElement_ID,String CostingMethod,Timestamp DateAcct ,String trxName)
+	{
+		final String whereClause = MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
+		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+		+ MCostDetail.COLUMNNAME_DateAcct+ ">?"
+		;
+		return  new Query(ctx, Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(AD_Org_ID, M_Product_ID, M_CostElement_ID, CostingMethod, DateAcct)
+		.setOrderBy(COLUMNNAME_DateAcct +" DESC")
+		.list();
+	}
+
+	
+	/**
 	 * 	Create New Order Cost Detail for Production.
 	 * 	Called from Doc_Production
 	 *	@param as accounting schema
@@ -85,9 +112,8 @@ public class MCostDetail extends X_M_CostDetail
 		//
 		if (cd == null)		//	createNew
 		{
-			MCostType[] mcost = null;
-			mcost = MCostType.get(as.getCtx(), as.get_TrxName());
-			for (MCostType mc : mcost)
+			List<MCostType> costtypes = MCostType.get(as.getCtx(), trxName); 
+			for (MCostType mc : costtypes)
 			{	
 				int M_CostType_ID = mc.get_ID();
 				cd = new MCostDetail (as, AD_Org_ID, 
@@ -147,23 +173,23 @@ public class MCostDetail extends X_M_CostDetail
 		return retValue;
 	}	//	get
 	
-	public static MCostDetail[] getAfterCostAdjustmentDate (MCostDetail cd, String trxName)
+	public static List<MCostDetail> getAfterCostAdjustmentDate (MCostDetail cd, String trxName)
 	{
 		final String whereClause = MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
 		//+ MCostDetail.COLUMNNAME_CostAdjustmentDate+ ">='?' AND "
 		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">=?"
 		;
-		List <MCostDetail> list = new Query(cd.getCtx(), Table_Name, whereClause, trxName)
+		return  new Query(cd.getCtx(), Table_Name, whereClause, trxName)
 		.setClient_ID()
 		.setParameters(new Object[]{cd.getAD_Org_ID(), cd.getM_Product_ID(), 
-				cd.getM_AttributeSetInstance_ID(), /*cd.getCostAdjustmentDate(),*/ cd.getCostingMethod(), cd.get_ID()})
+				cd.getM_AttributeSetInstance_ID(),cd.getM_CostElement_ID(), /*cd.getCostAdjustmentDate(),*/ cd.getCostingMethod(), cd.get_ID()})
 		//.setOrderBy(COLUMNNAME_CostAdjustmentDate+" DESC, "+COLUMNNAME_M_CostDetail_ID+" DESC")
 		.setOrderBy(COLUMNNAME_M_CostDetail_ID+" DESC")
 		.list();
-		return list.toArray(new MCostDetail[list.size()]);
 	}
 	
 	/**
@@ -1026,4 +1052,6 @@ public class MCostDetail extends X_M_CostDetail
 		// TODO: load automatically m_cost if is not set
 		return m_cost;
 	}
+	
+	
 }	//	MCostDetail
