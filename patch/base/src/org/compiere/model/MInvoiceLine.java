@@ -1367,4 +1367,9 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 		// TODO Auto-generated method stub
 		return -1;
 	}
+	
+	@Override
+	public int getC_DocType_ID() {
+		return getParent().getC_DocType_ID();
+	}
 }	//	MInvoiceLine

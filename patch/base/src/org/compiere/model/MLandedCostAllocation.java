@@ -218,5 +218,9 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 		return -1;
 	}
 	
+	@Override
+	public int getC_DocType_ID() {
+		return -1;
+	}
 	
 }	//	MLandedCostAllocation

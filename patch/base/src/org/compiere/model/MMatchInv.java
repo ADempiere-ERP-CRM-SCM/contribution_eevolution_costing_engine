@@ -532,4 +532,8 @@ public class MMatchInv extends X_M_MatchInv implements IDocumentLine
 		return -1;
 	}
 	
+	@Override
+	public int getC_DocType_ID() {
+		return -1;
+	}
 }	//	MMatchInv

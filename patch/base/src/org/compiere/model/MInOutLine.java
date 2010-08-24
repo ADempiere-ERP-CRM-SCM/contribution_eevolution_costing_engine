@@ -762,4 +762,9 @@ implements IDocumentLine
 		return -1;
 	}
 
+	@Override
+	public int getC_DocType_ID() {
+		return getParent().getC_DocType_ID();
+	}
+
 }	//	MInOutLine

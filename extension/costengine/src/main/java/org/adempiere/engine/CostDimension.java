@@ -4,18 +4,13 @@ import java.util.ArrayList;
 import java.util.Properties;
 
 import org.adempiere.exceptions.AdempiereException;
-import org.compiere.model.I_M_InOutLine;
-import org.compiere.model.I_M_Locator;
 import org.compiere.model.MAcctSchema;
-import org.compiere.model.MInOutLine;
+import org.compiere.model.MCostType;
 import org.compiere.model.MLocator;
-import org.compiere.model.MMovementLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTable;
 import org.compiere.model.MTransaction;
 import org.compiere.model.Query;
-import org.compiere.model.X_M_Locator;
-import org.compiere.model.X_M_Transaction;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
 
@@ -343,5 +338,11 @@ public class CostDimension
 		}
 		//
 		return Org_ID == Org_ID_To && ASI_ID == ASI_ID_To;
+	}
+	
+	public String getCostingMethod()
+	{
+		MCostType ct = new MCostType(Env.getCtx(), getM_CostType_ID(), null);
+		return ct.getCostingMethod();
 	}
 }

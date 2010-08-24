@@ -74,6 +74,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	public void test01() throws Exception
 	{
 		CLogMgt.setLevel(Level.CONFIG);
+		//CLogMgt.setLevel(Level.ALL);
 		String trxName = getTrxName();
 		Trx.run(trxName, new TrxRunnable()
 		{
@@ -98,9 +99,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		BigDecimal qtyOrdered = new BigDecimal(100);
 		BigDecimal qtyReceipt = new BigDecimal(10);
 		BigDecimal qtyInvoiced = new BigDecimal(10);
+		BigDecimal qtySales = new BigDecimal(5);
 		
 		// Result
 		BigDecimal purchasePrice = new BigDecimal(36);
+		BigDecimal salesPrice = new BigDecimal(40);
 		BigDecimal invoicePrice = new BigDecimal(38);
 		
 		Timestamp today = new Timestamp (System.currentTimeMillis());
@@ -159,6 +162,43 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		
 		assertCostReceipt(product, receiptLine, as , trxName);
 		
+		MDocType salesType = null;
+		for (MDocType dt : MDocType.getOfDocBaseType(getCtx(), MDocType.DOCBASETYPE_SalesOrder))
+		{
+			if (MDocType.DOCSUBTYPESO_OnCreditOrder.equals(dt.getDocSubTypeSO()))
+			{
+				salesType = dt;
+				break;
+			}
+		}
+		
+		//Create Purchase Order
+		MOrder salesOrder = new MOrder(getCtx(), 0, trxName);
+		salesOrder.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		salesOrder.setC_BPartner_ID(bp.getC_BPartner_ID());
+		salesOrder.setIsSOTrx(true);
+		salesOrder.setDateOrdered(today);
+		salesOrder.setM_Warehouse_ID(w.getM_Warehouse_ID());
+		salesOrder.setSalesRep_ID(u.getAD_User_ID());
+		salesOrder.setC_DocTypeTarget_ID(salesType.getC_DocType_ID());
+		salesOrder.saveEx();
+		
+		// Create Line
+		MOrderLine salesOrderLine = new MOrderLine(salesOrder);
+		salesOrderLine.setM_Product_ID(product.getM_Product_ID());
+		salesOrderLine.setPrice(salesPrice);
+		salesOrderLine.setQtyEntered(qtySales);
+		salesOrderLine.setQtyOrdered(qtySales);
+		salesOrderLine.saveEx();
+		
+		// Complete Purchase Order
+		salesOrder.setDocAction(DocAction.ACTION_Complete);
+		salesOrder.setDocStatus(DocAction.STATUS_Drafted);
+		salesOrder.processIt(DocAction.ACTION_Complete);
+		salesOrder.saveEx();
+		
+		assertCostShipment(product, salesOrderLine, as , trxName);
+		
 		MInvoice invoice = new MInvoice(getCtx(), 0 , trxName);
 		invoice.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
 		invoice.setC_DocType_ID(MDocType.getDocType(MDocType.DOCBASETYPE_APInvoice));
@@ -180,6 +220,9 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		invoice.saveEx();
 		
 		assertCostInvoice(product, receiptLine, as, trxName);
+		
+		assertCostShipmentAdjust(product, salesOrderLine, as , trxName);
+		
 		
 		//Reverse Material Receipt
 		receipt.processIt(DocAction.ACTION_Reverse_Correct);
@@ -211,7 +254,142 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		{	
 			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("36.0000"));
 			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(10));
-			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("360"));
+			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("360.0000"));
+		}
+		
+		whereClause = whereClause + "AND CostingMethod=? AND M_InOutLine_ID=?";
+		parameters.add(as.getCostingMethod());
+		parameters.add(receiptLine.getM_InOutLine_ID());
+		MCostDetail cd = new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(parameters)
+		.first();
+		if(cd != null)
+		{
+			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("360.0000"));
+			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("0"));
+			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(10));
+			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("0"));
+			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("0"));
+			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("0")));
+		}
+	}
+	
+	/**
+	 * assert Cost Receipt
+	 * @param product
+	 * @param receiptLine
+	 * @param as
+	 * @param trxName
+	 */
+	private void assertCostShipment(MProduct product, MOrderLine orderLine, MAcctSchema as , String trxName)
+	{
+		MCostElement ce = getMaterialElement(trxName);
+
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? ";
+		ArrayList<Object> parameters = new ArrayList();
+		parameters.add(product.getM_Product_ID());
+		parameters.add(ce.getM_CostElement_ID());
+		parameters.add(as.getM_CostType_ID());
+		MCost cost = new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(parameters)
+		.first();
+		if(cost != null)
+		{	
+			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("36.0000"));
+			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(5));
+			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("180.0000"));
+		}
+		
+		whereClause = whereClause + "AND CostingMethod=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
+		parameters.add(as.getCostingMethod());
+		parameters.add(orderLine.getC_OrderLine_ID());
+		MCostDetail cd = new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(parameters)
+		.first();
+		if(cd != null)
+		{
+			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("-180.0000"));
+			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("0"));
+			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(-5));
+			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("36.0000"));
+			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("10"));
+			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("360.0000")));
+		}
+	}
+	
+	/**
+	 * assert Cost Receipt
+	 * @param product
+	 * @param receiptLine
+	 * @param as
+	 * @param trxName
+	 */
+	private void assertCostShipmentAdjust(MProduct product, MOrderLine orderLine, MAcctSchema as , String trxName)
+	{
+		MCostElement ce = getMaterialElement(trxName);
+
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? ";
+		ArrayList<Object> parameters = new ArrayList();
+		parameters.add(product.getM_Product_ID());
+		parameters.add(ce.getM_CostElement_ID());
+		parameters.add(as.getM_CostType_ID());
+		MCost cost = new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(parameters)
+		.first();
+		if(cost != null)
+		{	
+			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("38.0000"));
+			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(5));
+			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("190.0000"));
+		}
+		
+		whereClause = whereClause + "AND CostingMethod=? AND C_OrderLine_ID=?";
+		parameters.add(as.getCostingMethod());
+		parameters.add(orderLine.getC_OrderLine_ID());
+		MCostDetail cd = new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(parameters)
+		.first();
+		if(cd != null)
+		{
+			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("190.0000"));
+			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("0.0000"));
+			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(10));
+			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("0"));
+			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("0"));
+			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("0")));
+		}
+	}
+
+	/**
+	 * assert Cost Receipt
+	 * @param product
+	 * @param receiptLine
+	 * @param as
+	 * @param trxName
+	 */
+	private void assertCostReceiptReversal(MProduct product, MInOutLine receiptLine, MAcctSchema as , String trxName)
+	{
+		MCostElement ce = getMaterialElement(trxName);
+
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? ";
+		ArrayList<Object> parameters = new ArrayList();
+		parameters.add(product.getM_Product_ID());
+		parameters.add(ce.getM_CostElement_ID());
+		parameters.add(as.getM_CostType_ID());
+		MCost cost = new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(parameters)
+		.first();
+		if(cost != null)
+		{	
+			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("38.0000"));
+			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(0));
+			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("-20"));
 		}
 		
 		whereClause = whereClause + "AND CostingMethod=? AND M_InOutLine_ID=?";
@@ -225,12 +403,13 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		{
 			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("360.0000"));
 			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("0.0000"));
-			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(10));
+			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(-10));
 			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("0"));
 			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("0"));
 			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("0")));
 		}
 	}
+
 	
 	/**
 	 * Assert Cost Invoice 
@@ -255,8 +434,8 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		if(cost != null)
 		{	
 			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("38.0000"));
-			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(10));
-			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("380"));
+			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(5));
+			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("190.0000"));
 		}
 		
 		whereClause = whereClause + "AND CostingMethod=? AND M_InOutLine_ID=?";

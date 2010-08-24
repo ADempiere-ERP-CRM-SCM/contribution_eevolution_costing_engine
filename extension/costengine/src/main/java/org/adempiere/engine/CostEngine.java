@@ -236,7 +236,10 @@ public class CostEngine
 							
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
 			method.setCostingMethod(as, mtrx, cost, model.getPriceActual(), isSOTrx);
-			method.process();				
+			MCostDetail cd = method.process();	
+			final String idColumnName = CostEngine.getIDColumnName(model);		
+			cd.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(model));
+			cd.saveEx();
 		}
 	}
 
@@ -318,7 +321,9 @@ public class CostEngine
 			
 			if (ce.isLandedCost()) 
 			{
-					MCostDetail	cd = new MCostDetail(cost, model.getAD_Org_ID(),cc.getAmount(), cc.getQty());
+				    CostDimension dimension = new CostDimension (model.getAD_Client_ID(), model.getAD_Org_ID(), model.getM_Product_ID(), model.getM_AttributeSetInstance_ID(), cost.getM_CostType_ID(), as.getC_AcctSchema_ID(), cost.getM_CostElement_ID());
+					MCostDetail	cd = new MCostDetail(model.getCtx(), dimension, cc.getAmount() , cc.getQty(), model.get_TrxName());
+
 					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 						throw new AdempiereException("Cannot set "+idColumnName);
 					if (isSOTrx != null)

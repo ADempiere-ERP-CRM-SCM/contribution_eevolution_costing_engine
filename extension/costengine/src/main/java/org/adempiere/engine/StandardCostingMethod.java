@@ -29,8 +29,9 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		m_cost = cost;
 		m_price = price;
 		m_isSOTrx = isSOTrx;
+		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
 		m_model = mtrx.getDocumentLine();
-		m_costdetail = getCostDetail(mtrx);
+		m_costdetail = MCostDetail.getByTransaction(mtrx, m_dimension);
 	}
 
 	private void calculate()
@@ -75,7 +76,7 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		
 		if(m_costdetail == null)
 		{	
-			m_costdetail = new MCostDetail(m_cost, m_model.getAD_Org_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()), m_trx.getMovementQty());
+			m_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty(), m_trx.get_TrxName());
 			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
 		}		
 		else
@@ -118,46 +119,16 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		return;
 	}
 	
-	private void updateInventoryValue()
-	{
-			m_cost.setCurrentCostPrice(m_CurrentCostPrice);
-			m_cost.setCumulatedQty(m_CumulatedQty);
-			m_cost.setCumulatedAmt(m_CumulatedAmt);
-			m_cost.saveEx();
-	}
-	
 	public void createCostAdjutment()
 	{
-		//Create Adjustment
-		/**if(m_trx !=null && m_trx.getMovementType().endsWith("+") 
-		&& m_CumulatedQty.signum() == 0  
-		&& m_CumulatedAmt.signum() < 1)
-		{	//Create Adjustment Cost 
-			if(m_as.isAdjustCOGS())	
-			{
-				BigDecimal totalQty = Env.ZERO;
-				for(MCostDetail cd : getCostDetail())
-				{
-					totalQty = totalQty.add(cd.getQty());
-				}
-				for(MCostDetail cd : getCostDetail())
-				{
-					// Update and set Adjustment Cost
-					BigDecimal ration = (totalQty.divide(cd.getQty()));
-					cd.setCostAdjustment(m_CumulatedAmt.divide(ration));
-					cd.setCostAdjustmentDate(m_trx.getMovementDate());
-					cd.setCumulatedAmt(cd.getCumulatedAmt().add(cd.getCostAdjustment()));
-					cd.saveEx();
-				}
-			}
-		}*/	
 	}	
 
-	public void process() {
+	public MCostDetail process() {
 		calculate();
-		createCostAdjutment();
 		createCostDetail();		
 		updateInventoryValue();
+		createCostAdjutment();
+		return m_costdetail;
 	}
 
 	@Override

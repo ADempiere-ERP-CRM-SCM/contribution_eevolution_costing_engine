@@ -1098,4 +1098,9 @@ public class MOrderLine extends X_C_OrderLine implements IDocumentLine
 		// TODO Auto-generated method stub
 		return -1;
 	}
+	
+	@Override
+	public int getC_DocType_ID() {
+		return getParent().getC_DocType_ID();
+	}
 }	//	MOrderLine

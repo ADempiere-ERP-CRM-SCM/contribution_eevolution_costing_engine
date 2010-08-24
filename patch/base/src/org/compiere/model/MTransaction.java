@@ -37,11 +37,42 @@ import org.compiere.util.Env;
  */
 public class MTransaction extends X_M_Transaction
 {
+
+
+	
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 3411351000865493212L;
+	private static final long serialVersionUID = 1L;
 
+	/**
+	 * get the Material Transaction after Date Account
+	 * @param ctx Context
+	 * @param M_Product_ID Product ID
+	 * @param dateAcct Date Account 
+	 * @param trxName Transaction name
+	 * @return List with the MTransaction after date account
+	 */
+	static public List<MTransaction> getAfterDateAcct(Properties ctx , int M_Product_ID,Timestamp dateAcct, String trxName)
+	{
+		ArrayList<MTransaction> list = new ArrayList();
+		final String whereClause = I_M_Transaction.COLUMNNAME_M_Product_ID + "=?";
+		List<MTransaction> trxs = new Query(ctx, Table_Name, whereClause, trxName)
+			.setClient_ID()
+			.setParameters(M_Product_ID)
+			.list();
+		
+		for(MTransaction trx : trxs)
+		{
+			IDocumentLine model = trx.getDocumentLine();
+			if(model.getDateAcct().compareTo(dateAcct) > 0)
+			{
+				list.add(trx);
+			}
+		}	
+		return list;
+	}
+	
 	/**
 	 * get all material transaction for MInOutLine 
 	 * @param line MInOutLine
@@ -75,6 +106,8 @@ public class MTransaction extends X_M_Transaction
 			.setParameters(line.getM_Product_ID(),line.getM_InOutLine_ID(), M_ASI_ID)
 			.firstOnly();
 	}
+	
+	
 	
 	static public MTransaction getByDocumentLine (IDocumentLine model)
 	{

@@ -1060,4 +1060,9 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 		return -1;
 	}
 	
+	@Override
+	public int getC_DocType_ID() {
+		return -1;
+	}
+	
 }	//	MMatchPO

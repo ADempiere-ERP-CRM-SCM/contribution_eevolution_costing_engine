@@ -35,7 +35,8 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
         m_price = price;
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
-		m_costdetail = getCostDetail(mtrx);
+		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
+		m_costdetail = MCostDetail.getByTransaction(mtrx,m_dimension);
 	}
 	
 	public void calculate()
@@ -88,14 +89,14 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		m_cost.saveEx();
 	}
 
-	public void process()
+	public MCostDetail process()
 	{
 		processCostDetail();
+		return m_costdetail;
 	}
 
 	public void processCostDetail()
-	{
-		final String idColumnName = CostEngine.getIDColumnName(m_model);			
+	{		
 		if(m_costdetail == null)
 		{
 			for (MCostDetail cd : createCostDetails(m_cost, m_trx))
@@ -122,7 +123,6 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				m_costdetail.setCostAdjustmentDate(m_model.getDateAcct());
 				m_costdetail.saveEx();
 			}
-			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
 			m_costdetail.saveEx();
 			if (m_costdetail.getCostAdjustmentDate()!= null)
 			{
@@ -131,7 +131,6 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 					adjustementQueue(m_costdetail);
 				}		
 			}
-			return;
 		}
 	}
 
@@ -204,7 +203,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 	
 	public void adjustementQueue (MCostDetail costDetail)
 	{
-		final List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(costDetail, m_model.get_TrxName());
+		final List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(costDetail);
 		List<Object> list = new ArrayList<Object>();
 		
 		for (MCostDetail cd : cds)
@@ -296,5 +295,4 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		.setParameters(trx.getM_Transaction_ID(), trx.getM_Product_ID(), trx.getMovementQty().negate())
 		.first();
 	}
-	
 }

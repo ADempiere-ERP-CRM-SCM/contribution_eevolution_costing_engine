@@ -6,13 +6,10 @@ package org.adempiere.engine;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.adempiere.exceptions.AdempiereException;
-import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MTransaction;
-import org.compiere.model.Query;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
 
@@ -31,8 +28,10 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		m_cost = cost;
 		m_price = price;
 		m_isSOTrx = isSOTrx;
+		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
 		m_model = mtrx.getDocumentLine();
-		m_costdetail = getCostDetail(mtrx);
+		m_costdetail = MCostDetail.getByTransaction(m_trx, m_dimension);
+		m_last_costdetail = MCostDetail.getLastEntry(m_trx, m_dimension);
 	}
 	
 
@@ -40,14 +39,18 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	{	
 		if(m_model.getReversalLine_ID() > 0)
 			return;
-		
+
+		if(m_last_costdetail == null)
+		{
+			m_last_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, Env.ZERO , Env.ZERO, m_trx.get_TrxName());
+		}
 		
 		if(m_trx.getMovementType().endsWith("-"))
 		{	
-			m_CurrentCostPrice = m_cost.getCurrentCostPrice();
+			m_CurrentCostPrice = m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			m_Amount = m_trx.getMovementQty().multiply(m_CurrentCostPrice);
-			m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
-			m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount);
+			m_CumulatedQty = m_last_costdetail.getNewCumulatedQty().add(m_trx.getMovementQty());
+			m_CumulatedAmt = m_last_costdetail.getNewCumulatedAmt().add(m_Amount);
 			return;
 		}	
 		
@@ -57,14 +60,14 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			m_CumulatedQty = m_costdetail.getCumulatedQty().add(m_trx.getMovementQty());
 			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount);
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-			m_AdjustCost = m_CurrentCostPrice.multiply(m_cost.getCumulatedQty()).subtract(m_cost.getCumulatedAmt());	
+			m_AdjustCost = m_CurrentCostPrice.multiply(m_costdetail.getNewCumulatedQty()).subtract(m_costdetail.getNewCumulatedAmt());
 			return;
 		}
 	    if (m_price == null) //m_price is null at physical inventory
-	    	m_price = m_cost.getCurrentCostPrice();
+	    	m_price = m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 		m_Amount = m_trx.getMovementQty().multiply(m_price);	
-		m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
-		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount);
+		m_CumulatedQty = m_last_costdetail.getNewCumulatedQty().add(m_trx.getMovementQty());
+		m_CumulatedAmt = m_last_costdetail.getNewCumulatedAmt().add(m_Amount);
 		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 	}
 	
@@ -75,35 +78,41 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			createReveralCostDetail(m_model);
 			return;
 		}
-		
-		final String idColumnName = CostEngine.getIDColumnName(m_model);			
+					
 		if(m_costdetail == null)
 		{				
-			m_costdetail = new MCostDetail(m_cost, m_model.getAD_Org_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty());
-			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
+			m_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty(), m_trx.get_TrxName());
+			m_costdetail.setDateAcct(m_model.getDateAcct());
 		}		
 		else
 		{
-			if(!m_AdjustCost.equals(Env.ZERO))
+			if(m_AdjustCost.signum() != 0)
 			{
+				m_costdetail.setCostAdjustmentDate(m_model.getDateAcct());
 				m_costdetail.setCostAdjustment(m_AdjustCost);
 				m_costdetail.setProcessed(false);
-				m_costdetail.setDescription("Adjust Cost");
+				m_costdetail.setDescription("Adjust Cost:"+ m_AdjustCost);
 			}
-			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
+			else
+			{	
+				m_costdetail.setCumulatedAmt(m_last_costdetail.getNewCumulatedAmt());	
+				m_costdetail.setCumulatedQty(m_last_costdetail.getNewCumulatedQty());
+				m_costdetail.setCurrentCostPrice(m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
+				m_costdetail.setAmt(m_CurrentCostPrice.multiply(m_trx.getMovementQty()));
+			}	
+			
 			m_costdetail.saveEx();
 			return;
 		}
-		if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, m_model.get_ID()))
-			throw new AdempiereException("Cannot set "+idColumnName);
+		
 		if (m_isSOTrx != null)
 			m_costdetail.setIsSOTrx(m_isSOTrx);
 		else
 			m_costdetail.setIsSOTrx(m_model.isSOTrx());	
 		
-		m_costdetail.setCumulatedQty(m_cost.getCumulatedQty());
-		m_costdetail.setCumulatedAmt(m_cost.getCumulatedAmt());	
-		m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
+		m_costdetail.setCumulatedQty(m_last_costdetail.getNewCumulatedQty());
+		m_costdetail.setCumulatedAmt(m_last_costdetail.getNewCumulatedAmt());	
+		m_costdetail.setCurrentCostPrice(m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));
 		
 		StringBuilder description = new StringBuilder();
 		if (!Util.isEmpty(m_model.getDescription(), true))
@@ -118,81 +127,37 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		m_costdetail.saveEx();
 		return;
 	}
-	
-	private void updateInventoryValue()
-	{
-		m_cost.setCurrentCostPrice(m_CurrentCostPrice);
-		m_cost.setCumulatedQty(m_CumulatedQty);
-		m_cost.setCumulatedAmt(m_CumulatedAmt);
-		m_cost.saveEx();
-	}
 
-	public void process() {
+	public MCostDetail process() {
 
 		calculate();
-		createCostAdjutment();
 		createCostDetail();		
 		updateInventoryValue();
+		createCostAdjutment();
+		return m_costdetail;
 	}
 	
 	public void createCostAdjutment()
 	{
-		if (m_costdetail != null)
+		List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(m_costdetail);
+			
+		if(m_as.isAdjustCOGS() && m_costdetail.getCostAdjustmentDate()!= null)	
 		{
-			if(m_trx.getMovementType().endsWith("+") 
-					&& m_CumulatedQty.signum() == 0  
-					&& m_CumulatedAmt.signum() < 0)
-			{	//Create Adjustment Cost 
-				if(m_as.isAdjustCOGS())	
-				{
-					BigDecimal totalQty = Env.ZERO;
-					for(MCostDetail cd : getCostDetailForOutTrx())
-					{
-						totalQty = totalQty.add(cd.getQty());
-					}
-
-					for(MCostDetail cd : getCostDetailForOutTrx())
-					{
-						// Update and set Adjustment Cost
-						BigDecimal ration = (totalQty.divide(cd.getQty()));					
-						cd.setCostAdjustment(m_CumulatedAmt.divide(ration));
-						cd.setCostAdjustmentDate(m_trx.getMovementDate());
-						cd.setProcessed(false);
-						cd.saveEx();
-					}
-				}
+			for(MCostDetail cd : cds)
+			{
+				MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
+				CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(trx);
+			}
+		}
+		else
+		{
+			for(MCostDetail cd : cds)
+			{
+				cd.setProcessed(false);
+				cd.saveEx();
 			}
 		}
 	}	
-
-	
-	private boolean isAdjustment()
-	{
-		String whereClause ="EXIST (SELECT 1 FROM M_Transaction t WHERE t.M_Transaction_ID=M_Cost.M_Transaction_ID AND MovementType LIKE '%') AND AcctDate >=?";
-		boolean isAjustment = new Query(m_cost.getCtx(), I_M_CostDetail.Table_Name, whereClause, m_cost.get_TrxName())
-		.setClient_ID()
-		.setParameters(m_model.getDateAcct())
-		.setOrderBy(I_M_CostDetail.COLUMNNAME_DateAcct)
-		.match();
-		return isAjustment;
-	}
-	
-	private List<MCostDetail> getCostDetailForOutTrx()
-	{
-		StringBuffer whereClause = new StringBuffer("EXIST (SELECT 1 FROM M_Transaction t WHERE")
-		.append("t.M_Transaction_ID=M_Cost.M_Transaction_ID AND ")
-		.append("MovementType LIKE '%-' AND ")
-		.append("t.MovementDate <=? ) AND ") 
-		.append("AcctDate => ? AND ")
-		.append("CumulatedQty < 0 AND ") 
-		.append("CumulatedAmt < 0 ");
-		
-		return new Query(m_cost.getCtx(), I_M_CostDetail.Table_Name , whereClause.toString(), m_cost.get_TrxName())
-		.setClient_ID()
-		.setParameters(m_trx.getMovementDate(), m_model.getDateAcct())
-		.setOrderBy(I_M_CostDetail.COLUMNNAME_DateAcct + " DESC")
-		.list();
-	}
 
 	@Override
 	public void processCostDetail(MCostDetail mCostdetail) {
@@ -205,5 +170,4 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 }

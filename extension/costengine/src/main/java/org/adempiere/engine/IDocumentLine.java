@@ -35,6 +35,7 @@ public interface IDocumentLine
 	public int getAD_Client_ID();
 	public int getAD_Org_ID();
 	public int getM_Product_ID();
+	public int getC_DocType_ID();
 	public String getDescription();
 	public int getM_Locator_ID();
 	public int getM_LocatorTo_ID();

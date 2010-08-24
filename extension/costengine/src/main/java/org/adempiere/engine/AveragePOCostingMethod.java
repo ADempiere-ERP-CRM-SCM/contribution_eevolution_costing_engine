@@ -35,7 +35,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 		m_model = docLine;
 	}
 	
-	public void process()
+	public MCostDetail process()
 	{
 		MCost cost = ((MCostDetail) m_costdetail).getM_Cost();
 		CLogger s_log = CLogger.getCLogger(AveragePOCostingMethod.class);
@@ -59,7 +59,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 			s_log.finer("QtyAdjust - AveragePO - " + cost);
 			cost.saveEx();
 		}
-		return;
+		return m_costdetail;
 	}
 
 	@Override
@@ -73,15 +73,4 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-		
-	/*public List<CostComponent> getCostComponents(IDocumentLine model, 
-			I_M_Transaction mtrx, I_M_Cost cost) {
-
-		List<CostComponent> list = new ArrayList<CostComponent>();
-		BigDecimal cc = cost.getCurrentCostPrice();
-		list.add(new CostComponent(mtrx.getMovementQty(), cc));
-
-		return list;
-	}*/
 }

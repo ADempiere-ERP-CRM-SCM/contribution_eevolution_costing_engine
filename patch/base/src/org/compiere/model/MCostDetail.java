@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.engine.CostDimension;
 import org.adempiere.engine.CostingMethodFactory;
 import org.adempiere.engine.ICostingMethod;
-import org.adempiere.engine.IDocumentLine;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -45,36 +45,82 @@ import org.compiere.util.Env;
  */
 public class MCostDetail extends X_M_CostDetail
 {
+
+	
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 5452006110417178583L;
+	private static final long serialVersionUID = 1L;
+
+	/**
+	 * get the last entry for a Cost Detail based on the Material Transaction and Cost Dimension
+	 * @param trx Material Transaction
+	 * @param dimension Cost Dimension
+	 * @return MCostDetail Cost Detail
+	 */
+	public static MCostDetail getLastEntry (MTransaction trx, CostDimension dimension)
+	{	
+		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ("
+		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? OR "
+		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=0 ) AND "
+		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ("
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? OR " 
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=0) AND " 
+		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
+		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Transaction_ID + "<? AND "
+		+ MCostDetail.COLUMNNAME_Qty + "> 0";
+		;
+		return  new Query(trx.getCtx(), Table_Name, whereClause, trx.get_TrxName())
+		.setParameters( 
+				dimension.getAD_Client_ID(),
+				dimension.getAD_Org_ID(), 
+				dimension.getC_AcctSchema_ID(),
+				dimension.getM_Product_ID(),
+				dimension.getM_AttributeSetInstance_ID(), 
+				dimension.getM_CostElement_ID(), 
+				dimension.getM_CostType_ID(),
+				dimension.getCostingMethod(),
+				trx.getM_Transaction_ID())
+		.setOrderBy(COLUMNNAME_M_Transaction_ID)
+		.first();
+	}
 	
 	/**
-	 * get the cost detail record after of date account
-	 * @param ctx Context
-	 * @param AD_Org_ID Organization ID
-	 * @param M_Product_ID Product ID
-	 * @param M_CostElement_ID Cost Element ID
-	 * @param CostingMethod Costing Method
-	 * @param DateAcct Date Accounting
-	 * @param trxName Transaction Name
-	 * @return List the MCostDetail 
+	 * get Cost Detail Based on  Material Transaction and Cost Dimension
+	 * @param trx Material Transaction
+	 * @param dimension Cost Dimension
+	 * @return MCostDetail cost detail
 	 */
-	public static List<MCostDetail> getAfterDateAcct (Properties ctx , int AD_Org_ID, int M_Product_ID, int M_CostElement_ID,String CostingMethod,Timestamp DateAcct ,String trxName)
+	public static MCostDetail getByTransaction(MTransaction trx, CostDimension dimension)
 	{
-		final String whereClause = MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
+		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ("
+		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? OR "
+		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=0 ) AND "
+		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ("
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? OR " 
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=0) AND " 
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-		+ MCostDetail.COLUMNNAME_DateAcct+ ">?"
-		;
-		return  new Query(ctx, Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(AD_Org_ID, M_Product_ID, M_CostElement_ID, CostingMethod, DateAcct)
-		.setOrderBy(COLUMNNAME_DateAcct +" DESC")
-		.list();
+		+ MCostDetail.COLUMNNAME_M_Transaction_ID + "=?";
+		return new Query (trx.getCtx(), I_M_CostDetail.Table_Name, whereClause , trx.get_TrxName())
+		.setParameters(
+				dimension.getAD_Client_ID(),
+				dimension.getAD_Org_ID(), 
+				dimension.getC_AcctSchema_ID(),
+				dimension.getM_Product_ID(),
+				dimension.getM_AttributeSetInstance_ID(), 
+				dimension.getM_CostElement_ID(), 
+				dimension.getM_CostType_ID(),
+				dimension.getCostingMethod(),
+				trx.getM_Transaction_ID())
+		.firstOnly();
 	}
+	
 
 	
 	/**
@@ -173,7 +219,7 @@ public class MCostDetail extends X_M_CostDetail
 		return retValue;
 	}	//	get
 	
-	public static List<MCostDetail> getAfterCostAdjustmentDate (MCostDetail cd, String trxName)
+	public static List<MCostDetail> getAfterCostAdjustmentDate (MCostDetail cd)
 	{
 		final String whereClause = MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
@@ -181,9 +227,9 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
 		//+ MCostDetail.COLUMNNAME_CostAdjustmentDate+ ">='?' AND "
-		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">=?"
+		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">?"
 		;
-		return  new Query(cd.getCtx(), Table_Name, whereClause, trxName)
+		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
 		.setClient_ID()
 		.setParameters(new Object[]{cd.getAD_Org_ID(), cd.getM_Product_ID(), 
 				cd.getM_AttributeSetInstance_ID(),cd.getM_CostElement_ID(), /*cd.getCostAdjustmentDate(),*/ cd.getCostingMethod(), cd.get_ID()})
@@ -192,6 +238,7 @@ public class MCostDetail extends X_M_CostDetail
 		.list();
 	}
 	
+
 	/**
 	 * 	Process Cost Details for product
 	 *	@param product product
@@ -312,35 +359,29 @@ public class MCostDetail extends X_M_CostDetail
 		setQty (Qty);
 		setDescription(Description);
 	}	//	MCostDetail
-
 	/**
-	 * @param cost
-	 * @param AD_Org_ID Organization ID
-	 * @param amt
-	 * @param qty
+	 * Create Cost Detail based on Cost Dimension
+	 * @param ctx Context
+	 * @param dimension Cost dimension
+	 * @param amt Amount
+	 * @param qty Quantity
+	 * @param trxName Transaction Name
 	 */
-	public MCostDetail(MCost cost,int AD_Org_ID ,BigDecimal amt, BigDecimal qty)
+	public MCostDetail(Properties ctx, CostDimension dimension ,BigDecimal amt, BigDecimal qty, String trxName)
 	{
-		this (cost.getCtx(), 0, cost.get_TrxName());
-		setAD_Client_ID(cost.getAD_Client_ID());
-		setAD_Org_ID(AD_Org_ID);
-		setC_AcctSchema_ID(cost.getC_AcctSchema_ID());
-		setM_Product_ID(cost.getM_Product_ID());
-		setM_AttributeSetInstance_ID(cost.getM_AttributeSetInstance_ID());
-		//
-		setM_CostType_ID(cost.getM_CostType_ID());
-		setM_CostElement_ID(cost.getM_CostElement_ID());
-		MCostType ct = new MCostType(cost.getCtx(), cost.getM_CostType_ID(), cost.get_TrxName());
-		setCostingMethod(ct.getCostingMethod()); 
-		setCurrentCostPrice(cost.getCurrentCostPrice());
-		setCurrentCostPriceLL(cost.getCurrentCostPriceLL());
-		setCumulatedQty(cost.getCumulatedQty());
-		setCumulatedAmt(cost.getCumulatedAmt());
-		//
+		this (ctx, 0, trxName);
+		setAD_Client_ID(dimension.getAD_Client_ID());
+		setAD_Org_ID(dimension.getAD_Org_ID());
+		setC_AcctSchema_ID(dimension.getC_AcctSchema_ID());
+		setM_Product_ID(dimension.getM_Product_ID());
+		setM_CostType_ID(dimension.getM_CostType_ID());
+		setM_CostElement_ID(dimension.getM_CostElement_ID());
+		setM_AttributeSetInstance_ID(dimension.getM_AttributeSetInstance_ID());
+		setCostingMethod(dimension.getCostingMethod()); 
 		setAmt(amt);
 		setQty(qty);
-		setDescription(cost.getDescription());
 	}
+	
 	/**
 	 * 	Set Amt
 	 *	@param Amt amt
@@ -439,6 +480,8 @@ public class MCostDetail extends X_M_CostDetail
 		sb.append(", Product="+ getM_Product().getName());
 		sb.append(", Cost Element="+ getM_CostElement().getName());
 		sb.append(", Costing Method="+ getCostingMethod());
+		if(getM_Transaction_ID() != 0)
+			sb.append (",M_Transaction_ID=").append (getM_Transaction_ID());
 		if (getC_OrderLine_ID() != 0)
 			sb.append (",C_OrderLine_ID=").append (getC_OrderLine_ID());
 		if (getM_InOutLine_ID() != 0)
@@ -1053,5 +1096,21 @@ public class MCostDetail extends X_M_CostDetail
 		return m_cost;
 	}
 	
+	public BigDecimal getNewCurrentCostPrice(int scale, int roundingMode)
+	{
+		if(getNewCumulatedQty().signum() > 0)
+			return getNewCumulatedAmt().divide(getNewCumulatedQty(), scale , roundingMode);
+		else return BigDecimal.ZERO;
+	}
+	
+	public BigDecimal getNewCumulatedAmt()
+	{
+		return getCumulatedAmt().add(getAmt()).add(getCostAdjustment());
+	}
+	
+	public BigDecimal getNewCumulatedQty()
+	{
+		return getCumulatedQty().add(getQty());
+	}
 	
 }	//	MCostDetail

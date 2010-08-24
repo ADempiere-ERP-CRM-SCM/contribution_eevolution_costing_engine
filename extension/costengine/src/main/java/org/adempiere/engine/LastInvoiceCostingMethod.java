@@ -4,13 +4,9 @@
 package org.adempiere.engine;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
-import org.compiere.model.I_M_Cost;
-import org.compiere.model.I_M_CostDetail;
-import org.compiere.model.I_M_Transaction;
+
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
@@ -33,10 +29,11 @@ public class LastInvoiceCostingMethod extends AbstractCostingMethod implements I
 		m_cost = cost;
 		m_price = price;
 		m_isSOTrx = isSOTrx;
+		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
 		m_model = mtrx.getDocumentLine();
 	}
 	
-	public void process() {
+	public MCostDetail process() {
 		MCost cost = ((MCostDetail) m_costdetail).getM_Cost();
 		CLogger s_log = CLogger.getCLogger(LastInvoiceCostingMethod.class);
 
@@ -71,7 +68,7 @@ public class LastInvoiceCostingMethod extends AbstractCostingMethod implements I
 			s_log.finer("QtyAdjust - LastInv - " + cost);
 			cost.saveEx();
 		}
-		return;
+		return m_costdetail;
 	}
 
 	@Override
@@ -85,14 +82,4 @@ public class LastInvoiceCostingMethod extends AbstractCostingMethod implements I
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	/*@Override
-	public List<CostComponent> getCostComponents(IDocumentLine model,
-			I_M_Transaction mtrx, I_M_Cost cost) {
-
-		List<CostComponent> list = new ArrayList<CostComponent>();
-		BigDecimal cc = cost.getCurrentCostPrice();
-		list.add(new CostComponent(mtrx.getMovementQty(), cc));
-		return list;
-	}*/
 }

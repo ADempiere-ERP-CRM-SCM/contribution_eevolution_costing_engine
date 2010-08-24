@@ -385,4 +385,9 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine
 	{
 		return super.getM_LocatorTo_ID();
 	}	
+	
+	@Override
+	public int getC_DocType_ID() {
+		return getParent().getC_DocType_ID();
+	}
 }	//	MMovementLine

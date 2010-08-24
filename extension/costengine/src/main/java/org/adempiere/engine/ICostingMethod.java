@@ -18,6 +18,6 @@ public interface ICostingMethod
 {
 	public void setCostingMethod(MAcctSchema as,MTransaction mtrx,
 			MCost cost, BigDecimal price, Boolean isSOTrx);
-	public void process();
+	public MCostDetail process();
 	public void processCostDetail(MCostDetail m_costdetail);//for reversal documents
 }
