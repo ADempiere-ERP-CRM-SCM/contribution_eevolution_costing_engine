@@ -143,16 +143,14 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			MCostDetail original_cd = MCostDetail.getByTransaction(original_trx, m_dimension); 
 			m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_model.get_TrxName());
 			m_costdetail.copyValues(original_cd , m_costdetail);
-			m_costdetail.setQty(m_trx.getMovementQty());
-			m_costdetail.setAmt(original_cd.getAmt());
+			m_costdetail.setQty(original_cd.getQty().negate());
+			m_costdetail.setAmt(original_cd.getAmt().negate());
+			m_costdetail.setCostAdjustment(original_cd.getCostAdjustment().negate());
+			m_costdetail.setCostAdjustmentDate(original_cd.getCostAdjustmentDate());
+			m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
+			m_costdetail.setCumulatedAmt(m_cost.getCumulatedAmt());
+			m_costdetail.setCumulatedQty(m_cost.getCumulatedQty());
 			m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
-			
-			m_Amount = m_costdetail.getAmt();
-			m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
-			m_CumulatedAmt = m_cost.getCumulatedAmt().subtract(m_Amount);
-			m_CurrentCostPrice = m_costdetail.getCurrentCostPrice();
-			m_AdjustCost = BigDecimal.ZERO;
-			m_costdetail.setCostAdjustment(m_AdjustCost);
 			m_costdetail.saveEx();	
 			return;
 	}

@@ -1098,7 +1098,7 @@ public class MCostDetail extends X_M_CostDetail
 	
 	public BigDecimal getNewCurrentCostPrice(int scale, int roundingMode)
 	{
-		if(getNewCumulatedQty().signum() > 0)
+		if(getNewCumulatedQty().signum() != 0)
 			return getNewCumulatedAmt().divide(getNewCumulatedQty(), scale , roundingMode);
 		else return BigDecimal.ZERO;
 	}

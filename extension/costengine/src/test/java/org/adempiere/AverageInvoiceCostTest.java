@@ -60,6 +60,17 @@ import test.AdempiereTestCase;
  */
 public class AverageInvoiceCostTest extends AdempiereTestCase
 {
+	
+	MBPartner bp =null;
+	MBPartnerLocation[]  bpls =null;
+	MWarehouse w = null;
+	MUser u = null;
+	MProduct product = null;
+	MAcctSchema as = null;
+	String trxName = getTrxName();
+	
+	Timestamp today = new Timestamp (System.currentTimeMillis());
+	
 	@Override
 	protected void setUp() throws Exception
 	{
@@ -75,7 +86,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	{
 		CLogMgt.setLevel(Level.CONFIG);
 		//CLogMgt.setLevel(Level.ALL);
-		String trxName = getTrxName();
+
 		Trx.run(trxName, new TrxRunnable()
 		{
 			public void run(String trxName) 
@@ -90,144 +101,137 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 */
 	void createBusinessCaseTest(String trxName)
 	{
-		MBPartner bp = (MBPartner) getEntity(I_C_BPartner.Table_Name, I_C_BPartner.COLUMNNAME_Value, "SeedFarm", trxName);
-		MBPartnerLocation[]  bpls = MBPartnerLocation.getForBPartner(getCtx(), bp.getC_BPartner_ID(), trxName);
-		MWarehouse w = (MWarehouse) getEntity(I_M_Warehouse.Table_Name, I_M_Warehouse.COLUMNNAME_Value, "HQ", trxName);
-		MUser u = (MUser) getEntity(I_AD_User.Table_Name, I_AD_User.COLUMNNAME_Name, "GardenAdmin", trxName);
-		MProduct product = (MProduct) getEntity(I_M_Product.Table_Name, I_M_Product.COLUMNNAME_Value, "Oak" , trxName);
-		MAcctSchema as = MAcctSchema.get(getCtx(), 101);
-		BigDecimal qtyOrdered = new BigDecimal(100);
-		BigDecimal qtyReceipt = new BigDecimal(10);
-		BigDecimal qtyInvoiced = new BigDecimal(10);
-		BigDecimal qtySales = new BigDecimal(5);
+		createDataMaster();
 		
-		// Result
-		BigDecimal purchasePrice = new BigDecimal(36);
-		BigDecimal salesPrice = new BigDecimal(40);
-		BigDecimal invoicePrice = new BigDecimal(38);
-		
-		Timestamp today = new Timestamp (System.currentTimeMillis());
-		if (bp == null ||  w == null || u == null)
-			throw new AdempiereException("Object null " );
-		
-		//Create Purchase Order
-		MOrder order = new MOrder(getCtx(), 0, trxName);
-		order.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
-		order.setC_BPartner_ID(bp.getC_BPartner_ID());
-		order.setIsSOTrx(false);
-		order.setDateOrdered(today);
-		order.setM_Warehouse_ID(w.getM_Warehouse_ID());
-		order.setSalesRep_ID(u.getAD_User_ID());
-		order.setC_DocTypeTarget_ID(MDocType.getDocType(MDocType.DOCBASETYPE_PurchaseOrder));
-		order.saveEx();
-		
-		// Create Line
-		MOrderLine orderLine = new MOrderLine(order);
-		orderLine.setM_Product_ID(product.getM_Product_ID());
-		orderLine.setPrice(purchasePrice);
-		orderLine.setQtyEntered(qtyOrdered);
-		orderLine.saveEx();
-		
-		// Complete Purchase Order
-		order.setDocAction(DocAction.ACTION_Complete);
-		order.setDocStatus(DocAction.STATUS_Drafted);
-		order.processIt(DocAction.ACTION_Complete);
-		order.saveEx();
-		
-		// Create Material Receipt
-		MInOut receipt = new MInOut(getCtx() , 0 , trxName);
-		receipt.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
-		receipt.setC_DocType_ID(MDocType.getDocType(MDocType.DOCBASETYPE_MaterialReceipt));
-		receipt.setC_BPartner_ID(bp.getC_BPartner_ID());
-		receipt.setC_BPartner_Location_ID(bpls[0].getC_BPartner_Location_ID());
-		receipt.setMovementDate(today);
-		receipt.setIsSOTrx(false);
-		receipt.setM_Warehouse_ID(w.getM_Warehouse_ID());
-		receipt.setMovementType(MInOut.MOVEMENTTYPE_VendorReceipts);
-		receipt.saveEx();
-		
-		// Create Materia Receipt Line
-		MInOutLine receiptLine = new MInOutLine(receipt);
-		receiptLine.setC_OrderLine_ID(orderLine.getC_OrderLine_ID());
-		receiptLine.setM_Product_ID(product.getM_Product_ID());
-		receiptLine.setMovementQty(qtyReceipt);
-		receiptLine.setM_Locator_ID(qtyReceipt);
-		receiptLine.saveEx();
-		
-		// Complete Receipt
-		receipt.setDocStatus(DocAction.STATUS_Drafted);
-		receipt.setDocAction(DocAction.ACTION_Complete);
-		receipt.processIt(DocAction.ACTION_Complete);
-		receipt.saveEx();
-		
-		assertCostReceipt(product, receiptLine, as , trxName);
-		
-		MDocType salesType = null;
-		for (MDocType dt : MDocType.getOfDocBaseType(getCtx(), MDocType.DOCBASETYPE_SalesOrder))
-		{
-			if (MDocType.DOCSUBTYPESO_OnCreditOrder.equals(dt.getDocSubTypeSO()))
-			{
-				salesType = dt;
-				break;
-			}
+		MOrder purchase = createPurchaseOrder(today, new BigDecimal(100), new BigDecimal(36));
+		MInOut receipt= null;
+		for (MOrderLine line : purchase.getLines())
+		{	
+			receipt = createMaterialReceipt(today,new BigDecimal(10), line.getC_OrderLine_ID());
+
+		}	
+
+		for (MInOutLine line : receipt.getLines())
+		{	
+			
+				assertCostReceipt(line.getM_Product_ID(), line.getM_InOutLine_ID(), as , trxName);	
 		}
 		
-		//Create Purchase Order
-		MOrder salesOrder = new MOrder(getCtx(), 0, trxName);
-		salesOrder.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
-		salesOrder.setC_BPartner_ID(bp.getC_BPartner_ID());
-		salesOrder.setIsSOTrx(true);
-		salesOrder.setDateOrdered(today);
-		salesOrder.setM_Warehouse_ID(w.getM_Warehouse_ID());
-		salesOrder.setSalesRep_ID(u.getAD_User_ID());
-		salesOrder.setC_DocTypeTarget_ID(salesType.getC_DocType_ID());
-		salesOrder.saveEx();
 		
-		// Create Line
-		MOrderLine salesOrderLine = new MOrderLine(salesOrder);
-		salesOrderLine.setM_Product_ID(product.getM_Product_ID());
-		salesOrderLine.setPrice(salesPrice);
-		salesOrderLine.setQtyEntered(qtySales);
-		salesOrderLine.setQtyOrdered(qtySales);
-		salesOrderLine.saveEx();
-		
-		// Complete Purchase Order
-		salesOrder.setDocAction(DocAction.ACTION_Complete);
-		salesOrder.setDocStatus(DocAction.STATUS_Drafted);
-		salesOrder.processIt(DocAction.ACTION_Complete);
-		salesOrder.saveEx();
-		
-		assertCostShipment(product, salesOrderLine, as , trxName);
-		
-		MInvoice invoice = new MInvoice(getCtx(), 0 , trxName);
-		invoice.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
-		invoice.setC_DocType_ID(MDocType.getDocType(MDocType.DOCBASETYPE_APInvoice));
-		invoice.setIsSOTrx(false);
-		invoice.setC_BPartner_ID(bp.getC_BPartner_ID());
-		invoice.setDateInvoiced(today);
-		invoice.setDocStatus(DocAction.STATUS_Drafted);
-		invoice.setDocAction(DocAction.ACTION_Complete);
-		invoice.saveEx();
-		
-		MInvoiceLine invoiceLine = new MInvoiceLine(invoice);
-		invoiceLine.setM_Product_ID(product.getM_Product_ID());
-		invoiceLine.setM_InOutLine_ID(receiptLine.getM_InOutLine_ID());
-		invoiceLine.setQtyEntered(qtyInvoiced);
-		invoiceLine.setPriceActual(invoicePrice);
-		invoiceLine.saveEx();
-		
-		invoice.processIt(DocAction.ACTION_Complete);
-		invoice.saveEx();
-		
-		assertCostInvoice(product, receiptLine, as, trxName);
-		
-		assertCostShipmentAdjust(product, salesOrderLine, as , trxName);
+		MOrder sales = createSalesOrder(today, new BigDecimal(5), new BigDecimal(45));
+		for (MOrderLine line : sales.getLines())
+		{	
+			
+			assertCostShipment(line.getM_Product_ID(), line.getC_OrderLine_ID(), as , trxName);
+		}	
 		
 		
+		int M_InOutLine_ID= 0;
+		for (MInOutLine line : receipt.getLines())
+		{	
+			M_InOutLine_ID = line.getM_InOutLine_ID();
+			MInvoice invoice = createInvoiceVendor(today, new BigDecimal(10), new BigDecimal(38), line.getM_InOutLine_ID());		
+		}	
+		
+		
+		
+		assertCostInvoice(product.getM_Product_ID(), M_InOutLine_ID, as ,trxName);
+		
+		for (MOrderLine line : sales.getLines())
+		{				
+			assertCostShipmentAdjust(line.getM_Product_ID(), line.getC_OrderLine_ID(), as, trxName);
+		}	
+			
 		//Reverse Material Receipt
 		receipt.processIt(DocAction.ACTION_Reverse_Correct);
 		receipt.saveEx();
 		
+		MInOut reversal = new MInOut(getCtx(), receipt.getReversal_ID(), trxName);
+		
+		for (MInOutLine line : reversal.getLines(true))
+		{			
+			assertCostReceiptReversal(line.getM_Product_ID(),line.getM_InOutLine_ID(), as, trxName);	
+		}
+		
+		
+	}
+	
+	public MCost assertCost(CostResult costResult)
+	{
+		MCost cost = getCost(costResult.M_Product_ID);
+		assertEquals("Current Price Cost ",cost.getCurrentCostPrice(),costResult.currentCostPrice);
+		assertEquals("Cumulate Qty ", cost.getCumulatedQty() , costResult.cumulateQty);
+		assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , costResult.cumulateAmt);
+		return cost;
+	}
+	
+	public void assertCostDetail(CostResult costResult, String whereClause, ArrayList<Object> parameters)
+	{
+		MCostDetail cd = getCostDetail(whereClause, parameters);
+		assertEquals("Cost Detail Amt ",cd.getAmt() , costResult.cdAmt);
+		assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , costResult.cdAdjutment);
+		assertEquals("Cost Detail Qty", cd.getQty() , costResult.cdQty);
+		assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice(), costResult.cdCurrentCostPrice);
+		assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , costResult.cdCumulateQty);
+		assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , costResult.cdCumulateAmt);
+	}
+	
+	public MCost getCost(int M_Product_ID)
+	{
+		MCostElement ce = getMaterialElement(trxName);
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? ";
+		ArrayList<Object> parameters = new ArrayList();
+		parameters.add(M_Product_ID);
+		parameters.add(ce.getM_CostElement_ID());
+		parameters.add(as.getM_CostType_ID());
+		return new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(parameters)
+		.first();
+	}
+	public MCostDetail getCostDetail(String whereClause, ArrayList<Object> parameters)
+	{
+		return new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(parameters)
+		.first();	
+	}
+	
+	
+	
+	/**
+	 * assert Cost Receipt
+	 * @param product
+	 * @param receiptLine
+	 * @param as
+	 * @param trxName
+	 */
+	private void assertCostReceipt(int M_Product_ID,
+			int M_InOutLine_ID, 
+			MAcctSchema as,
+			String trxName)
+	{
+		CostResult costResult = new CostResult(product.getM_Product_ID(),
+				 new BigDecimal("36.0000"),
+				 new BigDecimal(10),
+				 new BigDecimal("360.0000"),
+				 new BigDecimal("360.0000"),
+				 new BigDecimal("0"),
+				 new BigDecimal("10"),
+				 new BigDecimal("0"),
+				 new BigDecimal("0"),
+				 new BigDecimal("0")
+				 );
+		
+		MCost cost = assertCost(costResult);
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";	
+		ArrayList<Object> parameters = new ArrayList();	
+		parameters.add(costResult.M_Product_ID);
+		parameters.add(cost.getM_CostElement_ID());
+		parameters.add(cost.getM_CostType_ID());
+		parameters.add(as.getCostingMethod());
+		parameters.add(M_InOutLine_ID);
+		assertCostDetail(costResult,whereClause,parameters);
 	}
 	
 	/**
@@ -237,42 +241,28 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param as
 	 * @param trxName
 	 */
-	private void assertCostReceipt(MProduct product, MInOutLine receiptLine, MAcctSchema as , String trxName)
+	private void assertCostShipment(int M_Product_ID,int C_OrderLine_ID, MAcctSchema as , String trxName)
 	{
-		MCostElement ce = getMaterialElement(trxName);
-
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? ";
-		ArrayList<Object> parameters = new ArrayList();
-		parameters.add(product.getM_Product_ID());
-		parameters.add(ce.getM_CostElement_ID());
-		parameters.add(as.getM_CostType_ID());
-		MCost cost = new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		if(cost != null)
-		{	
-			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("36.0000"));
-			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(10));
-			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("360.0000"));
-		}
+		CostResult costResult = new CostResult(M_Product_ID,
+				new BigDecimal("36.0000"),
+				new BigDecimal(5),
+				new BigDecimal("180.0000"),
+				new BigDecimal("-180.0000"),
+				new BigDecimal("0"),
+				new BigDecimal(-5),
+				new BigDecimal("36.0000"),
+				new BigDecimal("10"),
+				new BigDecimal("360.0000"));
 		
-		whereClause = whereClause + "AND CostingMethod=? AND M_InOutLine_ID=?";
+		MCost cost = assertCost(costResult);
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
+		ArrayList<Object> parameters = new ArrayList();	
+		parameters.add(costResult.M_Product_ID);
+		parameters.add(cost.getM_CostElement_ID());
+		parameters.add(cost.getM_CostType_ID());
 		parameters.add(as.getCostingMethod());
-		parameters.add(receiptLine.getM_InOutLine_ID());
-		MCostDetail cd = new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		if(cd != null)
-		{
-			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("360.0000"));
-			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("0"));
-			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(10));
-			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("0"));
-			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("0"));
-			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("0")));
-		}
+		parameters.add(C_OrderLine_ID);
+		assertCostDetail(costResult,whereClause,parameters);
 	}
 	
 	/**
@@ -282,87 +272,28 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param as
 	 * @param trxName
 	 */
-	private void assertCostShipment(MProduct product, MOrderLine orderLine, MAcctSchema as , String trxName)
+	private void assertCostShipmentAdjust(int M_Product_ID , int C_OrderLine_ID, MAcctSchema as , String trxName)
 	{
-		MCostElement ce = getMaterialElement(trxName);
-
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? ";
-		ArrayList<Object> parameters = new ArrayList();
-		parameters.add(product.getM_Product_ID());
-		parameters.add(ce.getM_CostElement_ID());
-		parameters.add(as.getM_CostType_ID());
-		MCost cost = new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		if(cost != null)
-		{	
-			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("36.0000"));
-			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(5));
-			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("180.0000"));
-		}
+		CostResult costResult = new CostResult(M_Product_ID, 
+				new BigDecimal("38.0000"),
+				new BigDecimal("5"),
+				new BigDecimal("190.0000"),
+				new BigDecimal("-190.0000"),
+				new BigDecimal("0"),
+				new BigDecimal("-5"),
+				new BigDecimal("38.0000"),
+				new BigDecimal("10"),
+				new BigDecimal("380.0000"));
 		
-		whereClause = whereClause + "AND CostingMethod=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
+		MCost cost = assertCost(costResult);		
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
+		ArrayList<Object> parameters = new ArrayList();	
+		parameters.add(costResult.M_Product_ID);
+		parameters.add(cost.getM_CostElement_ID());
+		parameters.add(cost.getM_CostType_ID());
 		parameters.add(as.getCostingMethod());
-		parameters.add(orderLine.getC_OrderLine_ID());
-		MCostDetail cd = new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		if(cd != null)
-		{
-			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("-180.0000"));
-			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("0"));
-			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(-5));
-			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("36.0000"));
-			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("10"));
-			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("360.0000")));
-		}
-	}
-	
-	/**
-	 * assert Cost Receipt
-	 * @param product
-	 * @param receiptLine
-	 * @param as
-	 * @param trxName
-	 */
-	private void assertCostShipmentAdjust(MProduct product, MOrderLine orderLine, MAcctSchema as , String trxName)
-	{
-		MCostElement ce = getMaterialElement(trxName);
-
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? ";
-		ArrayList<Object> parameters = new ArrayList();
-		parameters.add(product.getM_Product_ID());
-		parameters.add(ce.getM_CostElement_ID());
-		parameters.add(as.getM_CostType_ID());
-		MCost cost = new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		if(cost != null)
-		{	
-			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("38.0000"));
-			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(5));
-			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("190.0000"));
-		}
-		
-		whereClause = whereClause + "AND CostingMethod=? AND C_OrderLine_ID=?";
-		parameters.add(as.getCostingMethod());
-		parameters.add(orderLine.getC_OrderLine_ID());
-		MCostDetail cd = new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		if(cd != null)
-		{
-			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("190.0000"));
-			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("0.0000"));
-			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(10));
-			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("0"));
-			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("0"));
-			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("0")));
-		}
+		parameters.add(C_OrderLine_ID);
+		assertCostDetail(costResult,whereClause,parameters);
 	}
 
 	/**
@@ -372,42 +303,34 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param as
 	 * @param trxName
 	 */
-	private void assertCostReceiptReversal(MProduct product, MInOutLine receiptLine, MAcctSchema as , String trxName)
+	private void assertCostReceiptReversal(
+			int M_Product_ID,
+			int M_InOutLine_ID, 
+			MAcctSchema as,
+			String trxName)
 	{
-		MCostElement ce = getMaterialElement(trxName);
-
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? ";
-		ArrayList<Object> parameters = new ArrayList();
-		parameters.add(product.getM_Product_ID());
-		parameters.add(ce.getM_CostElement_ID());
-		parameters.add(as.getM_CostType_ID());
-		MCost cost = new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		if(cost != null)
-		{	
-			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("38.0000"));
-			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(0));
-			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("-20"));
-		}
 		
-		whereClause = whereClause + "AND CostingMethod=? AND M_InOutLine_ID=?";
+		CostResult costResult = new CostResult(M_Product_ID, 
+				new BigDecimal("38.0000"),
+				new BigDecimal("-5"),
+				new BigDecimal("-190.0000"),
+				new BigDecimal("-360.0000"),
+				new BigDecimal("-20.0000"),
+				new BigDecimal("-10"),
+				new BigDecimal("38.0000"),
+				new BigDecimal("5"),
+				new BigDecimal("190.0000"));
+		
+		MCost cost = assertCost(costResult);		
+		
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";	
+		ArrayList<Object> parameters = new ArrayList();	
+		parameters.add(costResult.M_Product_ID);
+		parameters.add(cost.getM_CostElement_ID());
+		parameters.add(cost.getM_CostType_ID());
 		parameters.add(as.getCostingMethod());
-		parameters.add(receiptLine.getM_InOutLine_ID());
-		MCostDetail cd = new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		if(cd != null)
-		{
-			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("360.0000"));
-			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("0.0000"));
-			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(-10));
-			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("0"));
-			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("0"));
-			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("0")));
-		}
+		parameters.add(M_InOutLine_ID);
+		assertCostDetail(costResult,whereClause,parameters);
 	}
 
 	
@@ -418,43 +341,34 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param as
 	 * @param trxName
 	 */
-	private void assertCostInvoice(MProduct product, MInOutLine receiptLine, MAcctSchema as , String trxName)
-	{
-		MCostElement ce = getMaterialElement(trxName);
-		ArrayList<Object> parameters = new ArrayList();
-		parameters.add(product.getM_Product_ID());
-		parameters.add(ce.getM_CostElement_ID());
-		parameters.add(as.getM_CostType_ID());
+	private void assertCostInvoice(
+			int M_Product_ID, 
+			int M_InOutLine_ID, 
+			MAcctSchema as,
+			String trxName)
+	{	
+		//Evaluate Result
+			CostResult costResult = new CostResult(M_Product_ID,
+				 new BigDecimal("38.0000"),
+				 new BigDecimal("5"),
+				 new BigDecimal("190.0000"),
+				 new BigDecimal("360.0000"),
+				 new BigDecimal("20.0000"),
+				 new BigDecimal("10"),
+				 new BigDecimal("0"),
+				 new BigDecimal("0"),
+				 new BigDecimal("0")
+				 );
 		
-		String whereClause = "M_Product_ID=? AND  M_CostElement_ID=? AND M_CostType_ID=? ";
-		MCost cost = new Query (getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(product.getM_Product_ID(), ce.getM_CostElement_ID(), as.getM_CostType_ID())
-		.first();
-		if(cost != null)
-		{	
-			assertEquals("Current Price Cost ",cost.getCurrentCostPrice() , new BigDecimal("38.0000"));
-			assertEquals("Cumulate Qty ", cost.getCumulatedQty() , new BigDecimal(5));
-			assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , new BigDecimal("190.0000"));
-		}
-		
-		whereClause = whereClause + "AND CostingMethod=? AND M_InOutLine_ID=?";
-		parameters.add(as.getCostingMethod());
-		parameters.add(receiptLine.getM_InOutLine_ID());
-		MCostDetail cd = new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(parameters)
-		.first();
-		
-		if(cd != null)
-		{
-			assertEquals("Cost Detail Amt ",cd.getAmt() , new BigDecimal("360.0000"));
-			assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , new BigDecimal("20.0000"));
-			assertEquals("Cost Detail Qty", cd.getQty() , new BigDecimal(10));
-			assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice() , new BigDecimal("0"));
-			assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , new BigDecimal("0"));
-			assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , (new BigDecimal("0")));
-		}
+			MCost cost = assertCost(costResult);
+			String whereClause = "M_Product_ID=? AND  M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";
+			ArrayList<Object> parameters = new ArrayList();	
+			parameters.add(costResult.M_Product_ID);
+			parameters.add(cost.getM_CostElement_ID());
+			parameters.add(cost.getM_CostType_ID());
+			parameters.add(as.getCostingMethod());
+			parameters.add(M_InOutLine_ID);
+			assertCostDetail(costResult,whereClause,parameters);	
 	}
 	
 	/**
@@ -486,5 +400,170 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		.setParameters(value)
 		.first();
 	}
+	
+	public void createDataMaster()
+	{
+		bp = (MBPartner) getEntity(I_C_BPartner.Table_Name, I_C_BPartner.COLUMNNAME_Value, "SeedFarm", trxName);
+		bpls = MBPartnerLocation.getForBPartner(getCtx(), bp.getC_BPartner_ID(), trxName);
+		w = (MWarehouse) getEntity(I_M_Warehouse.Table_Name, I_M_Warehouse.COLUMNNAME_Value, "HQ", trxName);
+		u = (MUser) getEntity(I_AD_User.Table_Name, I_AD_User.COLUMNNAME_Name, "GardenAdmin", trxName);
+		product = (MProduct) getEntity(I_M_Product.Table_Name, I_M_Product.COLUMNNAME_Value, "Oak" , trxName);
+		as = MAcctSchema.get(getCtx(), 101);		
+		today = new Timestamp (System.currentTimeMillis());
+		if (bp == null ||  w == null || u == null)
+			throw new AdempiereException("Object null " );
+	}
+	
+	public MOrder createPurchaseOrder(Timestamp orderDate ,BigDecimal qty,BigDecimal price)
+	{
+		//Create Purchase Order
+		MOrder order = new MOrder(getCtx(), 0, trxName);
+		order.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		order.setC_BPartner_ID(bp.getC_BPartner_ID());
+		order.setIsSOTrx(false);
+		order.setDateOrdered(orderDate);
+		order.setM_Warehouse_ID(w.getM_Warehouse_ID());
+		order.setSalesRep_ID(u.getAD_User_ID());
+		order.setC_DocTypeTarget_ID(MDocType.getDocType(MDocType.DOCBASETYPE_PurchaseOrder));
+		order.saveEx();
+		
+		// Create Line
+		MOrderLine orderLine = new MOrderLine(order);
+		orderLine.setM_Product_ID(product.getM_Product_ID());
+		orderLine.setPrice(price);
+		orderLine.setQtyEntered(qty);
+		orderLine.saveEx();
+		
+		// Complete Purchase Order
+		order.setDocAction(DocAction.ACTION_Complete);
+		order.setDocStatus(DocAction.STATUS_Drafted);
+		order.processIt(DocAction.ACTION_Complete);
+		order.saveEx();
+		return order;
+	}
+	
+	public MInOut createMaterialReceipt(Timestamp movementDate,BigDecimal qtyMovement, int C_OrderLine_ID)
+	{
+		// Create Material Receipt
+		MInOut receipt = new MInOut(getCtx() , 0 , trxName);
+		receipt.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		receipt.setC_DocType_ID(MDocType.getDocType(MDocType.DOCBASETYPE_MaterialReceipt));
+		receipt.setC_BPartner_ID(bp.getC_BPartner_ID());
+		receipt.setC_BPartner_Location_ID(bpls[0].getC_BPartner_Location_ID());
+		receipt.setMovementDate(movementDate);
+		receipt.setIsSOTrx(false);
+		receipt.setM_Warehouse_ID(w.getM_Warehouse_ID());
+		receipt.setMovementType(MInOut.MOVEMENTTYPE_VendorReceipts);
+		receipt.saveEx();
+		
+		// Create Material Receipt Line
+		MInOutLine receiptLine = new MInOutLine(receipt);
+		receiptLine.setC_OrderLine_ID(C_OrderLine_ID);
+		receiptLine.setM_Product_ID(product.getM_Product_ID());
+		receiptLine.setMovementQty(qtyMovement);
+		receiptLine.setM_Locator_ID(qtyMovement);
+		receiptLine.saveEx();
+		
+		// Complete Receipt
+		receipt.setDocStatus(DocAction.STATUS_Drafted);
+		receipt.setDocAction(DocAction.ACTION_Complete);
+		receipt.processIt(DocAction.ACTION_Complete);
+		receipt.saveEx();	
+		return receipt;
+	}
+	
+	public MOrder createSalesOrder(Timestamp orderDate ,BigDecimal qty,BigDecimal price)
+	{
+		MDocType salesType = null;
+		for (MDocType dt : MDocType.getOfDocBaseType(getCtx(), MDocType.DOCBASETYPE_SalesOrder))
+		{
+			if (MDocType.DOCSUBTYPESO_OnCreditOrder.equals(dt.getDocSubTypeSO()))
+			{
+				salesType = dt;
+				break;
+			}
+		}
+		
+		//Create Purchase Order
+		MOrder salesOrder = new MOrder(getCtx(), 0, trxName);
+		salesOrder.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		salesOrder.setC_BPartner_ID(bp.getC_BPartner_ID());
+		salesOrder.setIsSOTrx(true);
+		salesOrder.setDateOrdered(orderDate);
+		salesOrder.setM_Warehouse_ID(w.getM_Warehouse_ID());
+		salesOrder.setSalesRep_ID(u.getAD_User_ID());
+		salesOrder.setC_DocTypeTarget_ID(salesType.getC_DocType_ID());
+		salesOrder.saveEx();
+		
+		// Create Line
+		MOrderLine salesOrderLine = new MOrderLine(salesOrder);
+		salesOrderLine.setM_Product_ID(product.getM_Product_ID());
+		salesOrderLine.setPrice(price);
+		salesOrderLine.setQtyEntered(qty);
+		salesOrderLine.setQtyOrdered(qty);
+		salesOrderLine.saveEx();
+		
+		// Complete Purchase Order
+		salesOrder.setDocAction(DocAction.ACTION_Complete);
+		salesOrder.setDocStatus(DocAction.STATUS_Drafted);
+		salesOrder.processIt(DocAction.ACTION_Complete);
+		salesOrder.saveEx();
+		return salesOrder;
+	}
+	
+	public MInvoice createInvoiceVendor(Timestamp documentDate,BigDecimal qty,BigDecimal price, int M_InOutLine_ID)
+	{
+		MInvoice invoice = new MInvoice(getCtx(), 0 , trxName);
+		invoice.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		invoice.setC_DocType_ID(MDocType.getDocType(MDocType.DOCBASETYPE_APInvoice));
+		invoice.setIsSOTrx(false);
+		invoice.setC_BPartner_ID(bp.getC_BPartner_ID());
+		invoice.setDateInvoiced(documentDate);
+		invoice.setDocStatus(DocAction.STATUS_Drafted);
+		invoice.setDocAction(DocAction.ACTION_Complete);
+		invoice.saveEx();
+		
+		MInvoiceLine invoiceLine = new MInvoiceLine(invoice);
+		invoiceLine.setM_Product_ID(product.getM_Product_ID());
+		invoiceLine.setM_InOutLine_ID(M_InOutLine_ID);
+		invoiceLine.setQtyEntered(qty);
+		invoiceLine.setPriceActual(price);
+		invoiceLine.saveEx();
+		
+		invoice.processIt(DocAction.ACTION_Complete);
+		invoice.saveEx();
+		return invoice;
+	}
+	
+}
+
+class CostResult
+{
+	public CostResult(int M_Product_ID ,BigDecimal currentCostPrice, BigDecimal cumulateQty,
+			BigDecimal cumulateAmt, BigDecimal cdAmt, BigDecimal cdAdjutment,
+			BigDecimal cdQty, BigDecimal cdCurrentCostPrice,
+			BigDecimal cdCumulateQty, BigDecimal cdCumulateAmt) {
+		super();
+		this.M_Product_ID = M_Product_ID;
+		this.currentCostPrice = currentCostPrice;
+		this.cumulateQty = cumulateQty;
+		this.cumulateAmt = cumulateAmt;
+		this.cdAmt = cdAmt;
+		this.cdAdjutment = cdAdjutment;
+		this.cdQty = cdQty;
+		this.cdCurrentCostPrice = cdCurrentCostPrice;
+		this.cdCumulateQty = cdCumulateQty;
+		this.cdCumulateAmt = cdCumulateAmt;
+	}
+	int M_Product_ID ;
+	BigDecimal currentCostPrice;
+	BigDecimal cumulateQty;
+	BigDecimal cumulateAmt; 
+	BigDecimal cdAmt;
+	BigDecimal cdAdjutment;
+	BigDecimal cdQty;
+	BigDecimal cdCurrentCostPrice;
+	BigDecimal cdCumulateQty;
+	BigDecimal cdCumulateAmt;
 }
 
