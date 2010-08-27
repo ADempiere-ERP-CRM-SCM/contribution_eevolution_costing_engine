@@ -198,6 +198,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			cd.setCurrentCostPrice(m_cost.getCurrentCostPrice());
 			updateCurrentCost(cd);
 			cd.saveEx();
+			m_costdetail = cd; 
 		}
 	}
 	

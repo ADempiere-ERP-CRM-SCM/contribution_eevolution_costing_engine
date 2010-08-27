@@ -26,6 +26,7 @@ import org.adempiere.engine.IDocumentLine;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.FillMandatoryException;
 import org.adempiere.exceptions.WarehouseLocatorConflictException;
+import org.compiere.util.CCache;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
@@ -98,8 +99,27 @@ implements IDocumentLine
 	{
 		return getOfOrderLine(ctx, C_OrderLine_ID, null, trxName);
 	}	//	get
-
-
+	private static CCache<Integer,MInOutLine> s_cache	= new CCache<Integer,MInOutLine>(Table_Name, 40, 5);
+	
+	public static MInOutLine get (Properties ctx, int M_InOutLine_ID)
+	{
+		if (M_InOutLine_ID <= 0)
+		{
+			return null;
+		}
+		Integer key = new Integer (M_InOutLine_ID);
+		MInOutLine retValue = (MInOutLine) s_cache.get (key);
+		if (retValue != null)
+		{
+			return retValue;
+		}
+		retValue = new MInOutLine (ctx, M_InOutLine_ID, null);
+		if (retValue.get_ID () != 0)
+		{
+			s_cache.put (key, retValue);
+		}
+		return retValue;
+	}	//	get
 	/**************************************************************************
 	 * 	Standard Constructor
 	 *	@param ctx context

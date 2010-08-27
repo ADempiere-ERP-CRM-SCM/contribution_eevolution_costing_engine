@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import org.adempiere.engine.CostEngineFactory;
+import org.adempiere.engine.IDocumentLine;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.BPartnerNoAddressException;
 import org.adempiere.exceptions.DBException;
@@ -1750,11 +1751,17 @@ public class MInvoice extends X_C_Invoice implements DocAction
 			for (int j = 0; j < lcas.length; j++)
 			{
 				MLandedCostAllocation lca = lcas[j];
-				MInOutLine inout_line = (MInOutLine) line.getM_InOutLine();
-				for (MTransaction trx: MTransaction.getByInOutLine(inout_line))
+				MLandedCost[] lcos = MLandedCost.getLandedCosts(line);
+				for (int k = 0; k < lcos.length; k++)
 				{
-					CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx);
-				}			
+					int inout_lineid = lcos[k].getM_InOutLine_ID();
+					MInOutLine inout_line = MInOutLine.get(getCtx(), inout_lineid);
+
+					for (MTransaction trx: MTransaction.getByInOutLine(inout_line))
+					{
+						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx, lca);
+					}	
+				}		
 			}
 		}
 		if (matchInv > 0)
