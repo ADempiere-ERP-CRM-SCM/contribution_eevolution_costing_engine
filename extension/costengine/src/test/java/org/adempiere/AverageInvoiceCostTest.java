@@ -47,6 +47,7 @@ import org.compiere.model.Query;
 import org.compiere.process.DocAction;
 import org.compiere.util.CLogMgt;
 import org.compiere.util.Env;
+import org.compiere.util.TimeUtil;
 import org.compiere.util.Trx;
 import org.compiere.util.TrxRunnable;
 
@@ -57,6 +58,7 @@ import test.AdempiereTestCase;
  * Run Average Invoice Cost 
  * Business Case Test  
  * @author victor.perez@e-evolution.com, www.e-evolution.com
+ * http://spreadsheets.google.com/pub?key=0AtQL5-PW36eqdGdnUFVBZDhJMXVSbHh1TzMtRHhSbWc&hl=es&output=html
  */
 public class AverageInvoiceCostTest extends AdempiereTestCase
 {
@@ -102,55 +104,154 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	void createBusinessCaseTest(String trxName)
 	{
 		createDataMaster();
-		
-		MOrder purchase = createPurchaseOrder(today, new BigDecimal(100), new BigDecimal(36));
-		MInOut receipt= null;
-		for (MOrderLine line : purchase.getLines())
+		//First Purchase Receipt 
+		MOrder purchase1 = createPurchaseOrder(today, new BigDecimal(100), new BigDecimal(36));
+		MInOut receipt1= null;
+		for (MOrderLine line : purchase1.getLines())
 		{	
-			receipt = createMaterialReceipt(today,new BigDecimal(10), line.getC_OrderLine_ID());
+			receipt1 = createMaterialReceipt(today,new BigDecimal(10), line.getC_OrderLine_ID());
 
 		}	
 
-		for (MInOutLine line : receipt.getLines())
+		for (MInOutLine line : receipt1.getLines())
 		{	
-			
-				assertCostReceipt(line.getM_Product_ID(), line.getM_InOutLine_ID(), as , trxName);	
+			CostResult costResult = new CostResult(product.getM_Product_ID(),
+					 new BigDecimal("36.0000"), //currentCostPrice
+					 new BigDecimal("10"), 		// cumulateQty
+					 new BigDecimal("360"),//cumulateAmt
+					 new BigDecimal("360.0000"),//cdAmt
+					 new BigDecimal("0"), //cdAdjutment
+					 new BigDecimal("10"),//cdQty
+					 new BigDecimal("0"), //cdCurrentCostPrice
+					 new BigDecimal("0"), //cdCumulateQty
+					 new BigDecimal("0")  //cdCumulateAmt
+					 );
+			assertCostReceipt(costResult, line.getM_InOutLine_ID(), as , trxName);	
 		}
 		
-		
-		MOrder sales = createSalesOrder(today, new BigDecimal(5), new BigDecimal(45));
-		for (MOrderLine line : sales.getLines())
+		//Create Sales Order Order Credit by 5
+		MOrder sales1 = createSalesOrder(today, new BigDecimal(5), new BigDecimal(45));
+		for (MOrderLine line : sales1.getLines())
 		{	
+			CostResult costResult = new CostResult(product.getM_Product_ID(),
+					new BigDecimal("36.0000"),
+					new BigDecimal("5"),
+					new BigDecimal("180.0000"),
+					new BigDecimal("-180.0000"),
+					new BigDecimal("0"),
+					new BigDecimal("-5"),
+					new BigDecimal("36.0000"),
+					new BigDecimal("10"),
+					new BigDecimal("360"));
 			
-			assertCostShipment(line.getM_Product_ID(), line.getC_OrderLine_ID(), as , trxName);
+			assertCostShipment(costResult, line.getC_OrderLine_ID(), as , trxName);
 		}	
+			
 		
+		//Second Purchase Receipt 7 day forward
+		MOrder purchase2 = createPurchaseOrder(TimeUtil.addDays(today, 7), new BigDecimal(100), new BigDecimal(34));
+		MInOut receipt2 = null;	
+		for (MOrderLine line : purchase2.getLines())
+		{	
+			receipt2 = createMaterialReceipt(TimeUtil.addDays(today, 7),new BigDecimal(10), line.getC_OrderLine_ID());
+
+		}	
+
+		for (MInOutLine line : receipt2.getLines())
+		{	
+			CostResult costResult = new CostResult(product.getM_Product_ID(),
+					 new BigDecimal("34.6667"), //currentCostPrice
+					 new BigDecimal("15"), 		// cumulateQty
+					 new BigDecimal("520.0000"),//cumulateAmt
+					 new BigDecimal("346.6670"),//cdAmt
+					 new BigDecimal("0"), //cdAdjutment
+					 new BigDecimal("10"),//cdQty
+					 new BigDecimal("36.0000"), //cdCurrentCostPrice
+					 new BigDecimal("5"), //cdCumulateQty
+					 new BigDecimal("180.0000")  //cdCumulateAmt
+					 );
+			
+				assertCostReceipt(costResult, line.getM_InOutLine_ID(), as , trxName);	
+		}
 		
+	
+		//Create Sales Order Order Credit by 5
+		MOrder sales2 = createSalesOrder(today, new BigDecimal(10), new BigDecimal(45));
+		for (MOrderLine line : sales2.getLines())
+		{	
+			CostResult costResult = new CostResult(product.getM_Product_ID(),
+					new BigDecimal("34.6667"),
+					new BigDecimal("5"),
+					new BigDecimal("173.3330"),
+					new BigDecimal("-346.6670"),
+					new BigDecimal("0"),
+					new BigDecimal("-10"),
+					new BigDecimal("34.6667"),
+					new BigDecimal("15"),
+					new BigDecimal("520.0000"));
+			
+			assertCostShipment(costResult, line.getC_OrderLine_ID(), as , trxName);
+		}		
+		
+	
 		int M_InOutLine_ID= 0;
-		for (MInOutLine line : receipt.getLines())
+		for (MInOutLine line : receipt1.getLines())
 		{	
 			M_InOutLine_ID = line.getM_InOutLine_ID();
-			MInvoice invoice = createInvoiceVendor(today, new BigDecimal(10), new BigDecimal(38), line.getM_InOutLine_ID());		
+			MInvoice invoice = createInvoiceVendor(TimeUtil.addDays(today, 2), new BigDecimal(10), new BigDecimal(38), line.getM_InOutLine_ID());		
 		}	
 		
+		CostResult costResult = new CostResult(product.getM_Product_ID(),
+				 new BigDecimal("35.3333"), //currentCostPrice
+				 new BigDecimal("5"), 		// cumulateQty
+				 new BigDecimal("176.6670"),//cumulateAmt
+				 new BigDecimal("380"),//cdAmt
+				 new BigDecimal("20"), //cdAdjutment
+				 new BigDecimal("10"),//cdQty
+				 new BigDecimal("0"), //cdCurrentCostPrice
+				 new BigDecimal("0"), //cdCumulateQty
+				 new BigDecimal("0")  //cdCumulateAmt
+				 );
 		
+		assertCostInvoice(costResult, M_InOutLine_ID, as ,trxName);
 		
-		assertCostInvoice(product.getM_Product_ID(), M_InOutLine_ID, as ,trxName);
-		
-		for (MOrderLine line : sales.getLines())
-		{				
-			assertCostShipmentAdjust(line.getM_Product_ID(), line.getC_OrderLine_ID(), as, trxName);
+		for (MOrderLine line : sales1.getLines())
+		{	
+			costResult = new CostResult(line.getM_Product_ID(), 
+					new BigDecimal("35.3333"),
+					new BigDecimal("5"),
+					new BigDecimal("176.6670"),
+					new BigDecimal("-190.0000"),
+					new BigDecimal("0"),
+					new BigDecimal("-5"),
+					new BigDecimal("38.0000"),
+					new BigDecimal("10"),
+					new BigDecimal("380"));
+			
+			assertCostShipmentAdjust(costResult, line.getC_OrderLine_ID(), as, trxName);
 		}	
 			
 		//Reverse Material Receipt
-		receipt.processIt(DocAction.ACTION_Reverse_Correct);
-		receipt.saveEx();
+		receipt1.processIt(DocAction.ACTION_Reverse_Correct);
+		receipt1.saveEx();
 		
-		MInOut reversal = new MInOut(getCtx(), receipt.getReversal_ID(), trxName);
+		MInOut reversal = new MInOut(getCtx(), receipt1.getReversal_ID(), trxName);
 		
 		for (MInOutLine line : reversal.getLines(true))
-		{			
-			assertCostReceiptReversal(line.getM_Product_ID(),line.getM_InOutLine_ID(), as, trxName);	
+		{
+			costResult = new CostResult(product.getM_Product_ID(),
+					 new BigDecimal("40.6666"), //currentCostPrice
+					 new BigDecimal("-5"), 		// cumulateQty
+					 new BigDecimal("-203.3330"),//cumulateAmt
+					 new BigDecimal("-380"),//cdAmt
+					 new BigDecimal("-20"), //cdAdjutment
+					 new BigDecimal("-10"),//cdQty
+					 new BigDecimal("35.3333"), //cdCurrentCostPrice
+					 new BigDecimal("5"), //cdCumulateQty
+					 new BigDecimal("176.6670")  //cdCumulateAmt
+					 );
+			
+			assertCostReceiptReversal(costResult,line.getM_InOutLine_ID(), as, trxName);	
 		}
 		
 		
@@ -159,21 +260,21 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	public MCost assertCost(CostResult costResult)
 	{
 		MCost cost = getCost(costResult.M_Product_ID);
-		assertEquals("Current Price Cost ",cost.getCurrentCostPrice(),costResult.currentCostPrice);
-		assertEquals("Cumulate Qty ", cost.getCumulatedQty() , costResult.cumulateQty);
-		assertEquals("Cumulate Amt ", cost.getCumulatedAmt() , costResult.cumulateAmt);
+		assertEquals("Current Price Cost ",costResult.currentCostPrice , cost.getCurrentCostPrice());
+		assertEquals("Cumulate Qty ", costResult.cumulateQty , cost.getCumulatedQty());
+		assertEquals("Cumulate Amt ", costResult.cumulateAmt, cost.getCumulatedAmt());
 		return cost;
 	}
 	
 	public void assertCostDetail(CostResult costResult, String whereClause, ArrayList<Object> parameters)
 	{
 		MCostDetail cd = getCostDetail(whereClause, parameters);
-		assertEquals("Cost Detail Amt ",cd.getAmt() , costResult.cdAmt);
-		assertEquals("Cost Detail Adjutment ", cd.getCostAdjustment() , costResult.cdAdjutment);
-		assertEquals("Cost Detail Qty", cd.getQty() , costResult.cdQty);
-		assertEquals("Cost Detail Current Price Cost ",cd.getCurrentCostPrice(), costResult.cdCurrentCostPrice);
-		assertEquals("Cost Detail Cumulate Qty ", cd.getCumulatedQty() , costResult.cdCumulateQty);
-		assertEquals("Cost Detail Cumulate Amt ", cd.getCumulatedAmt() , costResult.cdCumulateAmt);
+		assertEquals("Cost Detail Amt " , costResult.cdAmt ,cd.getAmt());
+		assertEquals("Cost Detail Adjutment ", costResult.cdAdjutment, cd.getCostAdjustment());
+		assertEquals("Cost Detail Qty", costResult.cdQty,  cd.getQty() );
+		assertEquals("Cost Detail Current Price Cost ", costResult.cdCurrentCostPrice, cd.getCurrentCostPrice());
+		assertEquals("Cost Detail Cumulate Qty ", costResult.cdCumulateQty , cd.getCumulatedQty());
+		assertEquals("Cost Detail Cumulate Amt ", costResult.cdCumulateAmt , cd.getCumulatedAmt());
 	}
 	
 	public MCost getCost(int M_Product_ID)
@@ -206,23 +307,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param as
 	 * @param trxName
 	 */
-	private void assertCostReceipt(int M_Product_ID,
+	private void assertCostReceipt(CostResult costResult,
 			int M_InOutLine_ID, 
 			MAcctSchema as,
 			String trxName)
-	{
-		CostResult costResult = new CostResult(product.getM_Product_ID(),
-				 new BigDecimal("36.0000"),
-				 new BigDecimal(10),
-				 new BigDecimal("360.0000"),
-				 new BigDecimal("360.0000"),
-				 new BigDecimal("0"),
-				 new BigDecimal("10"),
-				 new BigDecimal("0"),
-				 new BigDecimal("0"),
-				 new BigDecimal("0")
-				 );
-		
+	{		
 		MCost cost = assertCost(costResult);
 		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";	
 		ArrayList<Object> parameters = new ArrayList();	
@@ -234,6 +323,8 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		assertCostDetail(costResult,whereClause,parameters);
 	}
 	
+	
+	
 	/**
 	 * assert Cost Receipt
 	 * @param product
@@ -241,19 +332,8 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param as
 	 * @param trxName
 	 */
-	private void assertCostShipment(int M_Product_ID,int C_OrderLine_ID, MAcctSchema as , String trxName)
-	{
-		CostResult costResult = new CostResult(M_Product_ID,
-				new BigDecimal("36.0000"),
-				new BigDecimal(5),
-				new BigDecimal("180.0000"),
-				new BigDecimal("-180.0000"),
-				new BigDecimal("0"),
-				new BigDecimal(-5),
-				new BigDecimal("36.0000"),
-				new BigDecimal("10"),
-				new BigDecimal("360.0000"));
-		
+	private void assertCostShipment(CostResult costResult,int C_OrderLine_ID, MAcctSchema as , String trxName)
+	{		
 		MCost cost = assertCost(costResult);
 		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
 		ArrayList<Object> parameters = new ArrayList();	
@@ -272,19 +352,8 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param as
 	 * @param trxName
 	 */
-	private void assertCostShipmentAdjust(int M_Product_ID , int C_OrderLine_ID, MAcctSchema as , String trxName)
-	{
-		CostResult costResult = new CostResult(M_Product_ID, 
-				new BigDecimal("38.0000"),
-				new BigDecimal("5"),
-				new BigDecimal("190.0000"),
-				new BigDecimal("-190.0000"),
-				new BigDecimal("0"),
-				new BigDecimal("-5"),
-				new BigDecimal("38.0000"),
-				new BigDecimal("10"),
-				new BigDecimal("380.0000"));
-		
+	private void assertCostShipmentAdjust(CostResult costResult , int C_OrderLine_ID, MAcctSchema as , String trxName)
+	{		
 		MCost cost = assertCost(costResult);		
 		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
 		ArrayList<Object> parameters = new ArrayList();	
@@ -304,23 +373,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param trxName
 	 */
 	private void assertCostReceiptReversal(
-			int M_Product_ID,
+			CostResult costResult,
 			int M_InOutLine_ID, 
 			MAcctSchema as,
 			String trxName)
 	{
-		
-		CostResult costResult = new CostResult(M_Product_ID, 
-				new BigDecimal("38.0000"),
-				new BigDecimal("-5"),
-				new BigDecimal("-190.0000"),
-				new BigDecimal("-360.0000"),
-				new BigDecimal("-20.0000"),
-				new BigDecimal("-10"),
-				new BigDecimal("38.0000"),
-				new BigDecimal("5"),
-				new BigDecimal("190.0000"));
-		
 		MCost cost = assertCost(costResult);		
 		
 		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";	
@@ -341,25 +398,13 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	 * @param as
 	 * @param trxName
 	 */
-	private void assertCostInvoice(
-			int M_Product_ID, 
+	private void assertCostInvoice(CostResult costResult, 
 			int M_InOutLine_ID, 
 			MAcctSchema as,
 			String trxName)
 	{	
 		//Evaluate Result
-			CostResult costResult = new CostResult(M_Product_ID,
-				 new BigDecimal("38.0000"),
-				 new BigDecimal("5"),
-				 new BigDecimal("190.0000"),
-				 new BigDecimal("360.0000"),
-				 new BigDecimal("20.0000"),
-				 new BigDecimal("10"),
-				 new BigDecimal("0"),
-				 new BigDecimal("0"),
-				 new BigDecimal("0")
-				 );
-		
+				
 			MCost cost = assertCost(costResult);
 			String whereClause = "M_Product_ID=? AND  M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";
 			ArrayList<Object> parameters = new ArrayList();	
@@ -484,7 +529,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 			}
 		}
 		
-		//Create Purchase Order
+		//Create Sales Order
 		MOrder salesOrder = new MOrder(getCtx(), 0, trxName);
 		salesOrder.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
 		salesOrder.setC_BPartner_ID(bp.getC_BPartner_ID());

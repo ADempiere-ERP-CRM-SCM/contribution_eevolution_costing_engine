@@ -176,6 +176,19 @@ public interface I_M_CostDetail
 	  */
 	public Timestamp getCostAdjustmentDate();
 
+    /** Column name CostAmt */
+    public static final String COLUMNNAME_CostAmt = "CostAmt";
+
+	/** Set Cost Value.
+	  * Value with Cost
+	  */
+	public void setCostAmt (BigDecimal CostAmt);
+
+	/** Get Cost Value.
+	  * Value with Cost
+	  */
+	public BigDecimal getCostAmt();
+
     /** Column name CostingMethod */
     public static final String COLUMNNAME_CostingMethod = "CostingMethod";
 

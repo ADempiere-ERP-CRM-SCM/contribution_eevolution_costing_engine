@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.I_C_OrderLine;
-import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_InOutLine;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
@@ -19,7 +18,6 @@ import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.MTransaction;
-import org.compiere.model.Query;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -131,9 +129,9 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	 */
 	public void updateInventoryValue()
 	{
-		m_cost.setCurrentCostPrice(m_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));
-		m_cost.setCumulatedQty(m_costdetail.getNewCumulatedQty());
-		m_cost.setCumulatedAmt(m_costdetail.getNewCumulatedAmt());
+		m_cost.setCurrentCostPrice(m_CurrentCostPrice);
+		m_cost.setCumulatedAmt(m_CumulatedAmt);
+		m_cost.setCumulatedQty(m_CumulatedQty);
 		m_cost.saveEx();
 	}
 	
@@ -145,13 +143,17 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			m_costdetail.copyValues(original_cd , m_costdetail);
 			m_costdetail.setQty(original_cd.getQty().negate());
 			m_costdetail.setAmt(original_cd.getAmt().negate());
+			m_costdetail.setCostAmt(original_cd.getCostAmt().negate());
 			m_costdetail.setCostAdjustment(original_cd.getCostAdjustment().negate());
 			m_costdetail.setCostAdjustmentDate(original_cd.getCostAdjustmentDate());
 			m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
 			m_costdetail.setCumulatedAmt(m_cost.getCumulatedAmt());
 			m_costdetail.setCumulatedQty(m_cost.getCumulatedQty());
 			m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
-			m_costdetail.saveEx();	
+			m_costdetail.saveEx();
+			m_CurrentCostPrice = m_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			m_CumulatedAmt=m_costdetail.getNewCumulatedAmt();
+			m_CumulatedQty=m_costdetail.getNewCumulatedQty();
 			return;
 	}
 }

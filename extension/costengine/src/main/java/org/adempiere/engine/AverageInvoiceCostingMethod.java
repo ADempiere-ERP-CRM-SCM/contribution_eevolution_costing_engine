@@ -4,6 +4,7 @@
 package org.adempiere.engine;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.List;
 
 import org.compiere.model.MAcctSchema;
@@ -31,7 +32,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
 		m_model = mtrx.getDocumentLine();
 		m_costdetail = MCostDetail.getByTransaction(m_trx, m_dimension);
-		m_last_costdetail = MCostDetail.getLastEntry(m_trx, m_dimension);
+		//m_last_costdetail = MCostDetail.getLastEntry(m_trx, m_dimension);
 	}
 	
 
@@ -39,10 +40,12 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	{	
 		if(m_model.getReversalLine_ID() > 0)
 			return;
-
+	
+		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_dimension);
 		if(m_last_costdetail == null)
 		{
 			m_last_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, Env.ZERO , Env.ZERO, m_trx.get_TrxName());
+			m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));
 		}
 		
 		if(m_trx.getMovementType().endsWith("-"))
@@ -57,12 +60,14 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		if(m_costdetail != null)
 		{
 			m_Amount = m_trx.getMovementQty().multiply(m_price);	
-			m_CumulatedQty = m_costdetail.getCumulatedQty().add(m_trx.getMovementQty());
-			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount);
+			m_CumulatedQty = m_last_costdetail.getNewCumulatedQty().add(m_trx.getMovementQty());
+			m_CumulatedAmt = m_last_costdetail.getNewCumulatedAmt().add(m_Amount);
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-			m_AdjustCost = m_CurrentCostPrice.multiply(m_costdetail.getNewCumulatedQty()).subtract(m_costdetail.getNewCumulatedAmt());
+			m_AdjustCost = m_Amount.subtract(m_model.getPriceActual().multiply(m_trx.getMovementQty()));
 			return;
 		}
+		
+		
 	    if (m_price == null) //m_price is null at physical inventory
 	    	m_price = m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 		m_Amount = m_trx.getMovementQty().multiply(m_price);	
@@ -90,6 +95,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			{
 				m_costdetail.setCostAdjustmentDate(m_model.getDateAcct());
 				m_costdetail.setCostAdjustment(m_AdjustCost);
+				m_costdetail.setAmt(m_costdetail.getCostAmt().add(m_AdjustCost));
 				m_costdetail.setProcessed(false);
 				m_costdetail.setDescription("Adjust Cost:"+ m_AdjustCost);
 			}
@@ -99,6 +105,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 				m_costdetail.setCumulatedQty(m_last_costdetail.getNewCumulatedQty());
 				m_costdetail.setCurrentCostPrice(m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
 				m_costdetail.setAmt(m_CurrentCostPrice.multiply(m_trx.getMovementQty()));
+				if(m_trx.getMovementType().contains("-"))
+					m_costdetail.setCostAmt(m_costdetail.getAmt());
 			}	
 			
 			m_costdetail.saveEx();
@@ -110,9 +118,15 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		else
 			m_costdetail.setIsSOTrx(m_model.isSOTrx());	
 		
+		if(m_trx.getMovementType().contains("+"))
+			m_costdetail.setCostAmt(m_model.getPriceActual().multiply(m_trx.getMovementQty()));
+		if(m_trx.getMovementType().contains("-"))
+			m_costdetail.setCostAmt(m_costdetail.getAmt());
+		
 		m_costdetail.setCumulatedQty(m_last_costdetail.getNewCumulatedQty());
 		m_costdetail.setCumulatedAmt(m_last_costdetail.getNewCumulatedAmt());	
 		m_costdetail.setCurrentCostPrice(m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));
+		m_costdetail.setCostAdjustment(Env.ZERO);
 		
 		StringBuilder description = new StringBuilder();
 		if (!Util.isEmpty(m_model.getDescription(), true))
@@ -139,24 +153,31 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	
 	public void createCostAdjutment()
 	{
-		List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(m_costdetail);
-			
-		if(m_as.isAdjustCOGS() && m_costdetail.getCostAdjustmentDate()!= null)	
-		{
-			for(MCostDetail cd : cds)
-			{
-				MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
-				CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(trx);
-			}
-		}
-		else
-		{
-			for(MCostDetail cd : cds)
-			{
-				cd.setProcessed(false);
-				cd.saveEx();
-			}
-		}
+		if(m_AdjustCost.signum() != 0)
+		{	
+		
+				List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(m_costdetail);
+				
+				if(cds == null || cds.size() == 0)
+					return;
+					
+				if(m_as.isAdjustCOGS() && m_costdetail.getCostAdjustmentDate()!= null)	
+				{
+					for(MCostDetail cd : cds)
+					{
+						MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
+						CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(trx);
+					}
+				}
+				else
+				{
+					for(MCostDetail cd : cds)
+					{
+						cd.setProcessed(false);
+						cd.saveEx();
+					}
+				}
+			}	
 	}	
 
 	@Override

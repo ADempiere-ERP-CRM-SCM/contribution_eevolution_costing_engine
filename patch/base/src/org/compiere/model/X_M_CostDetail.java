@@ -32,7 +32,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100709L;
+	private static final long serialVersionUID = 20100828L;
 
     /** Standard Constructor */
     public X_M_CostDetail (Properties ctx, int M_CostDetail_ID, String trxName)
@@ -139,9 +139,9 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public void setC_InvoiceLine_ID (int C_InvoiceLine_ID)
 	{
 		if (C_InvoiceLine_ID < 1) 
-			set_ValueNoCheck (COLUMNNAME_C_InvoiceLine_ID, null);
+			set_Value (COLUMNNAME_C_InvoiceLine_ID, null);
 		else 
-			set_ValueNoCheck (COLUMNNAME_C_InvoiceLine_ID, Integer.valueOf(C_InvoiceLine_ID));
+			set_Value (COLUMNNAME_C_InvoiceLine_ID, Integer.valueOf(C_InvoiceLine_ID));
 	}
 
 	/** Get Invoice Line.
@@ -195,9 +195,9 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public void setC_OrderLine_ID (int C_OrderLine_ID)
 	{
 		if (C_OrderLine_ID < 1) 
-			set_ValueNoCheck (COLUMNNAME_C_OrderLine_ID, null);
+			set_Value (COLUMNNAME_C_OrderLine_ID, null);
 		else 
-			set_ValueNoCheck (COLUMNNAME_C_OrderLine_ID, Integer.valueOf(C_OrderLine_ID));
+			set_Value (COLUMNNAME_C_OrderLine_ID, Integer.valueOf(C_OrderLine_ID));
 	}
 
 	/** Get Sales Order Line.
@@ -274,6 +274,26 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public Timestamp getCostAdjustmentDate () 
 	{
 		return (Timestamp)get_Value(COLUMNNAME_CostAdjustmentDate);
+	}
+
+	/** Set Cost Value.
+		@param CostAmt 
+		Value with Cost
+	  */
+	public void setCostAmt (BigDecimal CostAmt)
+	{
+		set_Value (COLUMNNAME_CostAmt, CostAmt);
+	}
+
+	/** Get Cost Value.
+		@return Value with Cost
+	  */
+	public BigDecimal getCostAmt () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CostAmt);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
 	}
 
 	/** CostingMethod AD_Reference_ID=122 */
@@ -631,9 +651,9 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public void setM_InOutLine_ID (int M_InOutLine_ID)
 	{
 		if (M_InOutLine_ID < 1) 
-			set_ValueNoCheck (COLUMNNAME_M_InOutLine_ID, null);
+			set_Value (COLUMNNAME_M_InOutLine_ID, null);
 		else 
-			set_ValueNoCheck (COLUMNNAME_M_InOutLine_ID, Integer.valueOf(M_InOutLine_ID));
+			set_Value (COLUMNNAME_M_InOutLine_ID, Integer.valueOf(M_InOutLine_ID));
 	}
 
 	/** Get Shipment/Receipt Line.
@@ -789,9 +809,9 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public void setPP_Cost_Collector_ID (int PP_Cost_Collector_ID)
 	{
 		if (PP_Cost_Collector_ID < 1) 
-			set_ValueNoCheck (COLUMNNAME_PP_Cost_Collector_ID, null);
+			set_Value (COLUMNNAME_PP_Cost_Collector_ID, null);
 		else 
-			set_ValueNoCheck (COLUMNNAME_PP_Cost_Collector_ID, Integer.valueOf(PP_Cost_Collector_ID));
+			set_Value (COLUMNNAME_PP_Cost_Collector_ID, Integer.valueOf(PP_Cost_Collector_ID));
 	}
 
 	/** Get Manufacturing Cost Collector.

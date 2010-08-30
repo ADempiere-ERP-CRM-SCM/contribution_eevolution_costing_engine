@@ -89,6 +89,41 @@ public class MCostDetail extends X_M_CostDetail
 	}
 	
 	/**
+	 * get the last entry for a Cost Detail based on the Material Transaction and Cost Dimension
+	 * @param trx Material Transaction
+	 * @param dimension Cost Dimension
+	 * @return MCostDetail Cost Detail
+	 */
+	public static MCostDetail getLastTransaction (MTransaction trx, CostDimension dimension)
+	{	
+		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ("
+		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? OR "
+		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=0 ) AND "
+		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ("
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? OR " 
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=0) AND " 
+		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
+		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Transaction_ID + "<? ";
+		;
+		return  new Query(trx.getCtx(), Table_Name, whereClause, trx.get_TrxName())
+		.setParameters( 
+				dimension.getAD_Client_ID(),
+				dimension.getAD_Org_ID(), 
+				dimension.getC_AcctSchema_ID(),
+				dimension.getM_Product_ID(),
+				dimension.getM_AttributeSetInstance_ID(), 
+				dimension.getM_CostElement_ID(), 
+				dimension.getM_CostType_ID(),
+				dimension.getCostingMethod(),
+				trx.getM_Transaction_ID())
+		//.setOrderBy(COLUMNNAME_M_Transaction_ID + " DESC")
+		.setOrderBy(MCostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")		
+		.first();
+	}
+	/**
 	 * get Cost Detail Based on  Material Transaction and Cost Dimension
 	 * @param trx Material Transaction
 	 * @param dimension Cost Dimension
@@ -234,7 +269,8 @@ public class MCostDetail extends X_M_CostDetail
 		.setParameters(new Object[]{cd.getAD_Org_ID(), cd.getM_Product_ID(), 
 				cd.getM_AttributeSetInstance_ID(),cd.getM_CostElement_ID(), /*cd.getCostAdjustmentDate(),*/ cd.getCostingMethod(), cd.get_ID()})
 		//.setOrderBy(COLUMNNAME_CostAdjustmentDate+" DESC, "+COLUMNNAME_M_CostDetail_ID+" DESC")
-		.setOrderBy(COLUMNNAME_M_CostDetail_ID+" DESC")
+		//.setOrderBy(COLUMNNAME_M_CostDetail_ID+" DESC")
+		.setOrderBy(COLUMNNAME_M_CostDetail_ID)
 		.list();
 	}
 	
@@ -499,7 +535,12 @@ public class MCostDetail extends X_M_CostDetail
 		if (getM_AttributeSetInstance_ID() != 0)
 			sb.append(",ASI=").append(getM_AttributeSetInstance_ID());
 		sb.append(",Amt=").append(getAmt())
+		.append(",Cost Amt=").append(getCostAmt())
+		.append(",Cost Adjutment=").append(getCostAdjustment())
 		.append(",Qty=").append(getQty());
+		sb.append(",CurrentPrice=").append(getCurrentCostPrice());
+		sb.append(",CumulateAmt=").append(getCumulatedAmt())
+		.append(",CumulateQty=").append(getCumulatedQty());
 		if (isDelta())
 			sb.append(",DeltaAmt=").append(getDeltaAmt())
 			.append(",DeltaQty=").append(getDeltaQty());
@@ -1105,7 +1146,7 @@ public class MCostDetail extends X_M_CostDetail
 	
 	public BigDecimal getNewCumulatedAmt()
 	{
-		return getCumulatedAmt().add(getAmt()).add(getCostAdjustment());
+		return getCumulatedAmt().add(getCostAmt()).add(getCostAdjustment());
 	}
 	
 	public BigDecimal getNewCumulatedQty()
