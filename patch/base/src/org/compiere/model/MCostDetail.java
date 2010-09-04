@@ -274,6 +274,25 @@ public class MCostDetail extends X_M_CostDetail
 		.list();
 	}
 	
+	public static List<MCostDetail> getAfterAndIncludeCostAdjustmentDate (MCostDetail cd)
+	{
+		final String whereClause = MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
+		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+		//+ MCostDetail.COLUMNNAME_CostAdjustmentDate+ ">='?' AND "
+		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">=?"
+		;
+		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
+		.setClient_ID()
+		.setParameters(new Object[]{cd.getAD_Org_ID(), cd.getM_Product_ID(), 
+				cd.getM_AttributeSetInstance_ID(),cd.getM_CostElement_ID(), /*cd.getCostAdjustmentDate(),*/ cd.getCostingMethod(), cd.get_ID()})
+		//.setOrderBy(COLUMNNAME_CostAdjustmentDate+" DESC, "+COLUMNNAME_M_CostDetail_ID+" DESC")
+		//.setOrderBy(COLUMNNAME_M_CostDetail_ID+" DESC")
+		.setOrderBy(COLUMNNAME_M_CostDetail_ID)
+		.list();
+	}
 
 	/**
 	 * 	Process Cost Details for product

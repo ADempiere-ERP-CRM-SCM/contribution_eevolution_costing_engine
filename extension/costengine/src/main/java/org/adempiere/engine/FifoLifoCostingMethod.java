@@ -97,6 +97,21 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 
 	public void processCostDetail()
 	{		
+		if(m_model.getReversalLine_ID() > 0)
+		{	
+			createReversalCostDetail(m_model);
+			MCostQueue cq = MCostQueue.getQueueForAdjustment(m_costdetail, m_cost, m_model.get_TrxName());
+			if (cq.getCurrentQty().compareTo(m_costdetail.getQty()) == 1 
+					||cq.getCurrentQty().compareTo(m_costdetail.getCurrentQty()) == 0)
+			{
+			cq.setCurrentQty(cq.getCurrentQty().add(m_costdetail.getQty()));
+			m_cost.setCurrentQty(m_cost.getCurrentQty().add(m_costdetail.getQty()));
+			cq.saveEx();
+			m_cost.saveEx();
+			}
+			else processCostDetail(m_costdetail);
+			return;
+		}
 		if(m_costdetail == null)
 		{
 			for (MCostDetail cd : createCostDetails(m_cost, m_trx))
@@ -119,7 +134,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			{
 				m_costdetail.setCostAdjustment(m_AdjustCost);
 				m_costdetail.setProcessed(false);
-				m_costdetail.setDescription("Adjust Cost");
+				m_costdetail.setDescription("Adjust Cost:"+ m_AdjustCost);
 				m_costdetail.setCostAdjustmentDate(m_model.getDateAcct());
 				m_costdetail.saveEx();
 			}
@@ -149,7 +164,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		int AD_Org_ID = cd.getAD_Org_ID();
 		int M_ASI_ID = cd.getM_AttributeSetInstance_ID();
 		
-		if (cd.getC_OrderLine_ID() != 0)
+		if (cd.getC_OrderLine_ID() != 0 && !(m_model.getReversalLine_ID() > 0))
 		{
 			log.finer("Inv - FiFo/LiFo - amt=" + cd.getAmt() + ", qty=" + cd.getQty() + " [NOTHING TO DO]");	
 		}
@@ -204,7 +219,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 	
 	public void adjustementQueue (MCostDetail costDetail)
 	{
-		final List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(costDetail);
+		final List<MCostDetail> cds = MCostDetail.getAfterAndIncludeCostAdjustmentDate(costDetail);
 		List<Object> list = new ArrayList<Object>();
 		
 		for (MCostDetail cd : cds)

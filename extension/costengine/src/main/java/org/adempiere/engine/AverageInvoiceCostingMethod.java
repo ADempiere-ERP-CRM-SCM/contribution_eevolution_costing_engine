@@ -80,7 +80,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	{
 		if(m_model.getReversalLine_ID() > 0)
 		{	
-			createReveralCostDetail(m_model);
+			createReversalCostDetail(m_model);
 			return;
 		}
 					
@@ -95,8 +95,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			{
 				m_costdetail.setCostAdjustmentDate(m_model.getDateAcct());
 				m_costdetail.setCostAdjustment(m_AdjustCost);
-				m_costdetail.setAmt(m_costdetail.getCostAmt().add(m_AdjustCost));
 				m_costdetail.setProcessed(false);
+				m_costdetail.setAmt(m_costdetail.getCostAmt().add(m_AdjustCost));
 				m_costdetail.setDescription("Adjust Cost:"+ m_AdjustCost);
 			}
 			else

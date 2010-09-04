@@ -36,6 +36,7 @@ import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
+import org.compiere.model.MLandedCostAllocation;
 import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
 import org.compiere.model.MMovementLine;
@@ -218,22 +219,19 @@ public class CostEngine
 			if (ce.isLandedCost())
 			{
 				// skip landed costs for incoming transactions
-				if (cost.getCurrentQty().equals(Env.ZERO))
+			    if (cost.getCurrentQty().equals(Env.ZERO) && mtrx.getMovementType().endsWith("-"))
 				{
 					continue;
 				}
-
-				else if (isSOTrx != null)
-				{
-					if (!isSOTrx && model instanceof MMovementLine)
-						continue;
-				}
-				else if (!model.isSOTrx())
+			    else if (!(model instanceof MLandedCostAllocation) && mtrx.getMovementType().equals("V+"))
 				{
 					continue;
 				}
 			}
-							
+			if (model instanceof MLandedCostAllocation && !ce.isLandedCost())
+			{
+				continue;
+			}
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
 			method.setCostingMethod(as, mtrx, cost, model.getPriceActual(), isSOTrx);
 			MCostDetail cd = method.process();	

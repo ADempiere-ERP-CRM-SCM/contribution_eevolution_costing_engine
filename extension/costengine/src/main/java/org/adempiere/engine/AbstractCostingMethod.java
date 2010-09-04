@@ -95,7 +95,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 		}
 		else //qty and amt is take from documentline
 		{
-			MCostDetail cd = new MCostDetail(m_model.getCtx(), m_dimension, model.getPriceActual().multiply(model.getMovementQty()),  model.getMovementQty(), m_model.get_TrxName());
+			MCostDetail cd = new MCostDetail(m_model.getCtx(), m_dimension, m_price.multiply(model.getMovementQty()),  model.getMovementQty(), m_model.get_TrxName());
 			int id;
 			if (model instanceof MMatchPO)
 			{
@@ -132,10 +132,11 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 		m_cost.setCurrentCostPrice(m_CurrentCostPrice);
 		m_cost.setCumulatedAmt(m_CumulatedAmt);
 		m_cost.setCumulatedQty(m_CumulatedQty);
+		m_cost.setCurrentQty(m_cost.getCurrentQty().add(m_costdetail.getQty()));
 		m_cost.saveEx();
 	}
 	
-	public void createReveralCostDetail(IDocumentLine model)
+	public MCostDetail createReversalCostDetail(IDocumentLine model)
 	{
 			MTransaction original_trx = MTransaction.getByDocumentLine(m_model.getReversalDocumentLine());
 			MCostDetail original_cd = MCostDetail.getByTransaction(original_trx, m_dimension); 
@@ -154,6 +155,6 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			m_CurrentCostPrice = m_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			m_CumulatedAmt=m_costdetail.getNewCumulatedAmt();
 			m_CumulatedQty=m_costdetail.getNewCumulatedQty();
-			return;
+			return m_costdetail;
 	}
 }
