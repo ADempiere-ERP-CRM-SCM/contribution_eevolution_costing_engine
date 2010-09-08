@@ -47,10 +47,12 @@ public class MCostDetail extends X_M_CostDetail
 {
 
 	
+
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 9143151867348554092L;
+
 
 	/**
 	 * get the last entry for a Cost Detail based on the Material Transaction and Cost Dimension
@@ -58,7 +60,7 @@ public class MCostDetail extends X_M_CostDetail
 	 * @param dimension Cost Dimension
 	 * @return MCostDetail Cost Detail
 	 */
-	public static MCostDetail getLastEntry (MTransaction trx, CostDimension dimension)
+	public static MCostDetail getLastTransaction (MTransaction trx, CostDimension dimension , Timestamp dateAcct)
 	{	
 		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ("
 		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? OR "
@@ -70,8 +72,9 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+		+ MCostDetail.COLUMNNAME_DateAcct+"<? AND "
 		+ MCostDetail.COLUMNNAME_M_Transaction_ID + "<? AND "
-		+ MCostDetail.COLUMNNAME_Qty + "> 0";
+		+ MCostDetail.COLUMNNAME_IsReversal + " = ? ";
 		;
 		return  new Query(trx.getCtx(), Table_Name, whereClause, trx.get_TrxName())
 		.setParameters( 
@@ -83,8 +86,12 @@ public class MCostDetail extends X_M_CostDetail
 				dimension.getM_CostElement_ID(), 
 				dimension.getM_CostType_ID(),
 				dimension.getCostingMethod(),
-				trx.getM_Transaction_ID())
-		.setOrderBy(COLUMNNAME_M_Transaction_ID)
+				dateAcct,
+				trx.getM_Transaction_ID(),
+				false
+				)
+		//.setOrderBy(COLUMNNAME_M_Transaction_ID + " DESC")
+		.setOrderBy(MCostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")		
 		.first();
 	}
 	
@@ -106,7 +113,8 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_Transaction_ID + "<? ";
+		+ MCostDetail.COLUMNNAME_M_Transaction_ID + "<? AND "
+		+ MCostDetail.COLUMNNAME_IsReversal + " = ? ";
 		;
 		return  new Query(trx.getCtx(), Table_Name, whereClause, trx.get_TrxName())
 		.setParameters( 
@@ -118,7 +126,8 @@ public class MCostDetail extends X_M_CostDetail
 				dimension.getM_CostElement_ID(), 
 				dimension.getM_CostType_ID(),
 				dimension.getCostingMethod(),
-				trx.getM_Transaction_ID())
+				trx.getM_Transaction_ID(),
+				false)
 		//.setOrderBy(COLUMNNAME_M_Transaction_ID + " DESC")
 		.setOrderBy(MCostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")		
 		.first();
@@ -141,7 +150,8 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_Transaction_ID + "=?";
+		+ MCostDetail.COLUMNNAME_M_Transaction_ID + "=? AND "
+		+ MCostDetail.COLUMNNAME_IsReversal + " = ? ";;
 		return new Query (trx.getCtx(), I_M_CostDetail.Table_Name, whereClause , trx.get_TrxName())
 		.setParameters(
 				dimension.getAD_Client_ID(),
@@ -152,7 +162,8 @@ public class MCostDetail extends X_M_CostDetail
 				dimension.getM_CostElement_ID(), 
 				dimension.getM_CostType_ID(),
 				dimension.getCostingMethod(),
-				trx.getM_Transaction_ID())
+				trx.getM_Transaction_ID(),
+				false)
 		.firstOnly();
 	}
 	
@@ -262,14 +273,19 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
 		//+ MCostDetail.COLUMNNAME_CostAdjustmentDate+ ">='?' AND "
-		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">?"
+		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">? AND "
+		+ MCostDetail.COLUMNNAME_IsReversal + "=?";
 		;
 		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
 		.setClient_ID()
-		.setParameters(new Object[]{cd.getAD_Org_ID(), cd.getM_Product_ID(), 
-				cd.getM_AttributeSetInstance_ID(),cd.getM_CostElement_ID(), /*cd.getCostAdjustmentDate(),*/ cd.getCostingMethod(), cd.get_ID()})
-		//.setOrderBy(COLUMNNAME_CostAdjustmentDate+" DESC, "+COLUMNNAME_M_CostDetail_ID+" DESC")
-		//.setOrderBy(COLUMNNAME_M_CostDetail_ID+" DESC")
+		.setParameters(
+				cd.getAD_Org_ID(), 
+				cd.getM_Product_ID(), 
+				cd.getM_AttributeSetInstance_ID(),
+				cd.getM_CostElement_ID(), 
+				cd.getCostingMethod(), 
+				cd.get_ID(), 
+				false)
 		.setOrderBy(COLUMNNAME_M_CostDetail_ID)
 		.list();
 	}
@@ -281,15 +297,19 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-		//+ MCostDetail.COLUMNNAME_CostAdjustmentDate+ ">='?' AND "
-		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">=?"
+		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">=? AND "
+		+ MCostDetail.COLUMNNAME_IsReversal + "=?";
 		;
 		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
 		.setClient_ID()
-		.setParameters(new Object[]{cd.getAD_Org_ID(), cd.getM_Product_ID(), 
-				cd.getM_AttributeSetInstance_ID(),cd.getM_CostElement_ID(), /*cd.getCostAdjustmentDate(),*/ cd.getCostingMethod(), cd.get_ID()})
-		//.setOrderBy(COLUMNNAME_CostAdjustmentDate+" DESC, "+COLUMNNAME_M_CostDetail_ID+" DESC")
-		//.setOrderBy(COLUMNNAME_M_CostDetail_ID+" DESC")
+		.setParameters(
+				cd.getAD_Org_ID(), 
+				cd.getM_Product_ID(), 
+				cd.getM_AttributeSetInstance_ID(),
+				cd.getM_CostElement_ID(),
+				cd.getCostingMethod(), 
+				cd.get_ID(), 
+				false)
 		.setOrderBy(COLUMNNAME_M_CostDetail_ID)
 		.list();
 	}
@@ -535,6 +555,8 @@ public class MCostDetail extends X_M_CostDetail
 		sb.append(", Product="+ getM_Product().getName());
 		sb.append(", Cost Element="+ getM_CostElement().getName());
 		sb.append(", Costing Method="+ getCostingMethod());
+		sb.append(", Date Acct="+ getDateAcct());
+		sb.append(", Is Reversal="+ isReversal());
 		if(getM_Transaction_ID() != 0)
 			sb.append (",M_Transaction_ID=").append (getM_Transaction_ID());
 		if (getC_OrderLine_ID() != 0)

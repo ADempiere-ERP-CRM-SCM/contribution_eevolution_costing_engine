@@ -70,7 +70,7 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		final String idColumnName = CostEngine.getIDColumnName(m_model);
 		if(m_model.getReversalLine_ID() > 0)
 		{	
-			createReversalCostDetail(m_model);
+			createReversalCostDetail();
 			return;
 		}
 		

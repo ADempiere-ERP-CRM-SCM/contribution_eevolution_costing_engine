@@ -32,7 +32,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100828L;
+	private static final long serialVersionUID = 20100907L;
 
     /** Standard Constructor */
     public X_M_CostDetail (Properties ctx, int M_CostDetail_ID, String trxName)
@@ -506,6 +506,30 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public String getDescription () 
 	{
 		return (String)get_Value(COLUMNNAME_Description);
+	}
+
+	/** Set Reversal.
+		@param IsReversal 
+		This is a reversing transaction
+	  */
+	public void setIsReversal (boolean IsReversal)
+	{
+		set_Value (COLUMNNAME_IsReversal, Boolean.valueOf(IsReversal));
+	}
+
+	/** Get Reversal.
+		@return This is a reversing transaction
+	  */
+	public boolean isReversal () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsReversal);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
 	}
 
 	/** Set Sales Transaction.

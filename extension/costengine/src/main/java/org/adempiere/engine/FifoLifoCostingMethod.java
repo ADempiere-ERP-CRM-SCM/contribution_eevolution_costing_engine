@@ -99,7 +99,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 	{		
 		if(m_model.getReversalLine_ID() > 0)
 		{	
-			createReversalCostDetail(m_model);
+			createReversalCostDetail();
 			MCostQueue cq = MCostQueue.getQueueForAdjustment(m_costdetail, m_cost, m_model.get_TrxName());
 			if (cq.getCurrentQty().compareTo(m_costdetail.getQty()) == 1 
 					||cq.getCurrentQty().compareTo(m_costdetail.getCurrentQty()) == 0)

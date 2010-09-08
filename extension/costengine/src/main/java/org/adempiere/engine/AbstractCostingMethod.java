@@ -136,11 +136,11 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 		m_cost.saveEx();
 	}
 	
-	public MCostDetail createReversalCostDetail(IDocumentLine model)
+	public MCostDetail createReversalCostDetail()
 	{
-			MTransaction original_trx = MTransaction.getByDocumentLine(m_model.getReversalDocumentLine());
+			MTransaction original_trx = MTransaction.getByDocumentLine(m_trx);
 			MCostDetail original_cd = MCostDetail.getByTransaction(original_trx, m_dimension); 
-			m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_model.get_TrxName());
+			m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_trx.get_TrxName());
 			m_costdetail.copyValues(original_cd , m_costdetail);
 			m_costdetail.setQty(original_cd.getQty().negate());
 			m_costdetail.setAmt(original_cd.getAmt().negate());
@@ -150,8 +150,12 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
 			m_costdetail.setCumulatedAmt(m_cost.getCumulatedAmt());
 			m_costdetail.setCumulatedQty(m_cost.getCumulatedQty());
+			m_costdetail.setDateAcct(original_cd.getDateAcct());
 			m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
-			m_costdetail.saveEx();
+			m_costdetail.setIsReversal(true);
+			m_costdetail.saveEx(m_trx.get_TrxName());
+			original_cd.setIsReversal(true);
+			original_cd.saveEx(m_trx.get_TrxName());
 			m_CurrentCostPrice = m_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			m_CumulatedAmt=m_costdetail.getNewCumulatedAmt();
 			m_CumulatedQty=m_costdetail.getNewCumulatedQty();

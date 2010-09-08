@@ -348,6 +348,19 @@ public interface I_M_CostDetail
 	  */
 	public boolean isActive();
 
+    /** Column name IsReversal */
+    public static final String COLUMNNAME_IsReversal = "IsReversal";
+
+	/** Set Reversal.
+	  * This is a reversing transaction
+	  */
+	public void setIsReversal (boolean IsReversal);
+
+	/** Get Reversal.
+	  * This is a reversing transaction
+	  */
+	public boolean isReversal();
+
     /** Column name IsSOTrx */
     public static final String COLUMNNAME_IsSOTrx = "IsSOTrx";
 

@@ -109,13 +109,14 @@ public class MTransaction extends X_M_Transaction
 	
 	
 	
-	static public MTransaction getByDocumentLine (IDocumentLine model)
+	static public MTransaction getByDocumentLine (MTransaction mtrx)
 	{
+		IDocumentLine model = mtrx.getDocumentLine().getReversalDocumentLine();
 		String columnName =  model.get_TableName()+"_ID";			
 		final String whereClause = I_M_InOutLine.COLUMNNAME_M_Product_ID + "=? AND "
 								 + columnName + "=? AND "
 		 						 + I_M_InOutLine.COLUMNNAME_M_AttributeSetInstance_ID + "=?";
-			return new Query(model.getCtx(), Table_Name, whereClause, model.get_TrxName())
+			return new Query(model.getCtx(), Table_Name, whereClause, mtrx.get_TrxName())
 			.setClient_ID()
 			.setParameters(model.getM_Product_ID(), model.get_ID() , model.getM_AttributeSetInstance_ID())
 			.firstOnly();

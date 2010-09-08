@@ -41,7 +41,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		if(m_model.getReversalLine_ID() > 0)
 			return;
 	
-		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_dimension);
+		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_dimension, m_model.getDateAcct());
 		if(m_last_costdetail == null)
 		{
 			m_last_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, Env.ZERO , Env.ZERO, m_trx.get_TrxName());
@@ -69,7 +69,11 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		
 		
 	    if (m_price == null) //m_price is null at physical inventory
+	    {	
 	    	m_price = m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+	    	if(m_price.signum() == 0)
+	    		m_price = m_last_costdetail.getCurrentCostPrice();
+	    }	
 		m_Amount = m_trx.getMovementQty().multiply(m_price);	
 		m_CumulatedQty = m_last_costdetail.getNewCumulatedQty().add(m_trx.getMovementQty());
 		m_CumulatedAmt = m_last_costdetail.getNewCumulatedAmt().add(m_Amount);
@@ -80,7 +84,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	{
 		if(m_model.getReversalLine_ID() > 0)
 		{	
-			createReversalCostDetail(m_model);
+			createReversalCostDetail();
 			return;
 		}
 					
@@ -108,7 +112,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 				if(m_trx.getMovementType().contains("-"))
 					m_costdetail.setCostAmt(m_costdetail.getAmt());
 			}	
-			
+			m_costdetail.setDateAcct(m_model.getDateAcct());
 			m_costdetail.saveEx();
 			return;
 		}
@@ -119,7 +123,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			m_costdetail.setIsSOTrx(m_model.isSOTrx());	
 		
 		if(m_trx.getMovementType().contains("+"))
-			m_costdetail.setCostAmt(m_model.getPriceActual().multiply(m_trx.getMovementQty()));
+			m_costdetail.setCostAmt(m_price.multiply(m_trx.getMovementQty()));
 		if(m_trx.getMovementType().contains("-"))
 			m_costdetail.setCostAmt(m_costdetail.getAmt());
 		
@@ -153,7 +157,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	
 	public void createCostAdjutment()
 	{
-		if(m_AdjustCost.signum() != 0)
+		if(m_AdjustCost.signum() != 0 || 
+		(m_costdetail.getDateAcct().compareTo(m_last_costdetail.getDateAcct()) <= 0 && m_trx.getMovementType().contains("+")))
 		{	
 		
 				List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(m_costdetail);
