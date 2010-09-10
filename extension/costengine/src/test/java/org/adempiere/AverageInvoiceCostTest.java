@@ -340,6 +340,26 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 			assertCostPhisicalInventory(costResult, line.getM_InventoryLine_ID(), as, trxName);;	
 		}
 		
+		dateAcct = TimeUtil.addDays(today, 80);
+		inventory = createInvetoryInternalUse(dateAcct, new BigDecimal("5"));
+		
+		for (MInventoryLine line : inventory.getLines(true))
+		{
+			costResult = new CostResult(product.getM_Product_ID(),
+					 new BigDecimal("35.8000"), //currentCostPrice
+					 new BigDecimal("15"), 		// cumulateQty
+					 new BigDecimal("537.0000"),//cumulateAmt
+					 new BigDecimal("-179.0000"),//cdAmt
+					 new BigDecimal("0"), //cdAdjutment
+					 line.getMovementQty(),//cdQty
+					 costResult.currentCostPrice, //cdCurrentCostPrice
+					 costResult.cumulateQty, //cdCumulateQty
+					 costResult.cumulateAmt,  //cdCumulateAmt
+					 dateAcct
+					 );
+			
+			assertCostPhisicalInventory(costResult, line.getM_InventoryLine_ID(), as, trxName);;	
+		}
 	}
 	
 	public MCost assertCost(CostResult costResult)
@@ -754,16 +774,43 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		inventory.setMovementDate(documentDate);
 		inventory.saveEx();
 		
-		MInventoryLine moveLine = new MInventoryLine(getCtx(),0,trxName);
-		moveLine.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
-		moveLine.setM_Inventory_ID(inventory.getM_Inventory_ID());
-		moveLine.setM_Product_ID(product.getM_Product_ID());
-		moveLine.setQtyBook(MStorage.getQtyOnHand(inventory.getM_Inventory_ID(), M_Locator_ID , product.getM_Product_ID(), 0, trxName));
-		//moveLine.setQtyBook(MStorage.getQtyOnHand(inventory.getM_Inventory_ID(), M_Locator_ID , product.getM_Product_ID(), 0, trxName));
-		moveLine.setQtyBook(qtyBook);
-		moveLine.setQtyCount(qty);
-		moveLine.setM_Locator_ID(M_Locator_ID ); // Default HQ Locator
-		moveLine.saveEx();
+		MInventoryLine inventoryLine = new MInventoryLine(getCtx(),0,trxName);
+		inventoryLine.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		inventoryLine.setM_Inventory_ID(inventory.getM_Inventory_ID());
+		inventoryLine.setM_Product_ID(product.getM_Product_ID());
+		inventoryLine.setQtyBook(qtyBook);
+		inventoryLine.setInventoryType(MInventoryLine.INVENTORYTYPE_InventoryDifference);
+		inventoryLine.setQtyCount(qty);
+		inventoryLine.setM_Locator_ID(M_Locator_ID ); // Default HQ Locator
+		inventoryLine.saveEx();
+		
+		inventory.processIt(DocAction.ACTION_Complete);
+		inventory.saveEx();
+		
+		return inventory;
+	}
+	
+	public MInventory createInvetoryInternalUse(Timestamp documentDate,BigDecimal qty)
+	{
+		int M_Locator_ID = 101;
+		MInventory inventory = new MInventory(getCtx(),0,trxName);
+		inventory.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		inventory.setM_Warehouse_ID(w.getM_Warehouse_ID());
+		inventory.setC_DocType_ID((MDocType.getDocType(MDocType.DOCBASETYPE_MaterialPhysicalInventory)));
+		inventory.setMovementDate(documentDate);
+		inventory.saveEx();
+		
+		MInventoryLine invenotryLine = new MInventoryLine(getCtx(),0,trxName);
+		invenotryLine.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		invenotryLine.setM_Inventory_ID(inventory.getM_Inventory_ID());
+		invenotryLine.setM_Product_ID(product.getM_Product_ID());
+		invenotryLine.setQtyBook(Env.ZERO);
+		invenotryLine.setQtyCount(Env.ZERO);
+		invenotryLine.setQtyInternalUse(qty);
+		invenotryLine.setInventoryType(MInventoryLine.INVENTORYTYPE_ChargeAccount);
+		invenotryLine.setC_Charge_ID(100);
+		invenotryLine.setM_Locator_ID(M_Locator_ID ); // Default HQ Locator
+		invenotryLine.saveEx();
 		
 		inventory.processIt(DocAction.ACTION_Complete);
 		inventory.saveEx();
