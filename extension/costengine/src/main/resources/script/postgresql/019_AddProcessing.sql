@@ -10,16 +10,10 @@ INSERT INTO AD_Column_Trl (AD_Language,AD_Column_ID, Name, IsTranslated,AD_Clien
 
 -- Sep 9, 2010 10:40:10 PM CDT
 -- Cost Engine
-INSERT INTO t_alter_column values('m_costdetail','Processing','CHAR(1)',null,'NULL')
+INSERT INTO t_alter_column values('m_costdetail','Processing','CHAR(1)',null,'N')
 ;
 
 -- Sep 9, 2010 10:50:07 PM CDT
 -- Cost Engine
 UPDATE AD_Column SET DefaultValue='N',Updated=TO_TIMESTAMP('2010-09-09 22:50:07','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_Column_ID=59789
 ;
-
--- Sep 9, 2010 10:50:11 PM CDT
--- Cost Engine
-INSERT INTO t_alter_column values('m_costdetail','Processing','CHAR(1)',null,'N')
-;
-
