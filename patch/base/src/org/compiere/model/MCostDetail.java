@@ -62,7 +62,8 @@ public class MCostDetail extends X_M_CostDetail
 	 */
 	public static MCostDetail getLastTransaction (MTransaction trx, CostDimension dimension , Timestamp dateAcct)
 	{	
-		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ("
+		final String whereClause = MCostDetail.COLUMNNAME_M_Transaction_ID + " <> ? AND "
+		+ MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ("
 		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? OR "
 		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=0 ) AND "
 		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
@@ -72,11 +73,13 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-		+ MCostDetail.COLUMNNAME_DateAcct+"<? AND "
-		+ MCostDetail.COLUMNNAME_IsReversal + " = ? ";
+		+ MCostDetail.COLUMNNAME_DateAcct+"<=? AND "
+		+ MCostDetail.COLUMNNAME_IsReversal + " = ?";
+	
 		;
 		return  new Query(trx.getCtx(), Table_Name, whereClause, trx.get_TrxName())
 		.setParameters( 
+				trx.getM_Transaction_ID(),
 				dimension.getAD_Client_ID(),
 				dimension.getAD_Org_ID(), 
 				dimension.getC_AcctSchema_ID(),

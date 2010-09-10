@@ -37,6 +37,8 @@ import org.compiere.model.MCostElement;
 import org.compiere.model.MDocType;
 import org.compiere.model.MInOut;
 import org.compiere.model.MInOutLine;
+import org.compiere.model.MInventory;
+import org.compiere.model.MInventoryLine;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MInvoiceLine;
 import org.compiere.model.MMovement;
@@ -44,6 +46,7 @@ import org.compiere.model.MMovementLine;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
+import org.compiere.model.MStorage;
 import org.compiere.model.MUser;
 import org.compiere.model.MWarehouse;
 import org.compiere.model.Query;
@@ -296,7 +299,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 				assertCostReceipt(costResult, line.getM_InOutLine_ID(), as , trxName);	
 		}
 		
-		/*dateAcct = TimeUtil.addDays(today, 65);
+		dateAcct = TimeUtil.addDays(today, 65);
 		MMovement move = createMovement(dateAcct, new BigDecimal("5"));
 		for (MMovementLine line : move.getLines(true))
 		{
@@ -308,13 +311,34 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 					 new BigDecimal("0"), //cdAdjutment
 					 new BigDecimal("5"),//cdQty
 					 new BigDecimal("35.8000"), //cdCurrentCostPrice
-					 new BigDecimal("15.0000"), //cdCumulateQty
-					 new BigDecimal("537.0000"),  //cdCumulateAmt
+					 new BigDecimal("10"), //cdCumulateQty
+					 new BigDecimal("358.0000"),  //cdCumulateAmt
 					 dateAcct
 					 );
 			
 			assertCostMovement(costResult,line.getM_MovementLine_ID(), as, trxName);	
-		}*/
+		}
+		
+		dateAcct = TimeUtil.addDays(today, 70);
+		MInventory inventory = createPhisicalInventory(dateAcct, new BigDecimal("20"), costResult.cumulateQty);
+		
+		for (MInventoryLine line : inventory.getLines(true))
+		{
+			costResult = new CostResult(product.getM_Product_ID(),
+					 new BigDecimal("35.8000"), //currentCostPrice
+					 new BigDecimal("20"), 		// cumulateQty
+					 new BigDecimal("716.0000"),//cumulateAmt
+					 new BigDecimal("179.0000"),//cdAmt
+					 new BigDecimal("0"), //cdAdjutment
+					 new BigDecimal("5"),//cdQty
+					 new BigDecimal("35.8000"), //cdCurrentCostPrice
+					 new BigDecimal("15"), //cdCumulateQty
+					 new BigDecimal("537.0000"),  //cdCumulateAmt
+					 dateAcct
+					 );
+			
+			assertCostPhisicalInventory(costResult, line.getM_InventoryLine_ID(), as, trxName);;	
+		}
 		
 	}
 	
@@ -476,6 +500,32 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		parameters.add(cost.getM_CostType_ID());
 		parameters.add(as.getCostingMethod());
 		parameters.add(M_InOutLine_ID);
+		assertCostDetail(costResult,whereClause,parameters);
+	}
+	
+	
+	/**
+	 * assert Cost Receipt
+	 * @param product
+	 * @param receiptLine
+	 * @param as
+	 * @param trxName
+	 */
+	private void assertCostPhisicalInventory(
+			CostResult costResult,
+			int M_InventoryLine_ID, 
+			MAcctSchema as,
+			String trxName)
+	{
+		MCost cost = assertCost(costResult);		
+		
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InventoryLine_ID=?";	
+		ArrayList<Object> parameters = new ArrayList();	
+		parameters.add(costResult.M_Product_ID);
+		parameters.add(cost.getM_CostElement_ID());
+		parameters.add(cost.getM_CostType_ID());
+		parameters.add(as.getCostingMethod());
+		parameters.add(M_InventoryLine_ID);
 		assertCostDetail(costResult,whereClause,parameters);
 	}
 
@@ -692,6 +742,35 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		
 		return move;
 	}
+	
+	
+	public MInventory createPhisicalInventory(Timestamp documentDate,BigDecimal qty , BigDecimal qtyBook)
+	{
+		int M_Locator_ID = 101;
+		MInventory inventory = new MInventory(getCtx(),0,trxName);
+		inventory.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		inventory.setM_Warehouse_ID(w.getM_Warehouse_ID());
+		inventory.setC_DocType_ID((MDocType.getDocType(MDocType.DOCBASETYPE_MaterialPhysicalInventory)));
+		inventory.setMovementDate(documentDate);
+		inventory.saveEx();
+		
+		MInventoryLine moveLine = new MInventoryLine(getCtx(),0,trxName);
+		moveLine.setAD_Org_ID(Env.getAD_Org_ID(getCtx()));
+		moveLine.setM_Inventory_ID(inventory.getM_Inventory_ID());
+		moveLine.setM_Product_ID(product.getM_Product_ID());
+		moveLine.setQtyBook(MStorage.getQtyOnHand(inventory.getM_Inventory_ID(), M_Locator_ID , product.getM_Product_ID(), 0, trxName));
+		//moveLine.setQtyBook(MStorage.getQtyOnHand(inventory.getM_Inventory_ID(), M_Locator_ID , product.getM_Product_ID(), 0, trxName));
+		moveLine.setQtyBook(qtyBook);
+		moveLine.setQtyCount(qty);
+		moveLine.setM_Locator_ID(M_Locator_ID ); // Default HQ Locator
+		moveLine.saveEx();
+		
+		inventory.processIt(DocAction.ACTION_Complete);
+		inventory.saveEx();
+		
+		return inventory;
+	}
+	
 	
 }
 
