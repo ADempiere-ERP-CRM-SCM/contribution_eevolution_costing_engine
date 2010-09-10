@@ -157,21 +157,28 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	
 	public void createCostAdjutment()
 	{
-		if(m_AdjustCost.signum() != 0 || 
-		(m_costdetail.getDateAcct().compareTo(m_last_costdetail.getDateAcct()) <= 0 && m_trx.getMovementType().contains("+")))
+		//void the cycle process
+		if(m_costdetail.isProcessing())
+			return;
+		
+		if(m_AdjustCost.signum() != 0 || MCostDetail.isDelayedEntry(m_costdetail, m_dimension))
 		{	
 		
-				List<MCostDetail> cds = MCostDetail.getAfterCostAdjustmentDate(m_costdetail);
+				List<MCostDetail> cds = MCostDetail.getAfterDate(m_costdetail);
 				
 				if(cds == null || cds.size() == 0)
 					return;
 					
-				if(m_as.isAdjustCOGS() && m_costdetail.getCostAdjustmentDate()!= null)	
+				if(m_as.isAdjustCOGS())	
 				{
 					for(MCostDetail cd : cds)
 					{
+						cd.setProcessing(true);
+						cd.saveEx();
 						MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
 						CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(trx);
+						cd.setProcessing(false);
+						cd.saveEx();
 					}
 				}
 				else

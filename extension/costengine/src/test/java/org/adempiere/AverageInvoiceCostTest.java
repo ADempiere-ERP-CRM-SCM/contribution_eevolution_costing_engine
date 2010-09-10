@@ -282,39 +282,39 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		{	
 			costResult = new CostResult(product.getM_Product_ID(),
 					 new BigDecimal("35.8000"), //currentCostPrice
-					 new BigDecimal("25"), 		// cumulateQty
-					 new BigDecimal("895.0000"),//cumulateAmt
-					 new BigDecimal("346.6670"),//cdAmt
+					 new BigDecimal("15"), 		// cumulateQty
+					 new BigDecimal("537.0000"),//cumulateAmt
+					 new BigDecimal("740.0000"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
-					 new BigDecimal("10"),//cdQty
-					 new BigDecimal("36.0000"), //cdCurrentCostPrice
-					 new BigDecimal("5"), //cdCumulateQty
-					 new BigDecimal("180.0000"),  //cdCumulateAmt
+					 new BigDecimal("20"),//cdQty
+					 new BigDecimal("0"), //cdCurrentCostPrice
+					 new BigDecimal("0"), //cdCumulateQty
+					 new BigDecimal("0"),  //cdCumulateAmt
 					 dateAcct
 					 );
 			
 				assertCostReceipt(costResult, line.getM_InOutLine_ID(), as , trxName);	
 		}
 		
-		dateAcct = TimeUtil.addDays(today, 65);
-		MMovement move = createMovement(dateAcct, new BigDecimal("20"));
+		/*dateAcct = TimeUtil.addDays(today, 65);
+		MMovement move = createMovement(dateAcct, new BigDecimal("5"));
 		for (MMovementLine line : move.getLines(true))
 		{
 			costResult = new CostResult(product.getM_Product_ID(),
-					 new BigDecimal("35.3334"), //currentCostPrice
-					 new BigDecimal("5"), 		// cumulateQty
-					 new BigDecimal("176.6670"),//cumulateAmt
-					 new BigDecimal("176.6670"),//cdAmt
+					 new BigDecimal("35.8000"), //currentCostPrice
+					 new BigDecimal("15"), 		// cumulateQty
+					 new BigDecimal("537.0000"),//cumulateAmt
+					 new BigDecimal("179.0000"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
 					 new BigDecimal("5"),//cdQty
-					 new BigDecimal("0"), //cdCurrentCostPrice
-					 new BigDecimal("0"), //cdCumulateQty
-					 new BigDecimal("0.0000"),  //cdCumulateAmt
+					 new BigDecimal("35.8000"), //cdCurrentCostPrice
+					 new BigDecimal("15.0000"), //cdCumulateQty
+					 new BigDecimal("537.0000"),  //cdCumulateAmt
 					 dateAcct
 					 );
 			
 			assertCostMovement(costResult,line.getM_MovementLine_ID(), as, trxName);	
-		}
+		}*/
 		
 	}
 	
