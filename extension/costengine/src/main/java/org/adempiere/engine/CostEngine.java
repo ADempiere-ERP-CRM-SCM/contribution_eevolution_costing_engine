@@ -227,6 +227,15 @@ public class CostEngine
 				{
 					continue;
 				}
+			    else if (isSOTrx != null)
+				{
+					if (!isSOTrx && model instanceof MMovementLine)
+						continue;
+				}
+				else if (!model.isSOTrx())
+				{
+					continue;
+				}
 			}
 			if (model instanceof MLandedCostAllocation && !ce.isLandedCost())
 			{

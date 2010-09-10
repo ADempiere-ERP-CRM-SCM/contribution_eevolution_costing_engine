@@ -4,6 +4,7 @@
 package org.adempiere.engine;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,8 +119,22 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			{
 				if (CostDimension.isSameCostDimension(m_as, m_model) && 
 					(m_trx.getMovementType().equals("M+") || m_trx.getMovementType().equals("M-")))
+				{
+					m_costdetail = cd;
 					continue;
+				}
 				processCostDetail(cd);	
+				//check if document is entered with delay
+				m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_dimension);
+				if(m_last_costdetail == null)
+				{
+					m_last_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, Env.ZERO , Env.ZERO, m_trx.get_TrxName());
+					m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));
+				}
+				if (m_costdetail.getDateAcct().compareTo(m_last_costdetail.getDateAcct()) < 0)
+				{
+					adjustementQueue(cd);
+				}
 			}
 		}
 		else 
@@ -219,19 +234,28 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 	
 	public void adjustementQueue (MCostDetail costDetail)
 	{
-		final List<MCostDetail> cds = MCostDetail.getAfterAndIncludeCostAdjustmentDate(costDetail);
+		final List<MCostDetail> cds;
+		if (costDetail.getCostAdjustmentDate()!= null)
+		{
+			cds = MCostDetail.getAfterAndIncludeCostAdjustmentDate(costDetail);
+		}
+		else 
+			cds = MCostDetail.getAfterDateAcct(costDetail);
 		List<Object> list = new ArrayList<Object>();
-		
+
 		for (MCostDetail cd : cds)
 		{
 			if (cd == null)
 				throw new AdempiereException("Error do not exist adjustment");
 			MCostQueue cq = MCostQueue.getQueueForAdjustment(cd, m_cost, m_model.get_TrxName());
 			MTransaction trx = get(cd);
-			
-			if (!(cq.getCurrentQty().compareTo(Env.ZERO) == 0) && 
-				 trx.getMovementType().equals("C-") && trx.getMovementType().equals("I+") &&
-				 trx.getMovementType().equals("I-"))
+			//first condition - cost adjustement
+			//second condition - delayed transaction
+			if ((!(cq.getCurrentQty().compareTo(Env.ZERO) == 0) && 
+				 (trx.getMovementType().equals("C-") || trx.getMovementType().equals("I+") ||
+			      trx.getMovementType().equals("I-")) && cd.getCostAdjustmentDate()!= null )
+				|| ((trx.getMovementType().equals("C-") || trx.getMovementType().equals("I+") ||
+				    trx.getMovementType().equals("I-")) && m_trx.getMovementType().endsWith("+")))
 			{ 
 				cq.addCurrentQty(cd.getQty().negate());
 				cq.saveEx();
@@ -239,7 +263,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				cd.saveEx();
 				list.add(cd);
 			}
-			else if (trx.getMovementType().equals("V+"))
+			else if (trx.getMovementType().equals("V+") && costDetail.getCostAdjustmentDate()!= null)
 			{
 				cd.setAmt(m_Amount);
 				cd.saveEx();
