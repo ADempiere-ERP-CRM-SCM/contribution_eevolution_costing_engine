@@ -369,7 +369,7 @@ public class MCostDetail extends X_M_CostDetail
 		.setParameters(new Object[]{cd.getAD_Org_ID(), cd.getM_Product_ID(), 
 				cd.getM_AttributeSetInstance_ID(),cd.getM_CostElement_ID(),cd.getCostingMethod(),
 				cd.getDateAcct(), cd.get_ID()})
-		.setOrderBy(COLUMNNAME_M_CostDetail_ID)
+		.setOrderBy(COLUMNNAME_M_CostDetail_ID+ " DESC")
 		.list();
 	}
 

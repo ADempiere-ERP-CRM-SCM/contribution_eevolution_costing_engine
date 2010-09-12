@@ -259,12 +259,14 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			{ 
 				cq.addCurrentQty(cd.getQty().negate());
 				cq.saveEx();
+				cd.setProcessed(false);
 				cd.setAmt(cd.getQty().multiply(m_price));
 				cd.saveEx();
 				list.add(cd);
 			}
 			else if (trx.getMovementType().equals("V+") && costDetail.getCostAdjustmentDate()!= null)
 			{
+				cd.setProcessed(false);
 				cd.setAmt(m_Amount);
 				cd.saveEx();
 				cq.setCurrentCostPrice(cd.getAmt().divide(cd.getQty()));
@@ -278,18 +280,21 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				    trxTo = getPrevious(trx);
 				else 
 				    trxTo = getNext(trx);
+				cd.setProcessed(false);
 				if (CostDimension.isSameCostDimension(m_as, trx, trxTo))
 				{
 					cd.setAmt(cd.getQty().multiply(m_price));
 					cd.saveEx();
 				}
 				else 
-				{
+				{	
+					cq.addCurrentQty(cd.getQty().negate());
 					cd.setAmt(cd.getQty().multiply(m_price));
 					cd.saveEx();
 					if (trx.getMovementType().equals("M+"))
-					    cq.setCurrentCostPrice(cd.getAmt().divide(cd.getQty()));
-					cq.addCurrentQty(cd.getQty().negate());
+					    cq.setCurrentCostPrice(cd.getAmt().divide(cd.getQty()));	
+					if (cq.getCurrentCostPrice().compareTo(Env.ZERO)== 0)
+						cq.setCurrentCostPrice(cd.getCurrentCostPrice());
 					cq.saveEx();
 					list.add(cd);
 				}
