@@ -515,7 +515,13 @@ public class Doc_InOut extends Doc
 	}   //  createFact
 
 
-	
+	/**
+	 * 
+	 * get cost detail for document line
+	 * @param as Account Schema
+	 * @param line Document Line
+	 * @return Cost Detail List
+	 */
 	private List<MCostDetail> getCostDetail(MAcctSchema as, DocLine line)
 	{
 		final String whereClause = I_M_CostDetail.COLUMNNAME_M_InOutLine_ID + "=? AND "

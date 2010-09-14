@@ -19,12 +19,15 @@ package org.compiere.acct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.List;
 
+import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MMovement;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.ProductCost;
+import org.compiere.model.Query;
 import org.compiere.util.Env;
 
 /**
@@ -131,76 +134,55 @@ public class Doc_Movement extends Doc
 		for (int i = 0; i < p_lines.length; i++)
 		{
 			DocLine line = p_lines[i];
-			// MZ Goodwill
-			// if Inventory Move CostDetail exist then get Cost from Cost Detail 
-			BigDecimal costs = line.getProductCosts(as, line.getAD_Org_ID(), true, "M_MovementLine_ID=? AND IsSOTrx='N'");
-			// end MZ
-
-			//  ** Inventory       DR      CR
-			dr = fact.createLine(line,
-				line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
-				as.getC_Currency_ID(), costs.negate());		//	from (-) CR
-			if (dr == null)
-				continue;
-			dr.setM_Locator_ID(line.getM_Locator_ID());
-			dr.setQty(line.getQty().negate());	//	outgoing
-			if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
-			{
-				//	Set AmtAcctDr from Original Movement
-				if (!dr.updateReverseLine (MMovement.Table_ID, 
-						m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
-				{
-					p_Error = "Original Inventory Move not posted yet";
-					return null;
-				}
-			}
 			
-			//  ** InventoryTo     DR      CR
-			cr = fact.createLine(line,
-				line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
-				as.getC_Currency_ID(), costs);			//	to (+) DR
-			if (cr == null)
-				continue;
-			cr.setM_Locator_ID(line.getM_LocatorTo_ID());
-			cr.setQty(line.getQty());
-			if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
+			for (MCostDetail cost : getCostDetail(as, line))
 			{
-				//	Set AmtAcctCr from Original Movement
-				if (!cr.updateReverseLine (MMovement.Table_ID, 
-						m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
-				{
-					p_Error = "Original Inventory Move not posted yet";
-					return null;
+				//get costing method for product
+				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
+				BigDecimal costs = cost.getAmt();
+			
+					//  ** Inventory       DR      CR
+					dr = fact.createLine(line,
+						line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
+						as.getC_Currency_ID(), costs.negate());		//	from (-) CR
+					if (dr == null)
+						continue;
+					dr.setM_Locator_ID(line.getM_Locator_ID());
+					dr.addDescription(description);
+					dr.setQty(line.getQty().negate());	//	outgoing
+					if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
+					{
+						//	Set AmtAcctDr from Original Movement
+						if (!dr.updateReverseLine (MMovement.Table_ID, 
+								m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
+						{
+							p_Error = "Original Inventory Move not posted yet";
+							return null;
+						}
+					}
+					
+					//  ** InventoryTo     DR      CR
+					cr = fact.createLine(line,
+						line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
+						as.getC_Currency_ID(), costs);			//	to (+) DR
+					if (cr == null)
+						continue;
+					cr.setM_Locator_ID(line.getM_LocatorTo_ID());
+					cr.addDescription(description);
+					cr.setQty(line.getQty());
+					if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
+					{
+						//	Set AmtAcctCr from Original Movement
+						if (!cr.updateReverseLine (MMovement.Table_ID, 
+								m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
+						{
+							p_Error = "Original Inventory Move not posted yet";
+							return null;
+						}
+						costs = cr.getAcctBalance(); //get original cost
+					}		
 				}
-				costs = cr.getAcctBalance(); //get original cost
 			}
-
-			/*
-			//	Only for between-org movements
-			if (dr.getAD_Org_ID() != cr.getAD_Org_ID())
-			{
-				String costingLevel = line.getProduct().getCostingLevel(as);
-				if (!MAcctSchema.COSTINGLEVEL_Organization.equals(costingLevel))
-					continue;
-				//
-				String description = line.getDescription();
-				if (description == null)
-					description = "";
-				//	Cost Detail From
-				MCostDetail.createMovement(as, dr.getAD_Org_ID(), 	//	locator org
-					line.getM_Product_ID(), line.getM_AttributeSetInstance_ID(),
-					line.get_ID(), 0,
-					costs.negate(), line.getQty().negate(), true,
-					description + "(|->)", getTrxName());
-				//	Cost Detail To
-				MCostDetail.createMovement(as, cr.getAD_Org_ID(),	//	locator org 
-					line.getM_Product_ID(), line.getM_AttributeSetInstance_ID(),
-					line.get_ID(), 0,
-					costs, line.getQty(), false,
-					description + "(|<-)", getTrxName());
-			}
-			*/
-		}
 
 		//
 		ArrayList<Fact> facts = new ArrayList<Fact>();
@@ -208,4 +190,23 @@ public class Doc_Movement extends Doc
 		return facts;
 	}   //  createFact
 
+	/**
+	 * 
+	 * get cost detail for document line
+	 * @param as Account Schema
+	 * @param line Document Line
+	 * @return Cost Detail List
+	 */
+	private List<MCostDetail> getCostDetail(MAcctSchema as, DocLine line)
+	{
+		final String whereClause = I_M_CostDetail.COLUMNNAME_M_MovementLine_ID + "=? AND "
+								 + I_M_CostDetail.COLUMNNAME_M_Product_ID   + "=? AND "
+								 + I_M_CostDetail.COLUMNNAME_M_CostType_ID	+ "=? AND "
+								 + I_M_CostDetail.COLUMNNAME_CostingMethod  + "=?";
+		
+		return new Query(getCtx(), I_M_CostDetail.Table_Name , whereClause , getTrxName())
+		.setClient_ID()
+		.setParameters(line.get_ID() , line.getM_Product_ID(), as.getM_CostType_ID(), as.getCostingMethod())
+		.list();
+	}
 }   //  Doc_Movement
