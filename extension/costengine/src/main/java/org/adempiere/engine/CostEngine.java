@@ -207,47 +207,97 @@ public class CostEngine
 		{
 			description.append(isSOTrx ? "(|->)" : "(|<-)");
 		}
-		
-		//Validate if exist Cost for Cost Type defined in Account Schema
-		validateCostType(model , as);
-		
-		List<MCost> costs = MCost.getForProduct(as, model);
 
-		for (MCost cost : costs)
-		{
-			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
-			if (ce.isLandedCost())
-			{
-				// skip landed costs for incoming transactions
-			    if (cost.getCurrentQty().equals(Env.ZERO) && mtrx.getMovementType().endsWith("-"))
-				{
-					continue;
-				}
-			    else if (!(model instanceof MLandedCostAllocation) && mtrx.getMovementType().equals("V+"))
-				{
-					continue;
-				}
-			    else if (isSOTrx != null)
-				{
-					if (!isSOTrx && model instanceof MMovementLine)
-						continue;
-				}
-				else if (!model.isSOTrx())
-				{
-					continue;
-				}
-			}
-			if (model instanceof MLandedCostAllocation && !ce.isLandedCost())
-			{
-				continue;
-			}
-			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-			method.setCostingMethod(as, mtrx, cost, model.getPriceActual(), isSOTrx);
-			MCostDetail cd = method.process();	
-			final String idColumnName = CostEngine.getIDColumnName(model);		
-			cd.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(model));
-			cd.saveEx();
+		for (MCostType ct : MCostType.get(mtrx.getCtx(), mtrx.get_TrxName()))
+		{	
+			for (MCostElement ce : MCostElement.getCostElement(mtrx.getCtx(), mtrx.get_TrxName()))
+			{		
+					createCostDetail(as, mtrx , model , ce , ct);
+			}		
 		}
+	}
+	
+	public void createCostDetail(MAcctSchema as, MTransaction mtrx ,IDocumentLine model , MCostElement ce, MCostType ct)
+	{
+		MCost cost = validateCostForCostType(as, ct, ce, model.getM_Product_ID(), model.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
+		
+		if (ce.isLandedCost())
+		{
+			// skip landed costs for incoming transactions
+		    if (cost.getCurrentQty().equals(Env.ZERO) && mtrx.getMovementType().endsWith("-"))
+				return;
+		    else if (!(model instanceof MLandedCostAllocation) && mtrx.getMovementType().equals("V+"))
+				return;
+		    if (!model.isSOTrx() && model instanceof MMovementLine)
+				return;
+			else if (!model.isSOTrx())
+			return;
+		}
+		if (model instanceof MLandedCostAllocation && !ce.isLandedCost())
+			return;
+		
+		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, ct.getCostingMethod());
+		method.setCostingMethod(as, mtrx, cost, model.getPriceActual(), model.isSOTrx());
+		MCostDetail cd = method.process();	
+		final String idColumnName = CostEngine.getIDColumnName(model);		
+		cd.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(model));
+		cd.saveEx();
+	}
+	
+	public MCost validateCostForCostType(MAcctSchema as, MCostType ct , MCostElement ce,int M_Product_ID ,int AD_Org_ID , int M_AttributeSetInstance_ID)
+	{
+		if(ce == null)
+			 throw new IllegalArgumentException("No Costing Elemnt Material Type"); 
+		 
+		if(ct== null)
+			throw new AdempiereException("Error do not exist material cost element for method cost " + as.getCostingMethod());
+		
+		MProduct product = new MProduct(ct.getCtx(), M_Product_ID, ct.get_TrxName());
+		String CostingLevel = product.getCostingLevel(as);		
+		String costingMethod = ct.getCostingMethod();
+		
+		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
+		{
+			AD_Org_ID = 0;
+			M_AttributeSetInstance_ID = 0;
+		}
+		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+			M_AttributeSetInstance_ID = 0;
+		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
+			AD_Org_ID = 0;
+		//	Costing Method
+		if (costingMethod == null)
+		{
+			costingMethod = product.getCostingMethod(as);
+			if (costingMethod == null)
+			{
+				throw new IllegalArgumentException("No Costing Method");
+			}
+		}
+		 		
+		
+		String whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_C_AcctSchema_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_M_Product_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_M_CostElement_ID + "=? AND "
+								 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=?";
+
+		MCost cost = new Query(ct.getCtx(), I_M_Cost.Table_Name, whereClause, ct.get_TrxName())
+		.setClient_ID()
+		.setParameters(AD_Org_ID, 
+		as.getC_AcctSchema_ID(), 
+		M_Product_ID, 
+		M_AttributeSetInstance_ID, 
+		ce.getM_CostElement_ID(), 
+		ct.getM_CostType_ID())	
+		.first();
+		if(cost == null)
+		{	
+			cost = new MCost(product, M_AttributeSetInstance_ID, as , AD_Org_ID , ce.getM_CostElement_ID() , ct);
+			cost.saveEx();
+		}	
+		return cost;
 	}
 
 	public void createCostDetail (IDocumentLine model ,
@@ -788,76 +838,6 @@ public class CostEngine
 				throw new AdempiereException(ccmv.getProcessMsg());
 		}
 	}
-
-
-	public void validateCostType(IDocumentLine model , MAcctSchema as)
-	{
-		MProduct product = new MProduct(model.getCtx(), model.getM_Product_ID(), model.get_TrxName());
-		String CostingLevel = product.getCostingLevel(as);
-		int AD_Org_ID = model.getAD_Org_ID();
-		int M_AttributeSetInstance_ID = model.getM_AttributeSetInstance_ID();
-		String costingMethod = as.getCostingMethod();
-		
-		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
-		{
-			AD_Org_ID = 0;
-			M_AttributeSetInstance_ID = 0;
-		}
-		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
-			M_AttributeSetInstance_ID = 0;
-		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
-			AD_Org_ID = 0;
-		//	Costing Method
-		if (costingMethod == null)
-		{
-			costingMethod = product.getCostingMethod(as);
-			if (costingMethod == null)
-			{
-				throw new IllegalArgumentException("No Costing Method");
-			}
-		}
-		
-		String whereClause = I_M_CostElement.COLUMNNAME_CostElementType + "=?";
-		MCostElement ce = new Query(model.getCtx(), I_M_CostElement.Table_Name, whereClause, model.get_TrxName())
-		.setClient_ID()
-		.setOnlyActiveRecords(true)
-		.setParameters(MCostElement.COSTELEMENTTYPE_Material)
-		.setOrderBy(MCostElement.COLUMNNAME_M_CostElement_ID +","+MCostElement.COLUMNNAME_CostElementType)
-		.first();
-		 
-		 if(ce == null)
-			 throw new IllegalArgumentException("No Costing Elemnt Material Type"); 
-		 
-		MCostType costtype = new  MCostType(model.getCtx() , as.getM_CostType_ID() , model.get_TrxName());
-		if(costtype== null)
-		{	
-			throw new AdempiereException("Error do not exist material cost element for method cost " + as.getCostingMethod());
-		}	
-		
-		whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_C_AcctSchema_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_Product_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_CostElement_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=?";
-
-		MCost cost = new Query(model.getCtx(), I_M_Cost.Table_Name, whereClause, model.get_TrxName())
-		.setClient_ID()
-		.setParameters(AD_Org_ID, 
-		as.getC_AcctSchema_ID(), 
-		model.getM_Product_ID(), 
-		M_AttributeSetInstance_ID, 
-		ce.getM_CostElement_ID(), 
-		as.getM_CostType_ID())	
-		.first();
-		if(cost == null)
-		{	
-			cost = new MCost(product, M_AttributeSetInstance_ID, as , AD_Org_ID , ce.getM_CostElement_ID() , costtype);
-			cost.saveEx();
-		}	
-		return;
-	}
-
 
 	public MCostDetail[] getCostDetails (DocLine docLine, MAcctSchema as, int AD_Org_ID, String whereClause)
 	{

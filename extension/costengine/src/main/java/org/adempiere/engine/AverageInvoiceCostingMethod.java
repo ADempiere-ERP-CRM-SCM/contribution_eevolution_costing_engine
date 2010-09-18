@@ -45,7 +45,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		if(m_last_costdetail == null)
 		{
 			m_last_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, Env.ZERO , Env.ZERO, m_trx.get_TrxName());
-			m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));
+			m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));	
 		}
 		
 		if(m_trx.getMovementType().endsWith("-"))
@@ -161,7 +161,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		if(m_costdetail.isProcessing())
 			return;
 		
-		if(m_AdjustCost.signum() != 0 || MCostDetail.isDelayedEntry(m_costdetail, m_dimension))
+		if(m_AdjustCost.signum() != 0 || MCostDetail.isEarlierTransaction(m_costdetail, m_dimension))
 		{	
 		
 				List<MCostDetail> cds = MCostDetail.getAfterDate(m_costdetail);
