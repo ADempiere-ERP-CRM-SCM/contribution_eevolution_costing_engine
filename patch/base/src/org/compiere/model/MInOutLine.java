@@ -746,7 +746,8 @@ implements IDocumentLine
 			}	
 			if (price == null)
 			{
-				throw new AdempiereException("Shipment: PriceActual not found");
+				//throw new AdempiereException("Shipment: PriceActual not found");
+				price = Env.ZERO;
 			}
 			return price;
 		}

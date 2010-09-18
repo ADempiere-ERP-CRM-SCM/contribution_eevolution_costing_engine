@@ -91,7 +91,50 @@ public class MCostDetail extends X_M_CostDetail
 				dateAcct,
 				false
 				)	
-		.setOrderBy(MCostDetail.COLUMNNAME_DateAcct + " DESC ," +MCostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")	
+		.setOrderBy(MCostDetail.COLUMNNAME_DateAcct + " DESC ," +
+					MCostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")	
+		.first();
+	}
+	
+	/**
+	 * get Last Cost Detail before dateAcct
+	 * @param ctx
+	 * @param dimension
+	 * @param dateAcct
+	 * @param trxName
+	 * @return Cost Detail
+	 */
+	public static MCostDetail getLastTransaction (Properties ctx, CostDimension dimension , Timestamp dateAcct, String trxName)
+	{	
+		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ("
+		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? OR "
+		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=0 ) AND "
+		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
+		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ("
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? OR " 
+		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=0) AND " 
+		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
+		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+		+ MCostDetail.COLUMNNAME_DateAcct+"<=? AND "
+		+ MCostDetail.COLUMNNAME_IsReversal + " = ?";
+	
+		;
+		return  new Query(ctx, Table_Name, whereClause, trxName)
+		.setParameters(
+				dimension.getAD_Client_ID(),
+				dimension.getAD_Org_ID(), 
+				dimension.getC_AcctSchema_ID(),
+				dimension.getM_Product_ID(),
+				dimension.getM_AttributeSetInstance_ID(), 
+				dimension.getM_CostElement_ID(), 
+				dimension.getM_CostType_ID(),
+				dimension.getCostingMethod(),
+				dateAcct,
+				false
+				)	
+		.setOrderBy(MCostDetail.COLUMNNAME_DateAcct + " DESC ," +
+					MCostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")	
 		.first();
 	}
 	
@@ -132,8 +175,13 @@ public class MCostDetail extends X_M_CostDetail
 		.setOrderBy(MCostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")		
 		.first();
 	}
-	
-	public static boolean isDelayedEntry(MCostDetail cd , CostDimension dimension)
+	/**
+	 * get If Cost Detail delayed entry
+	 * @param cd
+	 * @param dimension
+	 * @return
+	 */
+	public static boolean isEarlierTransaction(MCostDetail cd , CostDimension dimension)
 	{
 		MTransaction trx = new MTransaction(cd.getCtx(), cd.getM_Transaction_ID(), cd.get_TrxName());
 		MCostDetail last_cd = getLastTransaction(trx, dimension);
@@ -590,6 +638,8 @@ public class MCostDetail extends X_M_CostDetail
 	 */
 	protected boolean afterSave (boolean newRecord, boolean success)
 	{
+		if(!isProcessed())
+			rePosted();		
 		return true;
 	}	//	afterSave
 
@@ -1214,6 +1264,63 @@ public class MCostDetail extends X_M_CostDetail
 		setDateAcct(dateAcct);
 	}
 
+	private void rePosted()
+	{		
+		if (getC_InvoiceLine_ID() > 0)
+		{
+			/*int id = DB.getSQLValue(get_TrxName(), "SELECT C_Invoice_ID FROM C_InvoiceLine WHERE C_InvoiceLine_ID=?", getC_InvoiceLine_ID());
+			DB.executeUpdate("UPDATE C_Invoice SET Posted='N', Processed='N', ProcessedOn=null WHERE C_Invoice_ID=?", id, get_TrxName());
+			DB.executeUpdate("UPDATE C_InvoiceLine SET Processed='N', WHERE C_Invoice_ID=?", id, get_TrxName());
+			MFactAcct.deleteEx (MInvoice.Table_ID, id, get_TrxName());*/
+			int id = DB.getSQLValue(get_TrxName(), "SELECT M_MatchInv_ID FROM M_MatchInv WHERE C_InvoiceLine_ID=?", getC_InvoiceLine_ID());
+			if(id > 0)
+			{	
+				DB.executeUpdate("UPDATE M_MatchInv SET Posted='N', Processing='N', ProcessedOn=null WHERE M_MatchInv_ID=? AND Processed='Y'", id, get_TrxName());
+				MFactAcct.deleteEx (MMatchInv.Table_ID, id, get_TrxName());	
+			}
+		}
+		else if (getM_InOutLine_ID() > 0)
+		{
+			int id = DB.getSQLValue(get_TrxName(), "SELECT M_InOut_ID FROM M_InOutLine WHERE M_InOutLine_ID=? ", getM_InOutLine_ID());
+			if(id > 0)
+			{	
+				DB.executeUpdate("UPDATE M_InOut SET Posted='N', Processing='N', ProcessedOn=null WHERE M_InOut_ID=? AND Processed='Y'", id , get_TrxName());
+				MFactAcct.deleteEx (MInOut.Table_ID, id, get_TrxName());
+			}
+		}
+		else if (getC_OrderLine_ID() > 0)
+		{
+			int id = DB.getSQLValue(get_TrxName(), "SELECT M_MatchPO_ID FROM M_MatchPO WHERE C_OrderLine_ID=?", getC_OrderLine_ID());
+			if(id > 0)
+			{	
+				DB.executeUpdate("UPDATE M_MatchPO SET Posted='N', Processing='N', ProcessedOn=null WHERE M_MatchPO_ID=? AND Processed='Y'", id, get_TrxName());
+				MFactAcct.deleteEx (MMatchPO.Table_ID, id, get_TrxName());
+			}
+		}
+		else if (getM_InventoryLine_ID() > 0)
+		{
+			int id = DB.getSQLValue(get_TrxName(), "SELECT M_Inventory_ID FROM M_InventoryLine WHERE M_InventoryLine_ID=?", getM_InventoryLine_ID());
+			if(id>0)
+			{	
+				DB.executeUpdate("UPDATE M_Inventory SET Posted='N', Processing='N', ProcessedOn=null WHERE M_Inventory_ID=? AND Processed='Y'", id, get_TrxName());
+				DB.executeUpdate("UPDATE M_InventoryLine SET Processing='N' WHERE M_Inventory_ID=? AND Processed='Y'", id, get_TrxName());
+				MFactAcct.deleteEx (MInventory.Table_ID, id, get_TrxName());
+			}
+		}
+		else if (getM_MovementLine_ID() > 0)
+		{
+			int id = DB.getSQLValue(get_TrxName(), "SELECT M_Movement_ID FROM M_MovementLine WHERE M_MovementLine_ID=?", getM_MovementLine_ID());
+			if(id>0)
+			{
+				DB.executeUpdate("UPDATE M_Movement SET Posted='N', Processing='N', ProcessedOn=null WHERE M_Movement_ID=? AND Processed='Y'", id, get_TrxName());
+				MFactAcct.deleteEx (MMovement.Table_ID, id, get_TrxName());
+			}
+		}
+		else if (getC_LandedCostAllocation_ID() > 0)
+		{
+			//Is necessary the logic when exist a landen cost
+		}
+	}
 
 	@Override
 	protected boolean beforeSave(boolean newRecord)

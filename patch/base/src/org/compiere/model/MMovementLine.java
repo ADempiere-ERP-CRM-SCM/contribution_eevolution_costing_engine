@@ -359,8 +359,7 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine
 	 * @return null
 	 */
 	public BigDecimal getPriceActual() {
-		// TODO Auto-generated method stub
-		return null;
+		return Env.ZERO;
 	}
 
 	/**

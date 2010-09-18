@@ -216,6 +216,20 @@ public class MCostElement extends X_M_CostElement
 	 * Get All Cost Elements for current AD_Client_ID
 	 * @param ctx context
 	 * @param trxName transaction
+	 * @return List with cost elements
+	 */
+	public static List<MCostElement> getCostElement(Properties ctx, String trxName)		
+	{
+		return new Query(ctx, Table_Name, null, trxName)
+					.setClient_ID()
+					.setOnlyActiveRecords(true)
+					.list();
+	}
+	
+	/**
+	 * Get All Cost Elements for current AD_Client_ID
+	 * @param ctx context
+	 * @param trxName transaction
 	 * @return array cost elements
 	 **/
 	public static List<MCostElement> getByCostingMethod (Properties ctx, String CostingMethod)
