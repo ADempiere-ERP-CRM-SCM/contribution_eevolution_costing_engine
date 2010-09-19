@@ -3166,6 +3166,62 @@ INSERT INTO AD_Menu_Trl (AD_Language,AD_Menu_ID, Description,Name, IsTranslated,
 INSERT INTO AD_TREENODEMM(AD_Client_ID, AD_Org_ID, CreatedBy, UpdatedBy, Parent_ID, SeqNo, AD_Tree_ID, Node_ID)VALUES(0, 0, 0, 0, 522,7, 10, 53293)
 ;
 
+-- Sep 18, 2010 2:51:41 AM CDT
+-- Report Engine
+UPDATE AD_PrintFormatItem SET SeqNo=0,IsPrinted='N' WHERE AD_PrintFormatItem_ID=51637
+;
+
+-- Sep 18, 2010 2:51:41 AM CDT
+-- Report Engine
+UPDATE AD_PrintFormatItem SET SeqNo=70,IsPrinted='Y' WHERE AD_PrintFormatItem_ID=51591
+;
+
+-- Sep 18, 2010 2:52:26 AM CDT
+-- Report Engine
+UPDATE AD_PrintFormatItem SET SortNo=0, XPosition=0, IsGroupBy='N', YPosition=0, IsPageBreak='N', PrintName='Adjustment', Name='Adjustment',Updated=TO_TIMESTAMP('2010-09-18 02:52:26','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_PrintFormatItem_ID=51638
+;
+
+-- Sep 18, 2010 2:52:26 AM CDT
+-- Report Engine
+UPDATE AD_PrintFormatItem_Trl SET IsTranslated='N' WHERE AD_PrintFormatItem_ID=51638
+;
+
+-- Sep 18, 2010 2:52:39 AM CDT
+-- Report Engine
+UPDATE AD_PrintFormatItem SET SortNo=0, XPosition=0, IsGroupBy='N', YPosition=0, IsPageBreak='N', PrintName='Ending Balance', Name='Ending Balance',Updated=TO_TIMESTAMP('2010-09-18 02:52:39','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_PrintFormatItem_ID=51640
+;
+
+-- Sep 18, 2010 2:52:39 AM CDT
+-- Report Engine
+UPDATE AD_PrintFormatItem_Trl SET IsTranslated='N' WHERE AD_PrintFormatItem_ID=51640
+;
+
+-- Sep 18, 2010 3:00:44 AM CDT
+-- Report Engine
+UPDATE AD_PrintFormatItem SET SortNo=0, XPosition=0, IsGroupBy='N', YPosition=0, IsPageBreak='N', IsSummarized='Y',Updated=TO_TIMESTAMP('2010-09-18 03:00:44','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_PrintFormatItem_ID=51591
+;
+
+-- Sep 18, 2010 3:00:48 AM CDT
+-- Report Engine
+UPDATE AD_PrintFormatItem SET SortNo=0, XPosition=0, IsGroupBy='N', YPosition=0, IsPageBreak='N', IsSummarized='Y',Updated=TO_TIMESTAMP('2010-09-18 03:00:48','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_PrintFormatItem_ID=51638
+;
+
+-- Sep 18, 2010 3:04:14 AM CDT
+-- Report Engine
+UPDATE AD_Field SET IsReadOnly='Y',Updated=TO_TIMESTAMP('2010-09-18 03:04:14','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_Field_ID=59622
+;
+
+-- Sep 18, 2010 3:04:21 AM CDT
+-- Report Engine
+UPDATE AD_Field SET IsReadOnly='Y',Updated=TO_TIMESTAMP('2010-09-18 03:04:21','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_Field_ID=59452
+;
+
+-- Sep 18, 2010 3:04:41 AM CDT
+-- Report Engine
+UPDATE AD_Field SET IsReadOnly='Y',Updated=TO_TIMESTAMP('2010-09-18 03:04:41','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_Field_ID=59632
+;
+
+
 DROP VIEW RV_TRANSACTION;
 CREATE OR REPLACE VIEW RV_TRANSACTION
 AS 
@@ -3245,7 +3301,7 @@ cd.qty,
 cd.Amt, 
 cd.CostAmt,
 cd.CumulatedQty + Qty AS EndingQtyBalance,
-cd.CumulatedAmt + CostAdjustment + Amt AS EndingBalance
+cd.CumulatedAmt  + CostAmt + CostAdjustment AS EndingBalance
 FROM M_Product p 
 INNER JOIN RV_Transaction t ON (t.M_Product_ID=p.M_Product_ID)
 LEFT OUTER JOIN M_CostDetail cd ON (cd.M_Transaction_ID=t.M_Transaction_ID AND cd.M_Product_ID=p.M_Product_ID) 
