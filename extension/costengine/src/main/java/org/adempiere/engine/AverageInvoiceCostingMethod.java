@@ -10,6 +10,8 @@ import java.util.List;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
+import org.compiere.model.MCostElement;
+import org.compiere.model.MCostType;
 import org.compiere.model.MTransaction;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -31,8 +33,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		m_isSOTrx = isSOTrx;
 		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
 		m_model = mtrx.getDocumentLine();
-		m_costdetail = MCostDetail.getByTransaction(m_trx, m_dimension);
-		//m_last_costdetail = MCostDetail.getLastEntry(m_trx, m_dimension);
+		m_costdetail = MCostDetail.getByTransaction(m_trx, m_dimension);		
 	}
 	
 
@@ -59,7 +60,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		
 		if(m_costdetail != null)
 		{
-			m_Amount = m_trx.getMovementQty().multiply(m_price);	
+		 	m_Amount = m_trx.getMovementQty().multiply(m_price);	
 			m_CumulatedQty = m_last_costdetail.getNewCumulatedQty().add(m_trx.getMovementQty());
 			m_CumulatedAmt = m_last_costdetail.getNewCumulatedAmt().add(m_Amount);
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
@@ -68,7 +69,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		}
 		
 		
-	    if (m_price == null) //m_price is null at physical inventory
+	    if (m_price == null || m_price==Env.ZERO) //m_price is null at physical inventory
 	    {	
 	    	m_price = m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 	    	if(m_price.signum() == 0)
@@ -176,7 +177,9 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 						cd.setProcessing(true);
 						cd.saveEx();
 						MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
-						CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(trx);
+						MCostType ct = (MCostType) cd.getM_CostType();
+						MCostElement ce =(MCostElement) cd.getM_CostElement();
+						CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(m_as,trx,trx.getDocumentLine(),ce,ct);
 						cd.setProcessing(false);
 						cd.saveEx();
 					}

@@ -44,8 +44,14 @@ public class ValuationEffectiveDate extends SvrProcess
 	private int p_M_CostElement_ID;
 	private Timestamp p_DateValue;
 	
-	private StringBuffer whereClause = new StringBuffer();
-	private ArrayList<Object> params = new ArrayList();   
+	private StringBuffer whereClause1 = new StringBuffer("WHERE 1=1 ");
+	private StringBuffer whereClause2 = new StringBuffer("AND cd.M_CostDetail_ID IN (SELECT MAX(M_CostDetail_ID) FROM M_CostDetail cd1")
+	.append(" INNER JOIN M_Transaction t ON (cd1.M_Transaction_ID=t.M_Transaction_ID)")
+	.append(" INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID) ")
+	.append(" WHERE cd.M_Product_ID=cd1.M_Product_ID ");
+	private ArrayList<Object> params1 = new ArrayList();  
+	private ArrayList<Object> params2 = new ArrayList();  
+	private ArrayList<Object> params = new ArrayList(); 
 	
 	/**
 	 *  Prepare - e.g., get Parameters.
@@ -64,15 +70,17 @@ public class ValuationEffectiveDate extends SvrProcess
  				if(p_DateValue == null)
  		    		throw new FillMandatoryException("@DateValue@");
  				
- 				whereClause.append("WHERE cd.DateAcct<= ").append(DB.TO_DATE(p_DateValue));
+ 				whereClause2.append("AND cd1.DateAcct<= ").append(DB.TO_DATE(p_DateValue));
  			}
  			else if (name.equals(MWarehouse.COLUMNNAME_M_Warehouse_ID))
  			{	
  				p_M_Warehouse_ID = parameter.getParameterAsInt();
  		    	if(p_M_Warehouse_ID > 0)
  		    	{
- 		    		whereClause.append(" AND ").append("l.").append(X_T_InventoryValue.COLUMNNAME_M_Warehouse_ID).append("=? ");
- 		    		params.add(p_M_Warehouse_ID);
+ 		    		whereClause1.append(" AND l.M_Warehouse_ID=?");
+ 		    		params1.add(p_M_Warehouse_ID);
+ 		    		whereClause2.append(" AND l.M_Warehouse_ID=?");
+ 		    		params2.add(p_M_Warehouse_ID);
  		    	}
  			}
  			else if (name.equals(MCostDetail.COLUMNNAME_M_Product_ID))
@@ -80,8 +88,8 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_M_Product_ID = parameter.getParameterAsInt();
  		    	if(p_M_Product_ID > 0)
  		    	{
- 		    		whereClause.append(" AND ").append("p.").append(X_T_InventoryValue.COLUMNNAME_M_Product_ID).append("=? ");
- 		    		params.add(p_M_Product_ID);
+ 		    		whereClause1.append(" AND p.M_Product_ID=? ");
+ 		    		params1.add(p_M_Product_ID);
  		    	}
  			}
  			else if (name.equals(MProduct.COLUMNNAME_M_Product_Category_ID))
@@ -89,8 +97,8 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_M_Product_Category_ID = parameter.getParameterAsInt();
  		    	if(p_M_Product_Category_ID > 0)
  		    	{
- 		    		whereClause.append(" AND ").append("p.").append(X_T_InventoryValue.COLUMNNAME_M_Product_Category_ID ).append( "=? ");
- 		    		params.add(p_M_Product_Category_ID);
+ 		    		whereClause1.append(" AND p.M_Product_Category_ID =? ");
+ 		    		params1.add(p_M_Product_Category_ID);
  		    	}
  			}
  			else if (name.equals(MCostDetail.COLUMNNAME_M_CostType_ID))
@@ -98,8 +106,8 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_M_CostType_ID =  parameter.getParameterAsInt();
  				if(p_M_CostType_ID > 0)
  		    	{
- 		    		whereClause.append(" AND ").append("cd.").append(X_T_InventoryValue.COLUMNNAME_M_CostType_ID + "=? ");
- 		    		params.add(p_M_CostType_ID);
+ 		    		whereClause2.append(" AND cd1.M_CostType_ID =? ");
+ 		    		params2.add(p_M_CostType_ID);
  		    	}
  			}
  			else if (name.equals(MCostDetail.COLUMNNAME_M_CostElement_ID))
@@ -107,12 +115,13 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_M_CostElement_ID = parameter.getParameterAsInt();
  				if(p_M_CostElement_ID > 0)
  		    	{
- 		    		whereClause.append(" AND ").append("cd.").append(X_T_InventoryValue.COLUMNNAME_M_CostElement_ID + "=? ");
- 		    		params.add(p_M_CostElement_ID);
+ 		    		whereClause2.append(" AND cd1.M_CostElement_ID =? ");
+ 		    		params2.add(p_M_CostElement_ID);
  		    	}
  			}
  				
          }
+         whereClause2.append(")");
 	}	//	prepare
 
 	/**
@@ -137,17 +146,23 @@ public class ValuationEffectiveDate extends SvrProcess
     	.append("M_Product_ID,M_Product_Category_ID,M_AttributeSetInstance_ID,Classification,Group1,Group2,QtyOnHand,CostAmt) ")
     	.append("SELECT ")
     	.append(getAD_PInstance_ID()).append(",")
-    	.append("MAX(cd.DateAcct)").append(",")
+    	.append("cd.DateAcct").append(",")
     	.append("p.AD_Client_ID,p.AD_Org_ID,cd.M_CostElement_ID,cd.M_CostType_ID,l.M_Warehouse_ID,p.M_Product_ID,")
-    	.append("p.M_Product_Category_ID,t.M_AttributeSetInstance_ID,p.Classification,p.Group1,p.Group2,MAX(cd.CumulatedQty + cd.Qty) AS QtyOnHand,")
-    	.append("MAX(cd.Amt + cd.CumulatedAmt) AS CostAmt")
+    	.append("p.M_Product_Category_ID,t.M_AttributeSetInstance_ID,p.Classification,p.Group1,p.Group2,(cd.CumulatedQty + cd.Qty) AS QtyOnHand,")
+    	.append("(cd.CostAmt + cd.CumulatedAmt) AS CostAmt")
     	.append(" FROM M_Product p ")
     	.append(" INNER JOIN M_CostDetail cd ON (p.M_Product_ID=cd.M_Product_ID) ")
     	.append(" INNER JOIN M_Transaction t ON (cd.M_Transaction_ID=t.M_Transaction_ID)")
     	.append(" INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID) ");
-    	whereClause.append(" GROUP BY p.AD_Client_ID,p.AD_Org_ID,cd.M_CostElement_ID,cd.M_CostType_ID,l.M_Warehouse_ID,")
-    	.append("p.M_Product_ID,p.M_Product_Category_ID,t.M_AttributeSetInstance_ID,p.Classification,p.Group1,p.Group2");
-    	insert.append(whereClause);
+
+    	insert.append(whereClause1.append(whereClause2));
+    	
+    	for (Object o : params1)
+    		params.add(o);
+    	
+    	for (Object o : params2)
+    		params.add(o);
+    	
     	DB.executeUpdateEx(insert.toString(), params.toArray(),get_TrxName());
     	DB.executeUpdate("UPDATE T_InventoryValue SET cost = CostAmt / QtyOnHand ,  DateValue = "
     	+DB.TO_DATE(p_DateValue)+" WHERE AD_PInstance_ID=?", getAD_PInstance_ID(),get_TrxName());

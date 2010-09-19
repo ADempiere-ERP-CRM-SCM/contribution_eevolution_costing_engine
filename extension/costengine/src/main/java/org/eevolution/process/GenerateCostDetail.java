@@ -30,6 +30,7 @@ import org.compiere.model.MCostType;
 import org.compiere.model.MInOutLine;
 import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
+import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.Query;
 import org.compiere.process.ProcessInfoParameter;
@@ -212,13 +213,11 @@ public class GenerateCostDetail extends SvrProcess
 		    			List<MTransaction> trxs = new Query(getCtx(), MTransaction.Table_Name, trxWhereClause.toString(), get_TrxName())
 		    			.setParameters(trxParameters)
 		    			.setClient_ID()
-		    			.setOrderBy(MTransaction.COLUMNNAME_MovementDate)
+		    			.setOrderBy(MProduct.COLUMNNAME_M_Product_ID + "," + MTransaction.COLUMNNAME_M_Transaction_ID)
 		    			.list();
 		    			
 				    	for (MTransaction trx : trxs)
-				    	{
-				    		
-				    		
+				    	{				    						    		
 				    		CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx, trx.getDocumentLine(), ce, ct);
 				    		
 				    		if(MTransaction.MOVEMENTTYPE_VendorReceipts.equals(trx.getMovementType()))
@@ -227,13 +226,15 @@ public class GenerateCostDetail extends SvrProcess
 				    			MMatchPO[] orderMatches = MMatchPO.getOrderLine(getCtx(), line.getC_OrderLine_ID(), get_TrxName());
 				    			for(MMatchPO match: orderMatches)
 				    			{	
-				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx, match);
+				    				if(match.getM_InOutLine_ID() == line.getM_InOutLine_ID())
+				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx, match , ce, ct );
 				    			}
 				    			
 				    			MMatchInv[] invoiceMatches = MMatchInv.getInOutLine(getCtx(), line.getM_InOutLine_ID(), get_TrxName());
 				    			for (MMatchInv match: invoiceMatches)
 				    			{
-				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx, match);
+				    				if(match.getC_InvoiceLine_ID()==match.getC_InvoiceLine_ID())
+				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as , trx, match , ce , ct);
 				    			}
 				    		}   	
 				    	}
