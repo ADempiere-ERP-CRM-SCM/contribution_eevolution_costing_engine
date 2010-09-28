@@ -150,7 +150,7 @@ public class Doc_Inventory extends Doc
 		{
 			DocLine line = p_lines[i];
 			
-			for (MCostDetail cost : getCostDetail(as, line))
+			for (MCostDetail cost : line.getCostDetail(as))
 			{
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
@@ -213,25 +213,4 @@ public class Doc_Inventory extends Doc
 		facts.add(fact);
 		return facts;
 	}   //  createFact
-	
-	/**
-	 * 
-	 * get cost detail for document line
-	 * @param as Account Schema
-	 * @param line Document Line
-	 * @return Cost Detail List
-	 */
-	private List<MCostDetail> getCostDetail(MAcctSchema as, DocLine line)
-	{
-		final String whereClause = I_M_CostDetail.COLUMNNAME_M_InventoryLine_ID + "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_M_Product_ID   + "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_M_CostType_ID	+ "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_CostingMethod  + "=?";
-		
-		return new Query(getCtx(), I_M_CostDetail.Table_Name , whereClause , getTrxName())
-		.setClient_ID()
-		.setParameters(line.get_ID() , line.getM_Product_ID(), as.getM_CostType_ID(), as.getCostingMethod())
-		.list();
-	}
-
 }   //  Doc_Inventory

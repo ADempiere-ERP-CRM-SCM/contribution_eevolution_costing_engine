@@ -29,7 +29,6 @@ public class LastInvoiceCostingMethod extends AbstractCostingMethod implements I
 		m_cost = cost;
 		m_price = price;
 		m_isSOTrx = isSOTrx;
-		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
 		m_model = mtrx.getDocumentLine();
 	}
 	

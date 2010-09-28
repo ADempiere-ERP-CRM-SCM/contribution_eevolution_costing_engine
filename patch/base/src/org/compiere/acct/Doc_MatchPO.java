@@ -169,7 +169,7 @@ public class Doc_MatchPO extends Doc
 
 		//	Calculate PPV for standard costing
 		MProduct product = MProduct.get(getCtx(), getM_Product_ID());
-		String costingMethod = product.getCostingMethod(as);
+		String costingMethod = product.getCostingMethod(as , getAD_Org_ID());
 		//get standard cost and also make sure cost for other costing method is updated
 		BigDecimal costs = m_pc.getProductCosts(as, getAD_Org_ID(), 
 			MAcctSchema.COSTINGMETHOD_StandardCosting, m_C_OrderLine_ID, false);	//	non-zero costs

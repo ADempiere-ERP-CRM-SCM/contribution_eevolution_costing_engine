@@ -3307,3 +3307,28 @@ INNER JOIN RV_Transaction t ON (t.M_Product_ID=p.M_Product_ID)
 LEFT OUTER JOIN M_CostDetail cd ON (cd.M_Transaction_ID=t.M_Transaction_ID AND cd.M_Product_ID=p.M_Product_ID) 
 LEFT OUTER JOIN M_CostType ct ON (ct.M_CostType_ID=cd.M_CostType_ID)
 LEFT OUTER JOIN M_CostElement ce ON (ce.M_CostElement_ID=cd.M_CostElement_ID);
+
+-- 27/09/2010 07:41:10 PM CDT
+-- Cost Engine Report
+UPDATE AD_PrintFormatItem SET SortNo=0,IsOrderBy='N' WHERE AD_PrintFormatItem_ID=51629
+;
+
+-- 27/09/2010 07:41:10 PM CDT
+-- Cost Engine Report
+UPDATE AD_PrintFormatItem SET SortNo=20,IsOrderBy='Y' WHERE AD_PrintFormatItem_ID=51590
+;
+
+-- 27/09/2010 07:41:10 PM CDT
+-- Cost Engine Report
+UPDATE AD_PrintFormatItem SET SortNo=30,IsOrderBy='Y' WHERE AD_PrintFormatItem_ID=51631
+;
+
+-- 27/09/2010 07:41:10 PM CDT
+-- Cost Engine Report
+UPDATE AD_PrintFormatItem SET SortNo=40,IsOrderBy='Y' WHERE AD_PrintFormatItem_ID=51633
+;
+
+-- 27/09/2010 07:41:10 PM CDT
+-- Cost Engine Report
+UPDATE AD_PrintFormatItem SET SortNo=50,IsOrderBy='Y' WHERE AD_PrintFormatItem_ID=51589
+;

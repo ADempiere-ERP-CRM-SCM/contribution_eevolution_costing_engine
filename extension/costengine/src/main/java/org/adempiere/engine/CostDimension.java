@@ -93,7 +93,7 @@ public class CostDimension
 		{
 			as = MAcctSchema.get(getCtx(), this.C_AcctSchema_ID);
 		}
-		String CostingLevel = product.getCostingLevel(as);
+		String CostingLevel = product.getCostingLevel(as, AD_Org_ID);
 		//
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 		{
@@ -283,7 +283,7 @@ public class CostDimension
 			throw new AdempiereException("Same product is needed - "+trxFrom+", "+trxTo);
 		}
 		MProduct product = MProduct.get(trxFrom.getCtx(), trxFrom.getM_Product_ID());
-		String CostingLevel = product.getCostingLevel(as);
+		String CostingLevel = product.getCostingLevel(as, trxFrom.getAD_Org_ID());
 		MLocator locatorFrom = MLocator.get(trxFrom.getCtx(), trxFrom.getM_Locator_ID());
 		MLocator locatorTo = MLocator.get(trxTo.getCtx(), trxTo.getM_Locator_ID());
 		int Org_ID = locatorFrom.getAD_Org_ID();
@@ -314,7 +314,7 @@ public class CostDimension
 	{
 		MProduct product = MProduct.get(model.getCtx(), model.getM_Product_ID());
 		MLocator locator = MLocator.get(model.getCtx(), model.getM_LocatorTo_ID());
-		String CostingLevel = product.getCostingLevel(as);
+		String CostingLevel = product.getCostingLevel(as, model.getAD_Org_ID());
 		int Org_ID = model.getAD_Org_ID();
 		int Org_ID_To = locator.getAD_Org_ID();
 		int ASI_ID = model.getM_AttributeSetInstance_ID();

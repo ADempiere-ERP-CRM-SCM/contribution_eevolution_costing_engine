@@ -73,4 +73,10 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public MCostDetail createReversalCostDetail() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

@@ -43,8 +43,8 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	BigDecimal m_CurrentCostPrice = Env.ZERO;
 	BigDecimal m_Amount= Env.ZERO;
 	BigDecimal m_AdjustCost = Env.ZERO;
-	CostDimension m_dimension = null;
 	MCostDetail m_last_costdetail = null;
+	String costingLevel;
 
 	protected List<MCostDetail> createCostDetails(MCost cost,
 			MTransaction mtrx)
@@ -72,7 +72,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			List<CostComponent> ccs = getCalculatedCosts();
 			for (CostComponent cc : ccs)
 			{
-				MCostDetail cd = new MCostDetail(m_model.getCtx(), m_dimension, cc.getAmount(), cc.getQty(), m_model.get_TrxName());
+				MCostDetail cd = new MCostDetail(m_trx, m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), cc.getAmount(), cc.getQty(), m_model.get_TrxName());
 				if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 					throw new AdempiereException("Cannot set "+idColumnName);
 
@@ -95,7 +95,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 		}
 		else //qty and amt is take from documentline
 		{
-			MCostDetail cd = new MCostDetail(m_model.getCtx(), m_dimension, m_price.multiply(model.getMovementQty()),  model.getMovementQty(), m_model.get_TrxName());
+			MCostDetail cd = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID() , m_price.multiply(model.getMovementQty()),  model.getMovementQty(), m_model.get_TrxName());
 			int id;
 			if (model instanceof MMatchPO)
 			{
@@ -132,14 +132,20 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 		m_cost.setCurrentCostPrice(m_CurrentCostPrice);
 		m_cost.setCumulatedAmt(m_CumulatedAmt);
 		m_cost.setCumulatedQty(m_CumulatedQty);
-		m_cost.setCurrentQty(m_cost.getCurrentQty().add(m_costdetail.getQty()));
+		m_cost.setCurrentQty(m_CumulatedQty);
 		m_cost.saveEx();
 	}
 	
+	/**
+	 * Create Reversal Transaction
+	 */
 	public MCostDetail createReversalCostDetail()
 	{
 			MTransaction original_trx = MTransaction.getByDocumentLine(m_trx);
-			MCostDetail original_cd = MCostDetail.getByTransaction(original_trx, m_dimension); 
+			IDocumentLine model = m_trx.getDocumentLine();
+			String idColumnName = model.get_TableName()+"_ID";
+			
+			MCostDetail original_cd = MCostDetail.getByTransaction(original_trx, m_as.getC_AcctSchema_ID() , m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), costingLevel); 
 			m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_trx.get_TrxName());
 			m_costdetail.copyValues(original_cd , m_costdetail);
 			m_costdetail.setQty(original_cd.getQty().negate());
@@ -147,18 +153,27 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			m_costdetail.setCostAmt(original_cd.getCostAmt().negate());
 			m_costdetail.setCostAdjustment(original_cd.getCostAdjustment().negate());
 			m_costdetail.setCostAdjustmentDate(original_cd.getCostAdjustmentDate());
-			m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
-			m_costdetail.setCumulatedAmt(m_cost.getCumulatedAmt());
-			m_costdetail.setCumulatedQty(m_cost.getCumulatedQty());
+			m_costdetail.setCumulatedQty(original_cd.getNewCumulatedQty());
+			m_costdetail.setCumulatedAmt(original_cd.getNewCumulatedAmt());	
+			m_costdetail.setCurrentCostPrice(original_cd.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
 			m_costdetail.setDateAcct(original_cd.getDateAcct());
+			if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
+				throw new AdempiereException("Cannot set "+idColumnName);
 			m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
+			m_costdetail.setDescription("Reversal" + original_cd.getM_Transaction_ID());
 			m_costdetail.setIsReversal(true);
 			m_costdetail.saveEx(m_trx.get_TrxName());
+			
+			//Update the original cost detail
+			original_cd.setDescription("Reversal" + m_costdetail.getM_Transaction_ID());
 			original_cd.setIsReversal(true);
 			original_cd.saveEx(m_trx.get_TrxName());
+			
+			//Update the new cost detail
+			m_CumulatedQty = m_costdetail.getNewCumulatedQty();
+			m_CumulatedAmt = m_costdetail.getNewCumulatedAmt();
 			m_CurrentCostPrice = m_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-			m_CumulatedAmt=m_costdetail.getNewCumulatedAmt();
-			m_CumulatedQty=m_costdetail.getNewCumulatedQty();
 			return m_costdetail;
 	}
+	
 }

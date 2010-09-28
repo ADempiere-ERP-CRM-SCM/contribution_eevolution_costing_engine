@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Properties;
 
+import org.compiere.util.CCache;
 import org.compiere.util.Msg;
 
 /**
@@ -33,7 +34,57 @@ public class MCostType extends X_M_CostType
 	 * 
 	 */
 	private static final long serialVersionUID = -2060640115481013228L;
+	
+	/**	Cache of AcctSchemas 					**/
+	private static CCache<Integer,MCostType> s_cache = new CCache<Integer,MCostType>("MCostType", 3);	//  3 accounting schemas
+	
+	public static MCostType get (Properties ctx, int M_CostType_ID)
+	{
+		return get(ctx, M_CostType_ID, null);
+	}	//	get
 
+	public static MCostType get (Properties ctx, int M_CostType_ID, String trxName)
+	{
+		//  Check Cache
+		Integer key = new Integer(M_CostType_ID);
+		MCostType retValue = (MCostType)s_cache.get(key);
+		if (retValue != null)
+			return retValue;
+		retValue = new MCostType (ctx, M_CostType_ID, trxName);
+		if (trxName == null)
+			s_cache.put(key, retValue);
+		return retValue;
+	}	//	get
+
+	public static List<MCostType> get (Properties ctx, String trxName)
+	{
+		// TODO: anca_bradau: do caching
+		return new Query(ctx, Table_Name, null, trxName)
+		.setOnlyActiveRecords(true)
+		.setClient_ID()
+		.setOrderBy(COLUMNNAME_M_CostType_ID)
+		.list();
+	}
+	
+	public static MCostType getByOrg(Properties ctx,int AD_Org_ID, String trxName)
+	{
+		return new Query(ctx, Table_Name, "AD_Org_ID=?", trxName)
+		.setOnlyActiveRecords(true)
+		.setClient_ID()
+		.setParameters(AD_Org_ID)
+		.setOrderBy(COLUMNNAME_M_CostType_ID)
+		.first();
+	}
+	
+	public static MCostType getByMethodCosting(Properties ctx,String costingMethod, String trxName)
+	{
+		return new Query(ctx, Table_Name, "CostingMethod=?", trxName)
+		.setOnlyActiveRecords(true)
+		.setParameters(costingMethod)
+		.setClient_ID()
+		.setOrderBy(COLUMNNAME_CostingMethod)
+		.first();
+	}
 	/**
 	 * 	Standard Constructor
 	 *	@param ctx context
@@ -74,8 +125,6 @@ public class MCostType extends X_M_CostType
 	 */
 	protected boolean beforeSave (boolean newRecord)
 	{
-		if (getAD_Org_ID() != 0)
-			setAD_Org_ID(0);
 		return true;
 	}	//	beforeSave
 
@@ -97,15 +146,4 @@ public class MCostType extends X_M_CostType
 		}
 		return true;
 	}	//	beforeDelete
-	//added by anca
-	public static List<MCostType> get (Properties ctx, String trxName)
-	{
-		// TODO: anca_bradau: do caching
-		return new Query(ctx, Table_Name, null, trxName)
-		.setOnlyActiveRecords(true)
-		.setClient_ID()
-		.setOrderBy(COLUMNNAME_M_CostType_ID)
-		.list();
-	}
-	
 }	//	MCostType

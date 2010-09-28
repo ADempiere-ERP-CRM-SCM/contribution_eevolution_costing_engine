@@ -81,7 +81,7 @@ public class MCost extends X_M_Cost
 		BigDecimal qty, int C_OrderLine_ID,
 		boolean zeroCostsOK, String trxName)
 	{
-		String CostingLevel = product.getCostingLevel(as);
+		String CostingLevel = product.getCostingLevel(as, AD_Org_ID);
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 		{
 			AD_Org_ID = 0;
@@ -94,7 +94,7 @@ public class MCost extends X_M_Cost
 		//	Costing Method
 		if (costingMethod == null)
 		{
-			costingMethod = product.getCostingMethod(as);
+			costingMethod = product.getCostingMethod(as, AD_Org_ID);
 			if (costingMethod == null)
 			{
 				throw new IllegalArgumentException("No Costing Method");
@@ -227,7 +227,7 @@ public class MCost extends X_M_Cost
 		if (MCostElement.COSTINGMETHOD_Fifo.equals(costingMethod)
 			|| MCostElement.COSTINGMETHOD_Lifo.equals(costingMethod))
 		{
-			MCostElement ce = MCostElement.getMaterialCostElement(as, costingMethod);
+			MCostElement ce = MCostElement.getByMaterialCostElementType(as);
 			materialCost = MCostQueue.getCosts(cost, qty, null, trxName);
 		}
 			
@@ -335,7 +335,7 @@ public class MCost extends X_M_Cost
 		//	Look for Standard Costs first
 		if (!MCostElement.COSTINGMETHOD_StandardCosting.equals(costingMethod))
 		{
-			MCostElement ce = MCostElement.getMaterialCostElement(as, MCostElement.COSTINGMETHOD_StandardCosting);
+			MCostElement ce = MCostElement.getByMaterialCostElementType(as);
 			List<MCostType> costtypes = MCostType.get(product.getCtx(), product.get_TrxName()); 
 			for (MCostType mc : costtypes)
 			{
@@ -692,7 +692,8 @@ public class MCost extends X_M_Cost
 			s_log.config(product.getName());
 
 			//	Cost Elements
-			List <MCostElement> ces = MCostElement.getCostElementsWithCostingMethods(product);
+			//List <MCostElement> ces = MCostElement.getCostElementsWithCostingMethods(product);
+			List <MCostElement> ces = MCostElement.getCostElement(product.getCtx(), product.get_TrxName());
 						
 			MAcctSchema[] mass = MAcctSchema.getClientAcctSchema(product.getCtx(), 
 				product.getAD_Client_ID(), product.get_TrxName());
@@ -701,7 +702,7 @@ public class MCost extends X_M_Cost
 			int M_ASI_ID = 0;		//	No Attribute
 			for (MAcctSchema as : mass)
 			{
-				String cl = product.getCostingLevel(as);
+				String cl = product.getCostingLevel(as, product.getAD_Org_ID());
 				
 				//	Create Std Costing
 				if (MAcctSchema.COSTINGLEVEL_Client.equals(cl))
@@ -801,7 +802,7 @@ public class MCost extends X_M_Cost
 	{
 		s_log.config(product.getName());
 		//	Cost Elements
-		List <MCostElement> ces = MCostElement.getCostElementsWithCostingMethods(product);
+		List <MCostElement> ces = MCostElement.getCostElement(product.getCtx(), product.get_TrxName());
 		
 			MAcctSchema[] mass = MAcctSchema.getClientAcctSchema(product.getCtx(), 
 				product.getAD_Client_ID(), product.get_TrxName());
@@ -810,7 +811,7 @@ public class MCost extends X_M_Cost
 			int M_ASI_ID = 0;		//	No Attribute
 			for (MAcctSchema as : mass)
 			{
-				String cl = product.getCostingLevel(as);
+				String cl = product.getCostingLevel(as,product.getAD_Org_ID());
 				//	Create Std Costing
 				if (MAcctSchema.COSTINGLEVEL_Client.equals(cl))
 				{
@@ -1436,7 +1437,7 @@ public class MCost extends X_M_Cost
 	{
 		int AD_Org_ID = 0;
 		int M_AttributeSetInstance_ID = 0;
-		String CostingLevel = MProduct.get(as.getCtx(), model.getM_Product_ID()).getCostingLevel(as);
+		String CostingLevel = MProduct.get(as.getCtx(), model.getM_Product_ID()).getCostingLevel(as,model.getAD_Org_ID());
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 		{
 			AD_Org_ID = 0;
@@ -1535,9 +1536,6 @@ public class MCost extends X_M_Cost
 		setM_Product_ID(product.getM_Product_ID());
 		setM_AttributeSetInstance_ID(M_AttributeSetInstance_ID);
 		setM_CostElement_ID(M_CostElement_ID);
-		//TODO: check if is ok
-		//setCostingMethod(costingMethod);
-		//
 		m_manual = false;
 	}	//	MCost
 
@@ -1630,8 +1628,8 @@ public class MCost extends X_M_Cost
 		sb.append (",M_Product_ID=").append (getM_Product_ID());
 		if (getM_AttributeSetInstance_ID() != 0)
 			sb.append (",AD_ASI_ID=").append (getM_AttributeSetInstance_ID());
-	//	sb.append (",C_AcctSchema_ID=").append (getC_AcctSchema_ID());
-	//	sb.append (",M_CostType_ID=").append (getM_CostType_ID());
+		sb.append (",C_AcctSchema_ID=").append (getC_AcctSchema_ID());
+		sb.append (",M_CostType_ID=").append (getM_CostType_ID());
 		sb.append (",M_CostElement_ID=").append (getM_CostElement_ID());
 		//
 		sb.append (", CurrentCost=").append (getCurrentCostPrice())
@@ -1668,7 +1666,7 @@ public class MCost extends X_M_Cost
 		{
 			MAcctSchema as = new MAcctSchema (getCtx(), getC_AcctSchema_ID(), null);
 			MProduct product = MProduct.get(getCtx(), getM_Product_ID());
-			String CostingLevel = product.getCostingLevel(as);
+			String CostingLevel = product.getCostingLevel(as, product.getAD_Org_ID());
 			if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 			{
 				if (getAD_Org_ID() != 0 || getM_AttributeSetInstance_ID() != 0)
@@ -1883,7 +1881,7 @@ public class MCost extends X_M_Cost
 		int M_AttributeSetInstance_ID = cost.getM_AttributeSetInstance_ID();
 		String costingMethod = cost.getCostingMethod(); 
 		
-		String CostingLevel = product.getCostingLevel(as);
+		String CostingLevel = product.getCostingLevel(as,product.getAD_Org_ID());
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 		{
 			AD_Org_ID = 0;
@@ -1896,7 +1894,7 @@ public class MCost extends X_M_Cost
 		//	Costing Method
 		if (costingMethod == null)
 		{
-			costingMethod = product.getCostingMethod(as);
+			costingMethod = product.getCostingMethod(as, AD_Org_ID);
 			if (costingMethod == null)
 			{
 				throw new IllegalArgumentException("No Costing Method");

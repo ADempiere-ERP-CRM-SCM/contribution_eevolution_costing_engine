@@ -1,5 +1,5 @@
 /******************************************************************************
- * Product: Adempiere ERP & CRM Smart Business Solution                       *
+// * Product: Adempiere ERP & CRM Smart Business Solution                       *
  * Copyright (C) 1999-2006 ComPiere, Inc. All Rights Reserved.                *
  * This program is free software; you can redistribute it and/or modify it    *
  * under the terms version 2 of the GNU General Public License as published   *
@@ -15,7 +15,6 @@
  * or via info@compiere.org or http://www.compiere.org/license.html           *
  *****************************************************************************/
 package org.compiere.acct;
-
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -23,15 +22,11 @@ import java.util.List;
 import java.util.logging.Level;
 
 import org.compiere.model.I_M_CostDetail;
-import org.compiere.model.I_M_CostElement;
-import org.compiere.model.I_M_CostType;
-import org.compiere.model.I_M_InOutLine;
 import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MInOut;
 import org.compiere.model.MInOutLine;
-import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.ProductCost;
 import org.compiere.model.Query;
@@ -170,7 +165,8 @@ public class Doc_InOut extends Doc
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
 				MProduct product = line.getProduct();
-				for (MCostDetail cost : getCostDetail(as, line))
+				
+				for (MCostDetail cost :  line.getCostDetail(as))
 				{	
 					//get costing method for product
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
@@ -266,7 +262,7 @@ public class Doc_InOut extends Doc
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
 				MProduct product = line.getProduct();
-				for (MCostDetail cost : getCostDetail(as, line))
+				for (MCostDetail cost : line.getCostDetail(as))
 				{	
 					costs = cost.getAmt();
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
@@ -349,7 +345,7 @@ public class Doc_InOut extends Doc
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
 				MProduct product = line.getProduct();
-				for (MCostDetail cost : getCostDetail(as, line))
+				for (MCostDetail cost : line.getCostDetail(as))
 				{	
 						//get costing method for product
 						costs = cost.getAmt();
@@ -436,7 +432,7 @@ public class Doc_InOut extends Doc
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
 				MProduct product = line.getProduct();
-				for(MCostDetail cost : getCostDetail(as, line))
+				for(MCostDetail cost : line.getCostDetail(as))
 				{	
 						
 						costs = cost.getAmt();	//	current costs
@@ -513,26 +509,5 @@ public class Doc_InOut extends Doc
 		facts.add(fact);
 		return facts;
 	}   //  createFact
-
-
-	/**
-	 * 
-	 * get cost detail for document line
-	 * @param as Account Schema
-	 * @param line Document Line
-	 * @return Cost Detail List
-	 */
-	private List<MCostDetail> getCostDetail(MAcctSchema as, DocLine line)
-	{
-		final String whereClause = I_M_CostDetail.COLUMNNAME_M_InOutLine_ID + "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_M_Product_ID   + "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_M_CostType_ID	+ "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_CostingMethod  + "=?";
-		
-		return new Query(getCtx(), I_M_CostDetail.Table_Name , whereClause , getTrxName())
-		.setClient_ID()
-		.setParameters(line.get_ID() , line.getM_Product_ID(), as.getM_CostType_ID(), as.getCostingMethod())
-		.list();
-	}
 
 }   //  Doc_InOut

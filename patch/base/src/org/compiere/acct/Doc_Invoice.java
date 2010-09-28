@@ -863,15 +863,6 @@ public class Doc_Invoice extends Doc
 				allocationAmt = allocationAmt.setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			if (!dr)
 				allocationAmt = allocationAmt.negate();
-			// AZ Goodwill
-			// use createInvoice to create/update non Material Cost Detail
-//			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(lca, null);
-			/*MCostDetail.createInvoice(as, lca.getAD_Org_ID(), 
-					lca.getM_Product_ID(), lca.getM_AttributeSetInstance_ID(),
-					C_InvoiceLine_ID, lca.getM_CostElement_ID(),
-					allocationAmt, lca.getQty(),
-					desc, getTrxName(), line.get_ID());*/
-			// end AZ
 		}
 		
 		log.config("Created #" + lcas.length);

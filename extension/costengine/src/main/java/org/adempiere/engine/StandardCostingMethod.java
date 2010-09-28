@@ -10,6 +10,7 @@ import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
+import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -29,9 +30,9 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		m_cost = cost;
 		m_price = price;
 		m_isSOTrx = isSOTrx;
-		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
 		m_model = mtrx.getDocumentLine();
-		m_costdetail = MCostDetail.getByTransaction(mtrx, m_dimension);
+		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
+		m_costdetail = MCostDetail.getByTransaction(mtrx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), costingLevel);
 	}
 
 	private void calculate()
@@ -76,7 +77,7 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		
 		if(m_costdetail == null)
 		{	
-			m_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty(), m_trx.get_TrxName());
+			m_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty(), m_trx.get_TrxName());
 			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
 		}		
 		else
@@ -143,4 +144,5 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 }

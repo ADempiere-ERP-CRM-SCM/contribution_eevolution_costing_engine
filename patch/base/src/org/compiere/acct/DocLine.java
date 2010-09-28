@@ -18,14 +18,16 @@ package org.compiere.acct;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Properties;
 
-import org.adempiere.engine.CostEngine;
 import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCharge;
 import org.compiere.model.MCostDetail;
+import org.compiere.model.MCostType;
 import org.compiere.model.MProduct;
+import org.compiere.model.MProductCategoryAcct;
 import org.compiere.model.PO;
 import org.compiere.model.ProductCost;
 import org.compiere.util.CLogger;
@@ -413,7 +415,7 @@ public class DocLine
 				return acct;
 		}
 		//	Product Account
-		return getProductCost().getAccount (AcctType, as);
+		return getProductCost().getAccount (AcctType, as, getAD_Org_ID());
 	}   //  getAccount
 
 	/**
@@ -728,6 +730,7 @@ public class DocLine
 	 *	@param whereClause null are OK
 	 *  @return costs
 	 */
+	/*
 	public BigDecimal getProductCosts (MAcctSchema as, int AD_Org_ID, boolean zeroCostsOK, String whereClause)
 	{
 		if (whereClause != null)
@@ -740,6 +743,7 @@ public class DocLine
 		}
 		return getProductCosts(as, AD_Org_ID, zeroCostsOK);
 	}   //  getProductCosts
+	*/
 	// end MZ
 	
 	/**
@@ -749,7 +753,7 @@ public class DocLine
 	 *	@param zeroCostsOK zero/no costs are OK
 	 *  @return costs
 	 */
-	public BigDecimal getProductCosts (MAcctSchema as, int AD_Org_ID, boolean zeroCostsOK)
+	/*public BigDecimal getProductCosts (MAcctSchema as, int AD_Org_ID, boolean zeroCostsOK)
 	{
 		
 		final String whereClause = null;
@@ -788,7 +792,7 @@ public class DocLine
 //		}
 		return costs;*/
 		
-	}   //  getProductCosts
+//	}   //  getProductCosts
 
 	/**
 	 * 	Get Product 
@@ -1170,16 +1174,34 @@ public class DocLine
 	}	//	toString
 
 	/**
-	 * @return cost detail for this document line or null if not found
-	 * @see #getCostDetail(MAcctSchema, int, String)
-	 * @category arhipac
+	 * getCostDetail
+	 * @return cost detail list for this document line or null if not found
 	 */
-	protected MCostDetail[] getCostDetail(MAcctSchema as, int AD_Org_ID)
+	public List<MCostDetail> getCostDetail(MAcctSchema as)
 	{
-		CostEngine engine = new CostEngine();
-		return engine.getCostDetails(this, as, AD_Org_ID, p_po.get_TableName() + "_ID=" + p_po.get_ID());
+		MCostType ct = MCostType.getByOrg(this.getCtx(), getAD_Org_ID(), getTrxName());
+		
+		MProduct product = MProduct.get(getCtx(), getM_Product_ID());
+		if(product != null)
+		{
+			MProductCategoryAcct pca = MProductCategoryAcct.get(getCtx(), product.getM_Product_Category_ID(), as.getC_AcctSchema_ID(), getAD_Org_ID(), getTrxName());
+			
+			if(pca.getCostingMethod() != null && pca.getCostingMethod().length() > 0)
+			{				
+				ct = MCostType.getByMethodCosting(getCtx(), pca.getCostingMethod(), getTrxName());
+			}
+			else if (ct == null)
+			{
+				ct = MCostType.getByMethodCosting(getCtx(), as.getCostingMethod(), getTrxName());				 
+			}
+		}		
+		return MCostDetail.getByDocLine(this, as.getC_AcctSchema_ID(), ct.getM_CostType_ID());
 	}
-
+	
+	public int getAD_Client_ID()
+	{
+		return m_doc.getAD_Client_ID();
+	}
 	public boolean isSOTrx()
 	{
 		return m_doc.isSOTrx();
@@ -1191,5 +1213,9 @@ public class DocLine
 	public String getTrxName()
 	{
 		return p_po.get_TrxName();
+	}
+	public String getTableName()
+	{
+		return p_po.get_TableName();
 	}
 }	//	DocumentLine

@@ -934,7 +934,7 @@ public class MMovement extends X_M_Movement implements DocAction
 			throw new AdempiereException("Same product is needed - "+trxFrom+", "+trxTo);
 		}
 		MProduct product = MProduct.get(getCtx(), trxFrom.getM_Product_ID());
-		String CostingLevel = product.getCostingLevel(as);
+		String CostingLevel = product.getCostingLevel(as,trxFrom.getAD_Org_ID());
 		int Org_ID = trxFrom.getAD_Org_ID();
 		int Org_ID_To = trxTo.getAD_Org_ID();
 		int ASI_ID = trxFrom.getM_AttributeSetInstance_ID();

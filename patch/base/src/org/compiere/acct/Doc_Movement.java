@@ -135,7 +135,7 @@ public class Doc_Movement extends Doc
 		{
 			DocLine line = p_lines[i];
 			
-			for (MCostDetail cost : getCostDetail(as, line))
+			for (MCostDetail cost : line.getCostDetail(as))
 			{
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();

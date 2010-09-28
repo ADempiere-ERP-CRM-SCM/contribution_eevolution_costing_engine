@@ -36,8 +36,8 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
         m_price = price;
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
-		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
-		m_costdetail = MCostDetail.getByTransaction(mtrx,m_dimension);
+		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
+		m_costdetail = MCostDetail.getByTransaction(mtrx,m_as.getC_AcctSchema_ID(), m_cost.getM_CostType_ID() , m_cost.getM_CostElement_ID(), costingLevel);
 	}
 	
 	public void calculate()
@@ -125,10 +125,10 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				}
 				processCostDetail(cd);	
 				//check if document is entered with delay
-				m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_dimension);
+				m_last_costdetail =  MCostDetail.getLastTransaction(m_trx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), costingLevel);
 				if(m_last_costdetail == null)
 				{
-					m_last_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, Env.ZERO , Env.ZERO, m_trx.get_TrxName());
+					m_last_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), Env.ZERO , Env.ZERO, m_trx.get_TrxName());
 					m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));
 				}
 				if (m_costdetail.getDateAcct().compareTo(m_last_costdetail.getDateAcct()) < 0)

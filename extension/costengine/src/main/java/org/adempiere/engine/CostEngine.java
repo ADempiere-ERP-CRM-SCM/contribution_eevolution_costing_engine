@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.adempiere.exceptions.AdempiereException;
-import org.compiere.acct.DocLine;
 import org.compiere.model.I_AD_WF_Node;
 import org.compiere.model.I_C_InvoiceLine;
 import org.compiere.model.I_C_OrderLine;
@@ -64,6 +63,7 @@ public class CostEngine
 	/**	Logger							*/
 	protected transient CLogger	log = CLogger.getCLogger (getClass());
 	
+	@Deprecated
 	public String getCostingMethod()
 	{
 		return MCostElement.COSTINGMETHOD_StandardCosting;
@@ -207,10 +207,13 @@ public class CostEngine
 		{
 			description.append(isSOTrx ? "(|->)" : "(|<-)");
 		}
-
-		for (MCostType ct : MCostType.get(mtrx.getCtx(), mtrx.get_TrxName()))
+		
+		List<MCostElement> ces = MCostElement.getCostElement(mtrx.getCtx(), mtrx.get_TrxName());
+		List<MCostType> cts = MCostType.get(mtrx.getCtx(), mtrx.get_TrxName());
+		
+		for (MCostType ct : cts)
 		{	
-			for (MCostElement ce : MCostElement.getCostElement(mtrx.getCtx(), mtrx.get_TrxName()))
+			for (MCostElement ce : ces)
 			{		
 					createCostDetail(as, mtrx , model , ce , ct);
 			}		
@@ -253,7 +256,7 @@ public class CostEngine
 			throw new AdempiereException("Error do not exist material cost element for method cost " + as.getCostingMethod());
 		
 		MProduct product = new MProduct(ct.getCtx(), M_Product_ID, ct.get_TrxName());
-		String CostingLevel = product.getCostingLevel(as);		
+		String CostingLevel = product.getCostingLevel(as,AD_Org_ID);		
 		String costingMethod = ct.getCostingMethod();
 		
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
@@ -268,7 +271,7 @@ public class CostEngine
 		//	Costing Method
 		if (costingMethod == null)
 		{
-			costingMethod = product.getCostingMethod(as);
+			costingMethod = product.getCostingMethod(as, AD_Org_ID);
 			if (costingMethod == null)
 			{
 				throw new IllegalArgumentException("No Costing Method");
@@ -378,8 +381,7 @@ public class CostEngine
 			
 			if (ce.isLandedCost()) 
 			{
-				    CostDimension dimension = new CostDimension (model.getAD_Client_ID(), model.getAD_Org_ID(), model.getM_Product_ID(), model.getM_AttributeSetInstance_ID(), cost.getM_CostType_ID(), as.getC_AcctSchema_ID(), cost.getM_CostElement_ID());
-					MCostDetail	cd = new MCostDetail(model.getCtx(), dimension, cc.getAmount() , cc.getQty(), model.get_TrxName());
+				  	MCostDetail	cd = new MCostDetail(as, model.getAD_Org_ID(), model.getM_Product_ID(), model.getM_AttributeSetInstance_ID(),ce.getM_CostElement_ID(),  cc.getAmount() ,cc.getQty() , ce.getDescription() , model.get_TrxName() , cost.getM_CostType_ID()); 
 
 					if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 						throw new AdempiereException("Cannot set "+idColumnName);
@@ -444,7 +446,7 @@ public class CostEngine
 		{
 			// Cost Detail
 			final MProduct product = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID());
-			final String costingMethod = product.getCostingMethod(as);
+			final String costingMethod = product.getCostingMethod(as, mtrx.getAD_Org_ID());
 			// Check costing method
 			if (!getCostingMethod().equals(costingMethod))
 			{
@@ -555,6 +557,7 @@ public class CostEngine
 		|| MCostElement.COSTELEMENTTYPE_BurdenMOverhead.equals(costElementType);
 	}
 
+	@Deprecated
 	private List<MCostElement> getCostElements(Properties ctx)
 	{
 		return MCostElement.getByCostingMethod(ctx, getCostingMethod());
@@ -838,25 +841,6 @@ public class CostEngine
 				throw new AdempiereException(ccmv.getProcessMsg());
 		}
 	}
-
-	public MCostDetail[] getCostDetails (DocLine docLine, MAcctSchema as, int AD_Org_ID, String whereClause)
-	{
-		final String whereClauseFinal = "AD_Org_ID=?" 
-			+" AND M_Product_ID=?"
-			+" AND C_AcctSchema_ID=?"
-			+" AND M_CostType_ID=?" //ancabradau
-			+(Util.isEmpty(whereClause, true) ? "" : " AND "+whereClause)
-		;
-		List<MCostDetail> list = new Query(docLine.getCtx(), MCostDetail.Table_Name, whereClauseFinal, docLine.getTrxName())
-			.setParameters(new Object[]{AD_Org_ID,
-					docLine.getM_Product_ID(),
-					as.getC_AcctSchema_ID(),
-					as.getM_CostType_ID()}) //ancabradau
-			.setOrderBy("IsSOTrx ASC") // Receipt First (IsSOTrx=N)
-			.list();
-		return list.toArray(new MCostDetail[list.size()]);
-	}
-
 	
 	static public String getIDColumnName(IDocumentLine model)
 	{

@@ -135,7 +135,6 @@ public class Doc_MatchInv extends Doc
 				+ ",Qty=" + getQty() + ",InOutQty=" + m_receiptLine.getMovementQty());
 			return facts;
 		}
-//		MMatchInv matchInv = (MMatchInv)getPO();
 		
 		//  create Fact Header
 		Fact fact = new Fact(this, as, Fact.POST_Actual);

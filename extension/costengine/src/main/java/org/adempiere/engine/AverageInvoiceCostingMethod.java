@@ -12,6 +12,7 @@ import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
+import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -31,9 +32,9 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		m_cost = cost;
 		m_price = price;
 		m_isSOTrx = isSOTrx;
-		m_dimension = new CostDimension(m_trx.getAD_Client_ID(), m_trx.getAD_Org_ID(), m_trx.getM_Product_ID(), m_trx.getM_AttributeSetInstance_ID(), m_cost.getM_CostType_ID(), m_as.getC_AcctSchema_ID(), m_cost.getM_CostElement_ID());
 		m_model = mtrx.getDocumentLine();
-		m_costdetail = MCostDetail.getByTransaction(m_trx, m_dimension);		
+		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
+		m_costdetail = MCostDetail.getByTransaction(m_trx, m_as.getC_AcctSchema_ID() , m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), costingLevel);	
 	}
 	
 
@@ -42,10 +43,10 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		if(m_model.getReversalLine_ID() > 0)
 			return;
 	
-		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_dimension, m_model.getDateAcct());
+		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_as.getC_AcctSchema_ID(), m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(),m_model.getDateAcct(), costingLevel);
 		if(m_last_costdetail == null)
 		{
-			m_last_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, Env.ZERO , Env.ZERO, m_trx.get_TrxName());
+			m_last_costdetail = new MCostDetail(m_trx , m_as.getC_AcctSchema_ID(), m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID() , Env.ZERO , Env.ZERO, m_trx.get_TrxName());
 			m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));	
 		}
 		
@@ -91,7 +92,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 					
 		if(m_costdetail == null)
 		{				
-			m_costdetail = new MCostDetail(m_trx.getCtx(), m_dimension, m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty(), m_trx.get_TrxName());
+			m_costdetail = new MCostDetail(m_trx, m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty(), m_trx.get_TrxName());
 			m_costdetail.setDateAcct(m_model.getDateAcct());
 		}		
 		else
@@ -127,7 +128,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			m_costdetail.setCostAmt(m_price.multiply(m_trx.getMovementQty()));
 		if(m_trx.getMovementType().contains("-"))
 			m_costdetail.setCostAmt(m_costdetail.getAmt());
-		
+
 		m_costdetail.setCumulatedQty(m_last_costdetail.getNewCumulatedQty());
 		m_costdetail.setCumulatedAmt(m_last_costdetail.getNewCumulatedAmt());	
 		m_costdetail.setCurrentCostPrice(m_last_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));
@@ -162,10 +163,10 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		if(m_costdetail.isProcessing())
 			return;
 		
-		if(m_AdjustCost.signum() != 0 || MCostDetail.isEarlierTransaction(m_costdetail, m_dimension))
+		if(m_AdjustCost.signum() != 0 || MCostDetail.isEarlierTransaction(m_costdetail, m_as.getC_AcctSchema_ID() , m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), costingLevel))
 		{	
 		
-				List<MCostDetail> cds = MCostDetail.getAfterDate(m_costdetail);
+				List<MCostDetail> cds = MCostDetail.getAfterDate(m_costdetail,costingLevel);
 				
 				if(cds == null || cds.size() == 0)
 					return;

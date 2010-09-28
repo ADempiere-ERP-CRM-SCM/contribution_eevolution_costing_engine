@@ -759,7 +759,7 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 		if (success && getC_OrderLine_ID() != 0)
 		{
 			// AZ Goodwill
-			deleteMatchPOCostDetail();
+			//deleteMatchPOCostDetail();
 			// end AZ
 			
 			MOrderLine orderLine = new MOrderLine (getCtx(), getC_OrderLine_ID(), get_TrxName());
@@ -967,6 +967,7 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 	//}
 	
 	//AZ Goodwill
+	/*
 	private String deleteMatchPOCostDetail()
 	{
 		// Get Account Schemas to delete MCostDetail
@@ -1011,7 +1012,7 @@ public class MMatchPO extends X_M_MatchPO implements IDocumentLine
 		}
 		
 		return "";
-	}
+	}*/
 
 	@Override
 	public int getM_Locator_ID() {

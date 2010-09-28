@@ -14,6 +14,7 @@
  *****************************************************************************/
 package org.adempiere;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -34,6 +35,7 @@ import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
+import org.compiere.model.MCostType;
 import org.compiere.model.MDocType;
 import org.compiere.model.MInOut;
 import org.compiere.model.MInOutLine;
@@ -45,17 +47,25 @@ import org.compiere.model.MMovement;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
+import org.compiere.model.MPInstance;
+import org.compiere.model.MPInstancePara;
+import org.compiere.model.MProcess;
 import org.compiere.model.MProduct;
-import org.compiere.model.MStorage;
 import org.compiere.model.MUser;
 import org.compiere.model.MWarehouse;
 import org.compiere.model.Query;
+import org.compiere.print.ReportCtl;
+import org.compiere.print.ReportEngine;
 import org.compiere.process.DocAction;
+import org.compiere.process.ProcessInfo;
 import org.compiere.util.CLogMgt;
+import org.compiere.util.EMail;
 import org.compiere.util.Env;
 import org.compiere.util.TimeUtil;
 import org.compiere.util.Trx;
 import org.compiere.util.TrxRunnable;
+import org.eevolution.process.GenerateCostDetail;
+import org.eevolution.process.ValuationEffectiveDate;
 
 import test.AdempiereTestCase;
 
@@ -76,6 +86,8 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	MProduct product = null;
 	MAcctSchema as = null;
 	String trxName = getTrxName();
+	String Mail; 
+	String MailPassword; 
 	
 	Timestamp today; 
 	
@@ -84,17 +96,24 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	{
 		super.setUp();
 		int currencyId = 0;
+	
+		CLogMgt.setLevel(Level.OFF);
+		//CLogMgt.setLevel(Level.ALL);
 		currencyId = Integer.parseInt( testProperties.getProperty("$C_Currency_ID", "100") );	
+		Env.setContext(Env.getCtx(), "$C_AcctSchema_ID", 101);
 		Env.setContext(Env.getCtx(), "$C_Currency_ID", currencyId);
 		Env.setContext(Env.getCtx(), "#M_Warehouse_ID", 103);
+		Env.setContext(Env.getCtx(), "#AD_Client_ID", 11);
 		Env.setContext(Env.getCtx(), "#AD_Org_ID", 11);
+		Env.setContext(Env.getCtx(), "#AD_User_ID", 100);
+		Env.setContext(Env.getCtx(), "#AD_Role_ID", 102);
+		String Mail = testProperties.getProperty("Email"); 
+		String MailPassword = testProperties.getProperty("EmailPassword"); 
+		
 	}
 	
 	public void test01() throws Exception
 	{
-		CLogMgt.setLevel(Level.OFF);
-		//CLogMgt.setLevel(Level.ALL);
-
 		Trx.run(trxName, new TrxRunnable()
 		{
 			public void run(String trxName) 
@@ -110,6 +129,9 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	void createBusinessCaseTest(String trxName)
 	{
 		createDataMaster();
+				
+		generateHistoryCost();
+		
 		Timestamp dateAcct;
 		//First Purchase Receipt 
 		dateAcct = today;
@@ -124,15 +146,15 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		for (MInOutLine line : receipt1.getLines())
 		{	
 			CostResult costResult = new CostResult(product.getM_Product_ID(),
-					 new BigDecimal("36.0000"), //currentCostPrice
-					 new BigDecimal("10"), 		// cumulateQty
-					 new BigDecimal("360"),//cumulateAmt
-					 new BigDecimal("360.0000"),//cdAmt
+					 new BigDecimal("48.4191"), //currentCostPrice
+					 new BigDecimal("34"), 		// cumulateQty
+					 new BigDecimal("1646.2496"),//cumulateAmt
+					 new BigDecimal("484.1910"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
 					 new BigDecimal("10"),//cdQty
-					 new BigDecimal("0"), //cdCurrentCostPrice
-					 new BigDecimal("0"), //cdCumulateQty
-					 new BigDecimal("0"),  //cdCumulateAmt
+					 new BigDecimal("53.5937"), //cdCurrentCostPrice
+					 new BigDecimal("24"), //cdCumulateQty
+					 new BigDecimal("1286.2496"),  //cdCumulateAmt
 					 dateAcct
 					 );
 			assertCostReceipt(costResult, line.getM_InOutLine_ID(), as , trxName);	
@@ -144,15 +166,15 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		for (MOrderLine line : sales1.getLines())
 		{	
 			CostResult costResult = new CostResult(product.getM_Product_ID(),
-					new BigDecimal("36.0000"),
-					new BigDecimal("5"),
-					new BigDecimal("180.0000"),
-					new BigDecimal("-180.0000"),
+					new BigDecimal("48.4191"),
+					new BigDecimal("29"),
+					new BigDecimal("1404.1541"),
+					new BigDecimal("-242.0955"),
 					new BigDecimal("0"),
 					new BigDecimal("-5"),
-					new BigDecimal("36.0000"),
-					new BigDecimal("10"),
-					new BigDecimal("360"),dateAcct);
+					new BigDecimal("48.4191"),
+					new BigDecimal("34"),
+					new BigDecimal("1646.2496"),dateAcct);
 			
 			assertCostShipment(costResult, line.getC_OrderLine_ID(), as , trxName);
 		}	
@@ -171,15 +193,15 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		for (MInOutLine line : receipt2.getLines())
 		{	
 			CostResult costResult = new CostResult(product.getM_Product_ID(),
-					 new BigDecimal("34.6667"), //currentCostPrice
-					 new BigDecimal("15"), 		// cumulateQty
-					 new BigDecimal("520.0000"),//cumulateAmt
-					 new BigDecimal("346.6670"),//cdAmt
+					 new BigDecimal("44.7219"), //currentCostPrice
+					 new BigDecimal("39"), 		// cumulateQty
+					 new BigDecimal("1744.1541"),//cumulateAmt
+					 new BigDecimal("447.2190"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
 					 new BigDecimal("10"),//cdQty
-					 new BigDecimal("36.0000"), //cdCurrentCostPrice
-					 new BigDecimal("5"), //cdCumulateQty
-					 new BigDecimal("180.0000")  //cdCumulateAmt
+					 new BigDecimal("48.4191"), //cdCurrentCostPrice
+					 new BigDecimal("29"), //cdCumulateQty
+					 new BigDecimal("1404.1541")  //cdCumulateAmt
 					, dateAcct
 					 );
 			
@@ -193,15 +215,15 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		for (MOrderLine line : sales2.getLines())
 		{	
 			CostResult costResult = new CostResult(product.getM_Product_ID(),
-					new BigDecimal("34.6667"),
-					new BigDecimal("5"),
-					new BigDecimal("173.3330"),
-					new BigDecimal("-346.6670"),
+					new BigDecimal("44.7219"),
+					new BigDecimal("29"),
+					new BigDecimal("1296.9351"),
+					new BigDecimal("-447.2190"),
 					new BigDecimal("0"),
 					new BigDecimal("-10"),
-					new BigDecimal("34.6667"),
-					new BigDecimal("15"),
-					new BigDecimal("520.0000"), dateAcct);
+					new BigDecimal("44.7219"),
+					new BigDecimal("39"),
+					new BigDecimal("1744.1541"), dateAcct);
 			
 			assertCostShipment(costResult, line.getC_OrderLine_ID(), as , trxName);
 		}		
@@ -215,15 +237,15 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		}	
 		
 		CostResult costResult = new CostResult(product.getM_Product_ID(),
-				 new BigDecimal("35.3333"), //currentCostPrice
-				 new BigDecimal("5"), 		// cumulateQty
-				 new BigDecimal("176.6670"),//cumulateAmt
+				 new BigDecimal("45.1593"), //currentCostPrice
+				 new BigDecimal("29"), 		// cumulateQty
+				 new BigDecimal("1309.6201"),//cumulateAmt
 				 new BigDecimal("380"),//cdAmt
 				 new BigDecimal("20"), //cdAdjutment
 				 new BigDecimal("10"),//cdQty
-				 new BigDecimal("0"), //cdCurrentCostPrice
-				 new BigDecimal("0"), //cdCumulateQty
-				 new BigDecimal("0"),  //cdCumulateAmt
+				 new BigDecimal("53.5937"), //cdCurrentCostPrice
+				 new BigDecimal("24"), //cdCumulateQty
+				 new BigDecimal("1286.2496"),  //cdCumulateAmt
 				 dateAcct
 				 );
 		
@@ -233,38 +255,56 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		for (MOrderLine line : sales1.getLines())
 		{	
 			costResult = new CostResult(line.getM_Product_ID(), 
-					new BigDecimal("35.3333"),
-					new BigDecimal("5"),
-					new BigDecimal("176.6670"),
-					new BigDecimal("-190.0000"),
+					new BigDecimal("45.1593"),
+					new BigDecimal("29"),
+					new BigDecimal("1309.6201"),
+					new BigDecimal("-245.0365"),
 					new BigDecimal("0"),
 					new BigDecimal("-5"),
-					new BigDecimal("38.0000"),
-					new BigDecimal("10"),
-					new BigDecimal("380"), dateAcct);
+					new BigDecimal("49.0073"),
+					new BigDecimal("34"),
+					new BigDecimal("1666.2496"), dateAcct);
 			
 			assertCostShipmentAdjust(costResult, line.getC_OrderLine_ID(), as, trxName);
 		}	
 			
-		//Reverse Material Receipt
+		//Reverse Material Receipt		
 		dateAcct = today;
 		receipt1.processIt(DocAction.ACTION_Reverse_Correct);
 		receipt1.saveEx();
 		
-		MInOut reversal = new MInOut(getCtx(), receipt1.getReversal_ID(), trxName);
+		for (MInOutLine line : receipt1.getLines(true))
+		{
+			costResult = new CostResult(product.getM_Product_ID(),
+					 new BigDecimal("46.8373"), //currentCostPrice
+					 new BigDecimal("19"), 		// cumulateQty
+					 new BigDecimal("889.9081"),//cumulateAmt
+					 new BigDecimal("380"),//cdAmt
+					 new BigDecimal("20"), //cdAdjutment
+					 new BigDecimal("10"),//cdQty
+					 new BigDecimal("53.5937"), //cdCurrentCostPrice
+					 new BigDecimal("24"), //cdCumulateQty
+					 new BigDecimal("1286.2496"),  //cdCumulateAmt
+					 dateAcct 
+					 );
+			
+			assertCostReceiptReversal(costResult,line.getM_InOutLine_ID(), as, trxName);	
+		}
+		
+		MInOut reversal = new MInOut(getCtx(),receipt1.getReversal_ID(), trxName);
 		
 		for (MInOutLine line : reversal.getLines(true))
 		{
 			costResult = new CostResult(product.getM_Product_ID(),
-					 new BigDecimal("40.6666"), //currentCostPrice
-					 new BigDecimal("-5"), 		// cumulateQty
-					 new BigDecimal("-203.3330"),//cumulateAmt
+					 new BigDecimal("46.8373"), //currentCostPrice
+					 new BigDecimal("19"), 		// cumulateQty
+					 new BigDecimal("889.9081"),//cumulateAmt
 					 new BigDecimal("-380"),//cdAmt
 					 new BigDecimal("-20"), //cdAdjutment
 					 new BigDecimal("-10"),//cdQty
-					 new BigDecimal("35.3333"), //cdCurrentCostPrice
-					 new BigDecimal("5"), //cdCumulateQty
-					 new BigDecimal("176.6670"),  //cdCumulateAmt
+					 new BigDecimal("49.0073"), //cdCurrentCostPrice
+					 new BigDecimal("34"), //cdCumulateQty
+					 new BigDecimal("1666.2496"),  //cdCumulateAmt
 					 dateAcct 
 					 );
 			
@@ -272,7 +312,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		}
 		
 		//Second Purchase Receipt 7 day forward
-		dateAcct = TimeUtil.addDays(today, 1);
+		dateAcct = TimeUtil.addDays(today, 7);
 		MOrder purchase3 = createPurchaseOrder(dateAcct, new BigDecimal(100), new BigDecimal(37));
 		MInOut receipt3 = null;	
 		for (MOrderLine line : purchase3.getLines())
@@ -284,15 +324,15 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		for (MInOutLine line : receipt3.getLines())
 		{	
 			costResult = new CostResult(product.getM_Product_ID(),
-					 new BigDecimal("35.8000"), //currentCostPrice
-					 new BigDecimal("15"), 		// cumulateQty
-					 new BigDecimal("537.0000"),//cumulateAmt
-					 new BigDecimal("740.0000"),//cdAmt
+					 new BigDecimal("43.5917"), //currentCostPrice
+					 new BigDecimal("39"), 		// cumulateQty
+					 new BigDecimal("1700.0771"),//cumulateAmt
+					 new BigDecimal("921.0220"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
 					 new BigDecimal("20"),//cdQty
-					 new BigDecimal("0"), //cdCurrentCostPrice
-					 new BigDecimal("0"), //cdCumulateQty
-					 new BigDecimal("0"),  //cdCumulateAmt
+					 new BigDecimal("53.5937"), //cdCurrentCostPrice
+					 new BigDecimal("24"), //cdCumulateQty
+					 new BigDecimal("1286.2496"),  //cdCumulateAmt
 					 dateAcct
 					 );
 			
@@ -304,15 +344,15 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		for (MMovementLine line : move.getLines(true))
 		{
 			costResult = new CostResult(product.getM_Product_ID(),
-					 new BigDecimal("35.8000"), //currentCostPrice
-					 new BigDecimal("15"), 		// cumulateQty
-					 new BigDecimal("537.0000"),//cumulateAmt
-					 new BigDecimal("179.0000"),//cdAmt
+					 new BigDecimal("43.5917"), //currentCostPrice
+					 new BigDecimal("39"), 		// cumulateQty
+					 new BigDecimal("1700.0771"),//cumulateAmt
+					 new BigDecimal("217.9585"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
 					 new BigDecimal("5"),//cdQty
-					 new BigDecimal("35.8000"), //cdCurrentCostPrice
-					 new BigDecimal("10"), //cdCumulateQty
-					 new BigDecimal("358.0000"),  //cdCumulateAmt
+					 new BigDecimal("43.5917"), //cdCurrentCostPrice
+					 new BigDecimal("34"), //cdCumulateQty
+					 new BigDecimal("1482.1186"),  //cdCumulateAmt
 					 dateAcct
 					 );
 			
@@ -325,41 +365,45 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		for (MInventoryLine line : inventory.getLines(true))
 		{
 			costResult = new CostResult(product.getM_Product_ID(),
-					 new BigDecimal("35.8000"), //currentCostPrice
+					 new BigDecimal("43.5917"), //currentCostPrice
 					 new BigDecimal("20"), 		// cumulateQty
-					 new BigDecimal("716.0000"),//cumulateAmt
-					 new BigDecimal("179.0000"),//cdAmt
+					 new BigDecimal("871.8348"),//cumulateAmt
+					 new BigDecimal("-392.3253"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
-					 new BigDecimal("5"),//cdQty
-					 new BigDecimal("35.8000"), //cdCurrentCostPrice
-					 new BigDecimal("15"), //cdCumulateQty
-					 new BigDecimal("537.0000"),  //cdCumulateAmt
+					 new BigDecimal("-9"),//cdQty
+					 new BigDecimal("43.5917"), //cdCurrentCostPrice
+					 new BigDecimal("29"), //cdCumulateQty
+					 new BigDecimal("1264.1601"),  //cdCumulateAmt
 					 dateAcct
 					 );
 			
-			assertCostPhisicalInventory(costResult, line.getM_InventoryLine_ID(), as, trxName);;	
+			assertCostPhisicalInventory(costResult, line.getM_InventoryLine_ID(), as, trxName);
+			break;
 		}
 		
 		dateAcct = TimeUtil.addDays(today, 80);
-		inventory = createInvetoryInternalUse(dateAcct, new BigDecimal("5"));
+		inventory = createInvetoryInternalUse(dateAcct, new BigDecimal("-5"));
 		
 		for (MInventoryLine line : inventory.getLines(true))
 		{
 			costResult = new CostResult(product.getM_Product_ID(),
-					 new BigDecimal("35.8000"), //currentCostPrice
-					 new BigDecimal("15"), 		// cumulateQty
-					 new BigDecimal("537.0000"),//cumulateAmt
-					 new BigDecimal("-179.0000"),//cdAmt
+					 new BigDecimal("43.5917"), //currentCostPrice
+					 new BigDecimal("25"), 		// cumulateQty
+					 new BigDecimal("1089.7933"),//cumulateAmt
+					 new BigDecimal("217.9585"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
-					 line.getMovementQty(),//cdQty
-					 costResult.currentCostPrice, //cdCurrentCostPrice
-					 costResult.cumulateQty, //cdCumulateQty
-					 costResult.cumulateAmt,  //cdCumulateAmt
+					 new BigDecimal("5"),//cdQty
+					 new BigDecimal("43.5917"), //cdCurrentCostPrice
+					 new BigDecimal("20"), //cdCumulateQty
+					 new BigDecimal("871.8348"),  //cdCumulateAmt
 					 dateAcct
 					 );
 			
 			assertCostPhisicalInventory(costResult, line.getM_InventoryLine_ID(), as, trxName);;	
 		}
+		
+		
+		createTrxAndInventoryValuationReport();
 	}
 	
 	public MCost assertCost(CostResult costResult)
@@ -403,6 +447,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		return new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
 		.setClient_ID()
 		.setParameters(parameters)
+		.setOrderBy(I_M_CostDetail.COLUMNNAME_DateAcct + ", " + I_M_CostDetail.COLUMNNAME_Created + " DESC")
 		.first();	
 	}
 	
@@ -421,12 +466,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 			String trxName)
 	{		
 		MCost cost = assertCost(costResult);
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";	
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND M_InOutLine_ID=?";	
 		ArrayList<Object> parameters = new ArrayList();	
 		parameters.add(costResult.M_Product_ID);
 		parameters.add(cost.getM_CostElement_ID());
 		parameters.add(cost.getM_CostType_ID());
-		parameters.add(as.getCostingMethod());
 		parameters.add(M_InOutLine_ID);
 		assertCostDetail(costResult,whereClause,parameters);
 	}
@@ -443,12 +487,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	private void assertCostShipment(CostResult costResult,int C_OrderLine_ID, MAcctSchema as , String trxName)
 	{		
 		MCost cost = assertCost(costResult);
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
 		ArrayList<Object> parameters = new ArrayList();	
 		parameters.add(costResult.M_Product_ID);
 		parameters.add(cost.getM_CostElement_ID());
 		parameters.add(cost.getM_CostType_ID());
-		parameters.add(as.getCostingMethod());
 		parameters.add(C_OrderLine_ID);
 		assertCostDetail(costResult,whereClause,parameters);
 	}
@@ -463,12 +506,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	private void assertCostShipmentAdjust(CostResult costResult , int C_OrderLine_ID, MAcctSchema as , String trxName)
 	{		
 		MCost cost = assertCost(costResult);		
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=?  AND M_InOutLine_ID IN (SELECT M_InOutLine_ID FROM M_InOutLine iol WHERE iol.C_OrderLine_ID=?)";
 		ArrayList<Object> parameters = new ArrayList();	
 		parameters.add(costResult.M_Product_ID);
 		parameters.add(cost.getM_CostElement_ID());
 		parameters.add(cost.getM_CostType_ID());
-		parameters.add(as.getCostingMethod());
 		parameters.add(C_OrderLine_ID);
 		assertCostDetail(costResult,whereClause,parameters);
 	}
@@ -488,12 +530,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	{
 		MCost cost = assertCost(costResult);		
 		
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";	
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND M_InOutLine_ID=?";	
 		ArrayList<Object> parameters = new ArrayList();	
 		parameters.add(costResult.M_Product_ID);
 		parameters.add(cost.getM_CostElement_ID());
 		parameters.add(cost.getM_CostType_ID());
-		parameters.add(as.getCostingMethod());
 		parameters.add(M_InOutLine_ID);
 		assertCostDetail(costResult,whereClause,parameters);
 	}
@@ -539,12 +580,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	{
 		MCost cost = assertCost(costResult);		
 		
-		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InventoryLine_ID=?";	
+		String whereClause = "M_Product_ID=? AND M_CostElement_ID=? AND M_CostType_ID=? AND M_InventoryLine_ID=?";	
 		ArrayList<Object> parameters = new ArrayList();	
 		parameters.add(costResult.M_Product_ID);
 		parameters.add(cost.getM_CostElement_ID());
 		parameters.add(cost.getM_CostType_ID());
-		parameters.add(as.getCostingMethod());
 		parameters.add(M_InventoryLine_ID);
 		assertCostDetail(costResult,whereClause,parameters);
 	}
@@ -565,12 +605,11 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		//Evaluate Result
 				
 			MCost cost = assertCost(costResult);
-			String whereClause = "M_Product_ID=? AND  M_CostElement_ID=? AND M_CostType_ID=? AND CostingMethod=? AND M_InOutLine_ID=?";
+			String whereClause = "M_Product_ID=? AND  M_CostElement_ID=? AND M_CostType_ID=? AND M_InOutLine_ID=?";
 			ArrayList<Object> parameters = new ArrayList();	
 			parameters.add(costResult.M_Product_ID);
 			parameters.add(cost.getM_CostElement_ID());
 			parameters.add(cost.getM_CostType_ID());
-			parameters.add(as.getCostingMethod());
 			parameters.add(M_InOutLine_ID);
 			assertCostDetail(costResult,whereClause,parameters);	
 	}
@@ -616,6 +655,15 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		today = Timestamp.valueOf("2010-01-01 00:00:00.0");
 		if (bp == null ||  w == null || u == null)
 			throw new AdempiereException("Object null " );
+		
+		for(MCostType ct : MCostType.get(getCtx(), trxName))
+		{
+			if(!MCostType.COSTINGMETHOD_AverageInvoice.equals(ct.getCostingMethod()))
+			{
+				ct.setIsActive(false);
+			}	
+			
+		}
 	}
 	
 	public MOrder createPurchaseOrder(Timestamp orderDate ,BigDecimal qty,BigDecimal price)
@@ -819,6 +867,122 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	}
 	
 	
+	void generateHistoryCost()
+	{
+		
+		
+		int AD_Process_ID =  MProcess.getProcess_ID("M_CostDetail Generate Cost Transaction", trxName);
+		ProcessInfo pi = new ProcessInfo ("Generate Cost Transaction",AD_Process_ID);
+		MPInstance instance = new MPInstance(Env.getCtx(), AD_Process_ID, 0);
+		instance.saveEx();
+		
+		pi.setAD_PInstance_ID (instance.getAD_PInstance_ID());
+		pi.setAD_Client_ID(Env.getAD_Client_ID(Env.getCtx()));
+
+		//	Add Parameters
+		MPInstancePara para = new MPInstancePara(instance, 10);
+		para.setParameter(MCostDetail.COLUMNNAME_C_AcctSchema_ID, Env.getContext(Env.getCtx(), "$C_AcctSchema_ID"));
+		para.saveEx();
+		
+		para = new MPInstancePara(instance, 20);
+		para.setParameter(MCostDetail.COLUMNNAME_M_CostType_ID, 50000);
+		para.saveEx();
+		
+		para = new MPInstancePara(instance, 30);
+		para.setParameter(MCostDetail.COLUMNNAME_M_CostElement_ID, 100);
+		para.saveEx();
+		
+		//Add Parameters
+		para = new MPInstancePara(instance, 40);
+		para.setParameter(MCostDetail.COLUMNNAME_M_Product_ID, product.getM_Product_ID());
+		para.saveEx();
+		
+		para = new MPInstancePara(instance, 50);
+		para.setParameter(MCostDetail.COLUMNNAME_DateAcct, Timestamp.valueOf("2000-01-01 00:00:00.0"));
+		para.saveEx();
+		
+		GenerateCostDetail process = new GenerateCostDetail();
+		process.startProcess(Env.getCtx(), pi, Trx.get(trxName, false));
+	}
+
+	void createTrxAndInventoryValuationReport()
+	{
+		int AD_Process_ID =  MProcess.getProcess_ID("Transaction Valuation", trxName);
+		ProcessInfo pi = new ProcessInfo ("Transaction Valuation",AD_Process_ID);
+		MPInstance instance = new MPInstance(getCtx(), AD_Process_ID, 0);
+		instance.saveEx();
+		
+		
+		pi.setAD_PInstance_ID (instance.getAD_PInstance_ID());
+		pi.setAD_Client_ID(Env.getAD_Client_ID(getCtx()));
+
+			//	Add Parameters
+		MPInstancePara para = new MPInstancePara(instance, 10);
+		para.setParameter(MCostDetail.COLUMNNAME_M_Product_ID, product.getM_Product_ID());
+		para.saveEx();
+		
+		para = new MPInstancePara(instance, 20);
+		para.setParameter(MCostDetail.COLUMNNAME_M_CostType_ID, 50000);
+		para.saveEx();
+		
+		para = new MPInstancePara(instance, 30);
+		para.setParameter(MCostDetail.COLUMNNAME_M_CostElement_ID, 100);
+		para.saveEx();
+	
+		pi.setTransactionName(trxName);
+		//ReportCtl.startStandardReport(pi);	
+		
+		ReportEngine re =  ReportEngine.get(getCtx(),  pi);
+		
+		File trxValuation = null;
+		trxValuation = re.getPDF();
+		
+		
+		
+		AD_Process_ID =  MProcess.getProcess_ID("Valuation Effective Date", trxName);
+		pi = new ProcessInfo ("Valuation Effective Date",AD_Process_ID);
+		instance = new MPInstance(getCtx(), AD_Process_ID, 0);
+		instance.saveEx();
+		
+		
+		pi.setAD_PInstance_ID (instance.getAD_PInstance_ID());
+		pi.setAD_Client_ID(Env.getAD_Client_ID(getCtx()));
+
+		para = new MPInstancePara(instance, 10);
+		para.setParameter("DateValue", new Timestamp(System.currentTimeMillis()));
+		para.saveEx();
+		
+		//	Add Parameters
+		para = new MPInstancePara(instance, 20);
+		para.setParameter(MCostDetail.COLUMNNAME_M_Product_ID, product.getM_Product_ID());
+		para.saveEx();
+		
+		para = new MPInstancePara(instance, 30);
+		para.setParameter(MCostDetail.COLUMNNAME_M_CostType_ID, 50000);
+		para.saveEx();
+		
+		para = new MPInstancePara(instance, 40);
+		para.setParameter(MCostDetail.COLUMNNAME_M_CostElement_ID, 100);
+		para.saveEx();
+	
+		
+		ValuationEffectiveDate process = new ValuationEffectiveDate();
+		process.startProcess(getCtx(), pi, Trx.get(trxName, false));		
+		pi.setTransactionName(trxName);
+		
+		re =  ReportEngine.get(getCtx(),  pi);
+		
+		File report = null;
+		report = re.getPDF();
+					
+		EMail email = new EMail (getCtx(), "smtp.gmail.com", "victor.perez@e-evolution.com", "victor.perez@e-evolution.com", 
+				"Transaction and Inventory Valuation Report Test", "Transaction and Inventory Valuation "+ new Timestamp(System.currentTimeMillis()));	
+		email.addAttachment(trxValuation);
+		email.addAttachment(report);
+		email.createAuthenticator(Mail, MailPassword);
+		String msg = email.send();
+		System.out.println(msg);
+	}
 }
 
 class CostResult
