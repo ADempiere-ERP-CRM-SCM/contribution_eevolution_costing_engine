@@ -57,8 +57,8 @@ public class MCostElement extends X_M_CostElement
 			.setParameters(COSTELEMENTTYPE_Material)
 			.setClient_ID()
 			.setOnlyActiveRecords(true)
-			.setOrderBy("AD_Org_ID")
-			.firstOnly();
+			.setOrderBy("AD_Org_ID DESC")
+			.first();
 		if (retValue != null)
 			return retValue;
 		

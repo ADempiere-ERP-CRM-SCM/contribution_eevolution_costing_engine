@@ -55,6 +55,19 @@ public class MCostDetail extends X_M_CostDetail
 	private static final long serialVersionUID = 9143151867348554092L;
 
 
+	public static List<MCostDetail> getByOrderLinesAndCostType(Properties ctx, int PP_Order_ID , int M_CostType_ID, int M_CostElement_ID, String trxName)
+	{
+		String whereClause 	= COLUMNNAME_PP_Cost_Collector_ID 
+							+ " IN (SELECT PP_Cost_Collector_ID  FROM M_Cost_Collector cc INNER JOIN PP_Order pp ON (cc.PP_Order_ID=pp.PP_Order_ID) "
+							+ " WHERE cc.CostCollectorType=100 AND cc.M_Cost_Collector_ID=M_CostDetail.M_Cost_Collector_ID AND pp.PP_Order_ID=? AND M_CostDetail.M_CostElement_ID=?)";
+		return new Query(ctx, Table_Name, whereClause, trxName)
+		.setClient_ID()
+		.setParameters(PP_Order_ID, M_CostType_ID, M_CostElement_ID)
+		.list();
+		
+	}
+	
+	
 	/**
 	 * get the last entry for a Cost Detail based on the Material Transaction and Cost Dimension
 	 * @param mtrx Transaction Material
@@ -611,8 +624,6 @@ public class MCostDetail extends X_M_CostDetail
 	 */
 	public void setAmt (BigDecimal Amt)
 	{
-		if (isProcessed())
-			throw new IllegalStateException("Cannot change Amt - processed");
 		if (Amt == null)
 			super.setAmt (Env.ZERO);
 		else
