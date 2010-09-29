@@ -238,9 +238,15 @@ public class CostEngine
 		}
 		if (model instanceof MLandedCostAllocation && !ce.isLandedCost())
 			return;
+		BigDecimal price = Env.ZERO;
+		
+		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()))
+		{	
+			price = model.getPriceActual();
+		}	
 		
 		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, ct.getCostingMethod());
-		method.setCostingMethod(as, mtrx, cost, model.getPriceActual(), model.isSOTrx());
+		method.setCostingMethod(as, mtrx, cost, price , model.isSOTrx());
 		MCostDetail cd = method.process();	
 		final String idColumnName = CostEngine.getIDColumnName(model);		
 		cd.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(model));

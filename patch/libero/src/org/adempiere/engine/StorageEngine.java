@@ -252,7 +252,6 @@ public class StorageEngine
 				Qty, MovementDate, model.get_TrxName());
 		setReferenceLine_ID(mtrx, model);
 		mtrx.saveEx();
-		CostEngineFactory.getCostEngine(model.getAD_Client_ID()).createCostDetail(mtrx);
 	}
 	
 	private static IInventoryAllocation createMA(IDocumentLine model, int M_AttributeSetInstance_ID, BigDecimal MovementQty)
