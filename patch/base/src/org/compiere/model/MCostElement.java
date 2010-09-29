@@ -39,20 +39,61 @@ import org.compiere.util.Msg;
 public class MCostElement extends X_M_CostElement
 {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6377348444778545116L;
 
-
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 3196322266971717530L;
-
-
+    /**
+     * Get Cost Element    
+     * @param po Persistence Object
+     * @return MCostElement Cost Element
+     */
+	public static MCostElement getByMaterialCostElementType (PO po)
+	{
+		//
+		final String whereClause = "CostElementType=?";
+		MCostElement retValue = new Query(po.getCtx(), Table_Name, whereClause, po.get_TrxName())
+			.setParameters(COSTELEMENTTYPE_Material)
+			.setClient_ID()
+			.setOnlyActiveRecords(true)
+			.setOrderBy("AD_Org_ID")
+			.firstOnly();
+		if (retValue != null)
+			return retValue;
+		
+		//	Create New
+		retValue = new MCostElement (po.getCtx(), 0, po.get_TrxName());
+		retValue.setClientOrg(po.getAD_Client_ID(), 0);
+		retValue.setCostElementType(COSTELEMENTTYPE_Material);
+		retValue.saveEx();
+		
+		//
+		return retValue;
+    }	//	getMaterialCostElement  
+	
+	/**
+	 * Get All Cost Elements for current AD_Client_ID
+	 * @param ctx context
+	 * @param trxName transaction
+	 * @return List with cost elements
+	 */
+	public static List<MCostElement> getCostElement(Properties ctx, String trxName)		
+	{
+		return new Query(ctx, Table_Name, null, trxName)
+					.setClient_ID()
+					.setOnlyActiveRecords(true)
+					.setOrderBy(COLUMNNAME_Created)
+					.list();
+	}
+	
 	/**
 	 * 	Get Material Cost Element or create it
 	 *	@param po parent
 	 *	@param CostingMethod method
 	 *	@return cost element
 	 */
+    @Deprecated
 	public static MCostElement getMaterialCostElement (PO po, String CostingMethod)
 	{
 		if (CostingMethod == null || CostingMethod.length() == 0)
@@ -84,13 +125,14 @@ public class MCostElement extends X_M_CostElement
 		//
 		return retValue;
 	}	//	getMaterialCostElement
-
+  
 	/**
 	 * 	Get first Material Cost Element
 	 *	@param ctx context
 	 *	@param CostingMethod costing method
 	 *	@return Cost Element or null
 	 */
+	@Deprecated
 	public static MCostElement getMaterialCostElement(Properties ctx, String CostingMethod)
 	{
 		final String whereClause = COLUMNNAME_CostingMethod + " = ? AND " + COLUMNNAME_CostElementType + " = ? ";
@@ -112,6 +154,7 @@ public class MCostElement extends X_M_CostElement
 	 *	@param po parent
 	 *	@return cost element array
 	 */
+	@Deprecated
 	public static List<MCostElement> getCostElementsWithCostingMethods (PO po)
 	{
 		final String whereClause = "CostingMethod IS NOT NULL";
@@ -121,26 +164,6 @@ public class MCostElement extends X_M_CostElement
 		.list();
 	}	//	getCostElementCostingMethod	
 	
-	/**
-	 * 	Get active Material Cost Element for client 
-	 *	@param po parent
-	 *	@return cost element array
-	 */
-	public static MCostElement[] getCostingMethods (PO po)
-	{
-		final String whereClause ="CostElementType=? AND CostingMethod IS NOT NULL";
-		List<MCostElement> list = new Query(po.getCtx(), I_M_CostElement.Table_Name, whereClause, po.get_TrxName())
-		.setParameters(COSTELEMENTTYPE_Material)
-		.setClient_ID()
-		.setOnlyActiveRecords(true)
-		.list();
-		//
-		MCostElement[] retValue = new MCostElement[list.size ()];
-		list.toArray (retValue);
-		return retValue;
-	}	//	getMaterialCostElement
-
-	// MZ Goodwill
 	/**
 	 * 	Get active non Material Cost Element for client 
 	 *	@param po parent
@@ -160,7 +183,7 @@ public class MCostElement extends X_M_CostElement
 	}	//	getMaterialCostElement
 	// end MZ
 	
-	//added by anca
+	@Deprecated
 	public static MCostElement[] getActiveCostingMethods (PO po)
 	{
 		final String whereClause = "CostingMethod IS NOT NULL AND CostElementType='M'";
@@ -198,6 +221,7 @@ public class MCostElement extends X_M_CostElement
 	 * @param trxName transaction
 	 * @return array cost elements
 	 */
+	@Deprecated
 	public static MCostElement[] getElements (Properties ctx, String trxName)
 	{
 		int AD_Org_ID = 0; // Org is always ZERO - see beforeSave
@@ -216,22 +240,9 @@ public class MCostElement extends X_M_CostElement
 	 * Get All Cost Elements for current AD_Client_ID
 	 * @param ctx context
 	 * @param trxName transaction
-	 * @return List with cost elements
-	 */
-	public static List<MCostElement> getCostElement(Properties ctx, String trxName)		
-	{
-		return new Query(ctx, Table_Name, null, trxName)
-					.setClient_ID()
-					.setOnlyActiveRecords(true)
-					.list();
-	}
-	
-	/**
-	 * Get All Cost Elements for current AD_Client_ID
-	 * @param ctx context
-	 * @param trxName transaction
 	 * @return array cost elements
 	 **/
+	@Deprecated
 	public static List<MCostElement> getByCostingMethod (Properties ctx, String CostingMethod)
 	{		
 		final String whereClause = "CostingMethod=?";
@@ -479,7 +490,6 @@ public class MCostElement extends X_M_CostElement
 		sb.append (get_ID ())
 			.append ("-").append (getName())
 			.append(",Type=").append(getCostElementType())
-			.append(",Method=").append(getCostingMethod())
 			.append ("]");
 		return sb.toString ();
 	} //	toString
