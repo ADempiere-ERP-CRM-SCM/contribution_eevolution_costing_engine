@@ -21,6 +21,7 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Properties;
 
+import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCharge;
@@ -1195,6 +1196,9 @@ public class DocLine
 				ct = MCostType.getByMethodCosting(getCtx(), as.getCostingMethod(), getTrxName());				 
 			}
 		}		
+		if(ct == null)
+			throw new IllegalStateException("Do not exist Cost Type with this Costing method");
+		
 		return MCostDetail.getByDocLine(this, as.getC_AcctSchema_ID(), ct.getM_CostType_ID());
 	}
 	
