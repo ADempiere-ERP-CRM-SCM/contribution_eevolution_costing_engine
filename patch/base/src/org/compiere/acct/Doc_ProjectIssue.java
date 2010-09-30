@@ -129,25 +129,34 @@ public class Doc_ProjectIssue extends Doc
 		FactLine cr = null;
 
 		//  Issue Cost
-		BigDecimal cost = null;
+		BigDecimal costs = null;
 		if (m_issue.getM_InOutLine_ID() != 0)
-			cost = getPOCost(as);
+			costs = getPOCost(as);
 		else if (m_issue.getS_TimeExpenseLine_ID() != 0)
-			cost = getLaborCost(as);
-		if (cost == null)	//	standard Product Costs
+			costs = getLaborCost(as);
+		if (costs == null)	//	standard Product Costs
 		{	
-			for(MCostDetail cd : m_line.getCostDetail(as))
+			for(MCostDetail cost : m_line.getCostDetail(as))
 			{	
-				cost = cost.add(cd.getAmt());
+				if(cost.getAmt().signum() == 0)
+					continue;
+				costs = costs.add(cost.getAmt());
 			}	
 		}	
+		
+		if (costs == null || costs.signum() == 0)
+		{
+			p_Error = "Resubmit - No Costs for " + product.getName();
+			log.log(Level.WARNING, p_Error);
+			return null;
+		}
 		
 		//  Project         DR
 		int acctType = ACCTTYPE_ProjectWIP;
 		if (MProject.PROJECTCATEGORY_AssetProject.equals(ProjectCategory))
 			acctType = ACCTTYPE_ProjectAsset;
 		dr = fact.createLine(m_line,
-			getAccount(acctType, as), as.getC_Currency_ID(), cost, null);
+			getAccount(acctType, as), as.getC_Currency_ID(), costs, null);
 		dr.setQty(m_line.getQty().negate());
 		
 		//  Inventory               CR
@@ -156,7 +165,7 @@ public class Doc_ProjectIssue extends Doc
 			acctType = ProductCost.ACCTTYPE_P_Expense;
 		cr = fact.createLine(m_line,
 			m_line.getAccount(acctType,as),
-			as.getC_Currency_ID(), null, cost);
+			as.getC_Currency_ID(), null, costs);
 		cr.setM_Locator_ID(m_line.getM_Locator_ID());
 		cr.setLocationFromLocator(m_line.getM_Locator_ID(), true);	// from Loc
 		//

@@ -19,16 +19,13 @@ package org.compiere.acct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.List;
 
-import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MInventory;
 import org.compiere.model.MInventoryLine;
 import org.compiere.model.ProductCost;
-import org.compiere.model.Query;
 import org.compiere.util.Env;
 
 /**
@@ -150,63 +147,66 @@ public class Doc_Inventory extends Doc
 		{
 			DocLine line = p_lines[i];
 			
+			BigDecimal costs =Env.ZERO;
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
+				if(cost.getAmt().signum() == 0)
+					continue;
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-				BigDecimal costs = cost.getAmt();
-				
-					if (costs == null || costs.signum() == 0)
+				costs = cost.getAmt();				
+					
+				//  Inventory       DR      CR
+				dr = fact.createLine(line,
+					line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
+					as.getC_Currency_ID(), costs);
+				//  may be zero difference - no line created.
+				if (dr == null)
+					continue;
+				dr.setM_Locator_ID(line.getM_Locator_ID());
+				dr.addDescription(description);
+				if (m_DocStatus.equals(MInventory.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
+				{
+					//	Set AmtAcctDr from Original Phys.Inventory
+					if (!dr.updateReverseLine (MInventory.Table_ID, 
+							m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
 					{
-						p_Error = "No Costs for " + line.getProduct().getName();
+						p_Error = "Original Physical Inventory not posted yet";
 						return null;
 					}
-					//  Inventory       DR      CR
-					dr = fact.createLine(line,
-						line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
-						as.getC_Currency_ID(), costs);
-					//  may be zero difference - no line created.
-					if (dr == null)
-						continue;
-					dr.setM_Locator_ID(line.getM_Locator_ID());
-					dr.addDescription(description);
-					if (m_DocStatus.equals(MInventory.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
+				}
+				
+				//  InventoryDiff   DR      CR
+				//	or Charge
+				MAccount invDiff = line.getChargeAccount(as, costs.negate());
+				if (invDiff == null)
+					invDiff = getAccount(Doc.ACCTTYPE_InvDifferences, as);
+				cr = fact.createLine(line, invDiff,
+					as.getC_Currency_ID(), costs.negate());
+				if (cr == null)
+					continue;
+				cr.setM_Locator_ID(line.getM_Locator_ID());
+				cr.setQty(line.getQty().negate());
+				cr.addDescription(description);
+				if (line.getC_Charge_ID() != 0)	//	explicit overwrite for charge
+					cr.setAD_Org_ID(line.getAD_Org_ID());
+				if (m_DocStatus.equals(MInventory.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
+				{
+					//	Set AmtAcctCr from Original Phys.Inventory
+					if (!cr.updateReverseLine (MInventory.Table_ID, 
+							m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
 					{
-						//	Set AmtAcctDr from Original Phys.Inventory
-						if (!dr.updateReverseLine (MInventory.Table_ID, 
-								m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
-						{
-							p_Error = "Original Physical Inventory not posted yet";
-							return null;
-						}
+						p_Error = "Original Physical Inventory not posted yet";
+						return null;
 					}
-					
-					//  InventoryDiff   DR      CR
-					//	or Charge
-					MAccount invDiff = line.getChargeAccount(as, costs.negate());
-					if (invDiff == null)
-						invDiff = getAccount(Doc.ACCTTYPE_InvDifferences, as);
-					cr = fact.createLine(line, invDiff,
-						as.getC_Currency_ID(), costs.negate());
-					if (cr == null)
-						continue;
-					cr.setM_Locator_ID(line.getM_Locator_ID());
-					cr.setQty(line.getQty().negate());
-					cr.addDescription(description);
-					if (line.getC_Charge_ID() != 0)	//	explicit overwrite for charge
-						cr.setAD_Org_ID(line.getAD_Org_ID());
-					if (m_DocStatus.equals(MInventory.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
-					{
-						//	Set AmtAcctCr from Original Phys.Inventory
-						if (!cr.updateReverseLine (MInventory.Table_ID, 
-								m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
-						{
-							p_Error = "Original Physical Inventory not posted yet";
-							return null;
-						}
-						costs = cr.getAcctBalance(); //get original cost
-					}
-			}	
+					costs = cr.getAcctBalance(); //get original cost
+				}
+			}
+			if (costs == null || costs.signum() == 0)
+			{
+				p_Error = "No Costs for " + line.getProduct().getName();
+				return null;
+			}
 		}
 		//
 		ArrayList<Fact> facts = new ArrayList<Fact>();

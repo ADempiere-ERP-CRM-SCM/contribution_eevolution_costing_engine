@@ -18,10 +18,8 @@ package org.compiere.acct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 
-import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCostDetail;
@@ -29,7 +27,6 @@ import org.compiere.model.MInOut;
 import org.compiere.model.MInOutLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.ProductCost;
-import org.compiere.model.Query;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 
@@ -168,20 +165,12 @@ public class Doc_InOut extends Doc
 				
 				for (MCostDetail cost :  line.getCostDetail(as))
 				{	
+					if (cost.getAmt().signum() == 0)
+						continue;
 					//get costing method for product
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 					costs = cost.getAmt();
-					if (costs == null || costs.signum() == 0)	//	zero costs OK
-					{
-						if (product.isStocked())
-						{
-							p_Error = "No Costs for " + line.getProduct().getName();
-							log.log(Level.WARNING, p_Error);
-							return null;
-						}
-						else	//	ignore service
-							continue;
-					}
+					
 					//  CoGS            DR
 					dr = fact.createLine(line,
 							line.getAccount(ProductCost.ACCTTYPE_P_Cogs, as),
@@ -236,7 +225,18 @@ public class Doc_InOut extends Doc
 						}
 						costs = cr.getAcctBalance(); //get original cost
 					}
-				} // costing elements	
+				} // costing elements
+				if (costs == null || costs.signum() == 0)	//	zero costs OK
+				{
+					if (product.isStocked())
+					{
+						p_Error = "No Costs for " + line.getProduct().getName();
+						log.log(Level.WARNING, p_Error);
+						return null;
+					}
+					else	//	ignore service
+						continue;
+				}
 			}	//	for all lines
 
 
@@ -264,20 +264,11 @@ public class Doc_InOut extends Doc
 				MProduct product = line.getProduct();
 				for (MCostDetail cost : line.getCostDetail(as))
 				{	
+					if (cost.getAmt().signum() == 0)
+						continue;
 					costs = cost.getAmt();
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-					
-					if (costs == null || costs.signum() == 0)	//	zero costs OK
-					{
-						if (product.isStocked())
-						{
-							p_Error = "No Costs for " + line.getProduct().getName();
-							log.log(Level.WARNING, p_Error);
-							return null;
-						}
-						else	//	ignore service
-							continue;
-					}
+										
 					//  Inventory               DR
 					dr = fact.createLine(line,
 						line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
@@ -331,7 +322,19 @@ public class Doc_InOut extends Doc
 							return null;
 						}					
 					}
-				}	
+				}
+				
+				if (costs == null || costs.signum() == 0)	//	zero costs OK
+				{
+					if (product.isStocked())
+					{
+						p_Error = "No Costs for " + line.getProduct().getName();
+						log.log(Level.WARNING, p_Error);
+						return null;
+					}
+					else	//	ignore service
+						continue;
+				}
 			}	//	for all lines
 		}	//	Sales Return
 		
@@ -347,15 +350,11 @@ public class Doc_InOut extends Doc
 				MProduct product = line.getProduct();
 				for (MCostDetail cost : line.getCostDetail(as))
 				{	
+						if (cost.getAmt().signum() == 0)
+						continue;
 						//get costing method for product
 						costs = cost.getAmt();
-						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-						if (costs == null || costs.signum() == 0)
-						{
-							p_Error = "Resubmit - No Costs for " + product.getName();
-							log.log(Level.WARNING, p_Error);
-							return null;
-						}
+						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();						
 						//  Inventory/Asset			DR
 						MAccount assets = line.getAccount(ProductCost.ACCTTYPE_P_Asset, as);
 						if (product.isService())
@@ -419,6 +418,13 @@ public class Doc_InOut extends Doc
 						cost.setProcessed(true);
 						cost.saveEx();
 					}
+					
+					if (costs == null || costs.signum() == 0)
+					{
+						p_Error = "Resubmit - No Costs for " + product.getName();
+						log.log(Level.WARNING, p_Error);
+						return null;
+					}
 				}
 		}	//	Receipt
 				//	  *** Purchasing - return
@@ -434,15 +440,11 @@ public class Doc_InOut extends Doc
 				MProduct product = line.getProduct();
 				for(MCostDetail cost : line.getCostDetail(as))
 				{	
-						
+						if (cost.getAmt().signum() == 0)
+						continue;
 						costs = cost.getAmt();	//	current costs
 						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-						if (costs == null || costs.signum() == 0)
-						{
-							p_Error = "Resubmit - No Costs for " + product.getName();
-							log.log(Level.WARNING, p_Error);
-							return null;
-						}
+						
 						dr = fact.createLine(line,
 							getAccount(Doc.ACCTTYPE_NotInvoicedReceipts, as),
 							C_Currency_ID, costs , null);
@@ -497,6 +499,12 @@ public class Doc_InOut extends Doc
 							}
 						}
 				}		
+				if (costs == null || costs.signum() == 0)
+				{
+					p_Error = "Resubmit - No Costs for " + product.getName();
+					log.log(Level.WARNING, p_Error);
+					return null;
+				}
 			}
 		}	//	Purchasing Return
 		else
@@ -509,5 +517,4 @@ public class Doc_InOut extends Doc
 		facts.add(fact);
 		return facts;
 	}   //  createFact
-
 }   //  Doc_InOut
