@@ -130,6 +130,7 @@ public class Doc_ProjectIssue extends Doc
 
 		//  Issue Cost
 		BigDecimal costs = null;
+		BigDecimal total = Env.ZERO;
 		if (m_issue.getM_InOutLine_ID() != 0)
 			costs = getPOCost(as);
 		else if (m_issue.getS_TimeExpenseLine_ID() != 0)
@@ -141,10 +142,11 @@ public class Doc_ProjectIssue extends Doc
 				if(cost.getAmt().signum() == 0)
 					continue;
 				costs = costs.add(cost.getAmt());
+				total = total.add(costs);
 			}	
 		}	
 		
-		if (costs == null || costs.signum() == 0)
+		if (total == null || total.signum() == 0)
 		{
 			p_Error = "Resubmit - No Costs for " + product.getName();
 			log.log(Level.WARNING, p_Error);

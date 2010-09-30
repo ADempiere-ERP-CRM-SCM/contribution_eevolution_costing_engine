@@ -19,15 +19,12 @@ package org.compiere.acct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.List;
 
-import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MMovement;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.ProductCost;
-import org.compiere.model.Query;
 import org.compiere.util.Env;
 
 /**
@@ -136,6 +133,7 @@ public class Doc_Movement extends Doc
 		{
 			DocLine line = p_lines[i];
 			BigDecimal costs = Env.ZERO;
+			BigDecimal total = Env.ZERO;
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
 				if(cost.getAmt().signum() == 0)
@@ -143,7 +141,7 @@ public class Doc_Movement extends Doc
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 				costs = cost.getAmt();
-			
+				total = total.add(costs);
 				//  ** Inventory       DR      CR
 				dr = fact.createLine(line,
 					line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
@@ -185,7 +183,7 @@ public class Doc_Movement extends Doc
 					costs = cr.getAcctBalance(); //get original cost
 				}		
 			}
-			if (costs == null || costs.signum() == 0)
+			if (total == null || total.signum() == 0)
 			{
 				p_Error = "No Costs for " + line.getProduct().getName();
 				return null;
@@ -197,24 +195,4 @@ public class Doc_Movement extends Doc
 		facts.add(fact);
 		return facts;
 	}   //  createFact
-
-	/**
-	 * 
-	 * get cost detail for document line
-	 * @param as Account Schema
-	 * @param line Document Line
-	 * @return Cost Detail List
-	 */
-	private List<MCostDetail> getCostDetail(MAcctSchema as, DocLine line)
-	{
-		final String whereClause = I_M_CostDetail.COLUMNNAME_M_MovementLine_ID + "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_M_Product_ID   + "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_M_CostType_ID	+ "=? AND "
-								 + I_M_CostDetail.COLUMNNAME_CostingMethod  + "=?";
-		
-		return new Query(getCtx(), I_M_CostDetail.Table_Name , whereClause , getTrxName())
-		.setClient_ID()
-		.setParameters(line.get_ID() , line.getM_Product_ID(), as.getM_CostType_ID(), as.getCostingMethod())
-		.list();
-	}
 }   //  Doc_Movement

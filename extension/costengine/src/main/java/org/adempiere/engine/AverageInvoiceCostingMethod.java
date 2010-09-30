@@ -79,7 +79,10 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		m_Amount = m_trx.getMovementQty().multiply(m_price);	
 		m_CumulatedQty = m_last_costdetail.getNewCumulatedQty().add(m_trx.getMovementQty());
 		m_CumulatedAmt = m_last_costdetail.getNewCumulatedAmt().add(m_Amount);
-		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+		if(m_CumulatedAmt.signum() != 0)
+			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+		else
+			m_CurrentCostPrice = Env.ZERO;
 	}
 	
 	private void createCostDetail()

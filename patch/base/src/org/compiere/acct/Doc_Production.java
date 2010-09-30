@@ -175,22 +175,25 @@ public class Doc_Production extends Doc
 			DocLine line = p_lines[i];
 			MProduct product = line.getProduct();
 			BigDecimal costs = Env.ZERO;
+			BigDecimal total = Env.ZERO;
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
 				if(cost.getAmt().signum() == 0)
 					continue;	 
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-				costs = cost.getAmt();
-	
+				costs = cost.getAmt();	
 				if (cost != null)
+				{	
 					costs = cost.getAmt();
+					total = total.add(costs);
+				}	
 				else
 				{	
 					if (line.isProductionBOM())
 					{
 						//	Get BOM Cost - Sum of individual lines
-						BigDecimal bomCost = Env.ZERO;
+						BigDecimal bomCost = Env.ZERO;						
 						for (int ii = 0; ii < p_lines.length; ii++)
 						{
 							DocLine line0 = p_lines[ii];
@@ -214,7 +217,6 @@ public class Doc_Production extends Doc
 					else
 						costs = Env.ZERO;
 				}
-				// end MZ
 				
 				//  Inventory       DR      CR
 				fl = fact.createLine(line,
@@ -236,12 +238,13 @@ public class Doc_Production extends Doc
 				if (line.isProductionBOM())
 					description += "(*)";
 			}	
-			if (costs == null || costs.signum() == 0)
+			if (total == null || total.signum() == 0)
 			{
 				p_Error = "Resubmit - No Costs for " + product.getName();
 				log.log(Level.WARNING, p_Error);
 				return null;
 			}
+		
 		}
 		//
 		ArrayList<Fact> facts = new ArrayList<Fact>();

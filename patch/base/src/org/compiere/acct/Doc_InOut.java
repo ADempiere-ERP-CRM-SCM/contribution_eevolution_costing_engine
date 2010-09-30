@@ -161,6 +161,7 @@ public class Doc_InOut extends Doc
 			{
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
+				BigDecimal total = Env.ZERO;
 				MProduct product = line.getProduct();
 				
 				for (MCostDetail cost :  line.getCostDetail(as))
@@ -170,6 +171,7 @@ public class Doc_InOut extends Doc
 					//get costing method for product
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 					costs = cost.getAmt();
+					total = total.add(costs);
 					
 					//  CoGS            DR
 					dr = fact.createLine(line,
@@ -226,7 +228,7 @@ public class Doc_InOut extends Doc
 						costs = cr.getAcctBalance(); //get original cost
 					}
 				} // costing elements
-				if (costs == null || costs.signum() == 0)	//	zero costs OK
+				if (total == null || total.signum() == 0)	//	zero costs OK
 				{
 					if (product.isStocked())
 					{
@@ -261,12 +263,14 @@ public class Doc_InOut extends Doc
 			{
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
+				BigDecimal total = Env.ZERO;
 				MProduct product = line.getProduct();
 				for (MCostDetail cost : line.getCostDetail(as))
 				{	
 					if (cost.getAmt().signum() == 0)
 						continue;
 					costs = cost.getAmt();
+					total = total.add(costs);
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 										
 					//  Inventory               DR
@@ -324,7 +328,7 @@ public class Doc_InOut extends Doc
 					}
 				}
 				
-				if (costs == null || costs.signum() == 0)	//	zero costs OK
+				if (total == null || total.signum() == 0)	//	zero costs OK
 				{
 					if (product.isStocked())
 					{
@@ -347,6 +351,7 @@ public class Doc_InOut extends Doc
 				//
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
+				BigDecimal total = Env.ZERO;
 				MProduct product = line.getProduct();
 				for (MCostDetail cost : line.getCostDetail(as))
 				{	
@@ -354,6 +359,8 @@ public class Doc_InOut extends Doc
 						continue;
 						//get costing method for product
 						costs = cost.getAmt();
+						total = total.add(costs);
+						
 						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();						
 						//  Inventory/Asset			DR
 						MAccount assets = line.getAccount(ProductCost.ACCTTYPE_P_Asset, as);
@@ -419,7 +426,7 @@ public class Doc_InOut extends Doc
 						cost.saveEx();
 					}
 					
-					if (costs == null || costs.signum() == 0)
+					if (total == null || total.signum() == 0)
 					{
 						p_Error = "Resubmit - No Costs for " + product.getName();
 						log.log(Level.WARNING, p_Error);
@@ -437,12 +444,14 @@ public class Doc_InOut extends Doc
 				//
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
+				BigDecimal total = Env.ZERO;
 				MProduct product = line.getProduct();
 				for(MCostDetail cost : line.getCostDetail(as))
 				{	
 						if (cost.getAmt().signum() == 0)
 						continue;
 						costs = cost.getAmt();	//	current costs
+						total = total.add(costs);
 						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 						
 						dr = fact.createLine(line,
@@ -499,7 +508,7 @@ public class Doc_InOut extends Doc
 							}
 						}
 				}		
-				if (costs == null || costs.signum() == 0)
+				if (total == null || total.signum() == 0)
 				{
 					p_Error = "Resubmit - No Costs for " + product.getName();
 					log.log(Level.WARNING, p_Error);
