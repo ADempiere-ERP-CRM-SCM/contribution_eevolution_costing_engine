@@ -894,7 +894,7 @@ public class MProduct extends X_M_Product
 	 * @param as accounting schema
 	 * @return product costing level
 	 */
-	/*
+	
 	public String getCostingLevel(MAcctSchema as)
 	{
 		MProductCategoryAcct pca = MProductCategoryAcct.get(getCtx(), getM_Product_Category_ID(), as.get_ID(), get_TrxName());
@@ -904,7 +904,7 @@ public class MProduct extends X_M_Product
 			costingLevel = as.getCostingLevel();
 		}
 		return costingLevel;
-	}*/
+	}
 	
 	/**
 	 * Get Product Costing Level
@@ -913,9 +913,14 @@ public class MProduct extends X_M_Product
 	 * @return product costing level
 	 */
 	public String getCostingLevel(MAcctSchema as,int AD_Org_ID)
-	{
+	{	
 		MProductCategoryAcct pca = MProductCategoryAcct.get(getCtx(), getM_Product_Category_ID(), as.get_ID(), AD_Org_ID , get_TrxName());
-		String costingLevel = pca.getCostingLevel();
+		if(pca == null)
+		{
+			return  getCostingLevel(as);
+		}
+		
+		String costingLevel = costingLevel = pca.getCostingLevel();
 		if (costingLevel == null)
 		{
 			costingLevel = as.getCostingLevel();

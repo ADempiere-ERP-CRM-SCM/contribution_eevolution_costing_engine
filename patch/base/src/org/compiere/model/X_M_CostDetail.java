@@ -32,7 +32,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100909L;
+	private static final long serialVersionUID = 20101003L;
 
     /** Standard Constructor */
     public X_M_CostDetail (Properties ctx, int M_CostDetail_ID, String trxName)
@@ -41,6 +41,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
       /** if (M_CostDetail_ID == 0)
         {
 			setAmt (Env.ZERO);
+			setAmtLL (Env.ZERO);
 			setC_AcctSchema_ID (0);
 			setIsSOTrx (false);
 			setM_AttributeSetInstance_ID (0);
@@ -94,6 +95,26 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public BigDecimal getAmt () 
 	{
 		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_Amt);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Amount LL.
+		@param AmtLL 
+		Amount Lower Level Cost
+	  */
+	public void setAmtLL (BigDecimal AmtLL)
+	{
+		set_Value (COLUMNNAME_AmtLL, AmtLL);
+	}
+
+	/** Get Amount LL.
+		@return Amount Lower Level Cost
+	  */
+	public BigDecimal getAmtLL () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_AmtLL);
 		if (bd == null)
 			 return Env.ZERO;
 		return bd;
@@ -276,6 +297,43 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 		return (Timestamp)get_Value(COLUMNNAME_CostAdjustmentDate);
 	}
 
+	/** Set Cost Adjustment Date LL.
+		@param CostAdjustmentDateLL 
+		Date Product Cost Adjustment Lower Level
+	  */
+	public void setCostAdjustmentDateLL (Timestamp CostAdjustmentDateLL)
+	{
+		set_Value (COLUMNNAME_CostAdjustmentDateLL, CostAdjustmentDateLL);
+	}
+
+	/** Get Cost Adjustment Date LL.
+		@return Date Product Cost Adjustment Lower Level
+	  */
+	public Timestamp getCostAdjustmentDateLL () 
+	{
+		return (Timestamp)get_Value(COLUMNNAME_CostAdjustmentDateLL);
+	}
+
+	/** Set Cost Adjustment LL.
+		@param CostAdjustmentLL 
+		Product Cost Adjustment Lower Level
+	  */
+	public void setCostAdjustmentLL (BigDecimal CostAdjustmentLL)
+	{
+		set_Value (COLUMNNAME_CostAdjustmentLL, CostAdjustmentLL);
+	}
+
+	/** Get Cost Adjustment LL.
+		@return Product Cost Adjustment Lower Level
+	  */
+	public BigDecimal getCostAdjustmentLL () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CostAdjustmentLL);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
 	/** Set Cost Value.
 		@param CostAmt 
 		Value with Cost
@@ -291,6 +349,26 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 	public BigDecimal getCostAmt () 
 	{
 		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CostAmt);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Cost Value LL.
+		@param CostAmtLL 
+		Value with Cost Lower Level
+	  */
+	public void setCostAmtLL (BigDecimal CostAmtLL)
+	{
+		set_Value (COLUMNNAME_CostAmtLL, CostAmtLL);
+	}
+
+	/** Get Cost Value LL.
+		@return Value with Cost Lower Level
+	  */
+	public BigDecimal getCostAmtLL () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CostAmtLL);
 		if (bd == null)
 			 return Env.ZERO;
 		return bd;
@@ -354,6 +432,26 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 		return bd;
 	}
 
+	/** Set Accumulated Amt LL.
+		@param CumulatedAmtLL 
+		Total Amount
+	  */
+	public void setCumulatedAmtLL (BigDecimal CumulatedAmtLL)
+	{
+		set_Value (COLUMNNAME_CumulatedAmtLL, CumulatedAmtLL);
+	}
+
+	/** Get Accumulated Amt LL.
+		@return Total Amount
+	  */
+	public BigDecimal getCumulatedAmtLL () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CumulatedAmtLL);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
 	/** Set Accumulated Qty.
 		@param CumulatedQty 
 		Total Quantity
@@ -394,7 +492,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 		return bd;
 	}
 
-	/** Set Current Cost Price Lower Level.
+	/** Set Current Cost Price LL.
 		@param CurrentCostPriceLL 
 		Current Price Lower Level Is the sum of the costs of the components of this product manufactured for this level.
 	  */
@@ -403,7 +501,7 @@ public class X_M_CostDetail extends PO implements I_M_CostDetail, I_Persistent
 		set_Value (COLUMNNAME_CurrentCostPriceLL, CurrentCostPriceLL);
 	}
 
-	/** Get Current Cost Price Lower Level.
+	/** Get Current Cost Price LL.
 		@return Current Price Lower Level Is the sum of the costs of the components of this product manufactured for this level.
 	  */
 	public BigDecimal getCurrentCostPriceLL () 

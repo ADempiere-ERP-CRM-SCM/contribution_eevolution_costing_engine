@@ -21,17 +21,19 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DocTypeNotFoundException;
 import org.adempiere.exceptions.FillMandatoryException;
 import org.adempiere.exceptions.NoVendorForProductException;
-import org.adempiere.model.engines.CostEngineFactory;
-import org.adempiere.model.engines.IDocumentLine;
-import org.adempiere.model.engines.StorageEngine;
+import org.adempiere.engine.CostEngineFactory;
+import org.adempiere.engine.IDocumentLine;
+import org.adempiere.engine.StorageEngine;
 import org.compiere.model.I_C_UOM;
 import org.compiere.model.MBPartner;
 import org.compiere.model.MDocType;
@@ -46,6 +48,7 @@ import org.compiere.model.MUOM;
 import org.compiere.model.MWarehouse;
 import org.compiere.model.ModelValidationEngine;
 import org.compiere.model.ModelValidator;
+import org.compiere.model.PO;
 import org.compiere.model.Query;
 import org.compiere.print.ReportEngine;
 import org.compiere.process.DocAction;
@@ -70,6 +73,27 @@ import org.eevolution.exceptions.ActivityProcessedException;
 public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction , IDocumentLine
 {
 	private static final long serialVersionUID = 1L;
+	
+	public static List<MPPCostCollector> getCostCollectorNotTransaction(MProduct product,int AD_Client_ÏD, Timestamp dateAcct)
+	{
+		List<Object> params = new ArrayList();
+		final StringBuffer whereClause = new StringBuffer();
+		whereClause.append(MPPCostCollector.COLUMNNAME_CostCollectorType +" NOT IN ('100','110') AND ");
+		if(product != null)
+		{	
+		  whereClause.append(MPPCostCollector.COLUMNNAME_M_Product_ID + "=? AND ");
+		  params.add(product.getM_Product_ID());
+		}	 
+			 
+		  whereClause.append(MPPCostCollector.COLUMNNAME_DateAcct + ">=?");
+		  params.add(dateAcct);
+		 
+		return new Query(product.getCtx(), I_PP_Cost_Collector.Table_Name, whereClause.toString() , product.get_TrxName())
+					.setClient_ID()
+					.setParameters(params)
+					.list();
+								 
+	}
 	
     /**
      * Create & Complete Cost Collector 
@@ -274,6 +298,8 @@ public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction ,
 	
 	/** Manufacturing Order BOM Line **/
 	private MPPOrderBOMLine m_bomLine = null;
+	/** Actual Cost 				 **/
+	private BigDecimal priceActual = Env.ZERO;
 
 //	@Override
 	public boolean unlockIt()
@@ -534,7 +560,7 @@ public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction ,
 			log.fine("OrderLine - Reserved=" + obomline.getQtyReserved() + ", Delivered=" + obomline.getQtyDelivered());				
 			obomline.saveEx();
 			log.fine("OrderLine -> Reserved="+obomline.getQtyReserved()+", Delivered="+obomline.getQtyDelivered());
-			CostEngineFactory.getCostEngine(getAD_Client_ID()).createUsageVariances(this);
+			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(null, this);
 		}
 		//
 		// Usage Variance (resource)
@@ -551,8 +577,8 @@ public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction ,
 			; // nothing
 		}
 		//
-		CostEngineFactory.getCostEngine(getAD_Client_ID()).createRateVariances(this);
-		CostEngineFactory.getCostEngine(getAD_Client_ID()).createMethodVariances(this);
+		//CostEngineFactory.getCostEngine(getAD_Client_ID()).createRateVariances(this);
+		//CostEngineFactory.getCostEngine(getAD_Client_ID()).createMethodVariances(this);
 
 		m_processMsg = ModelValidationEngine.get().fireDocValidate(this, ModelValidator.TIMING_AFTER_COMPLETE);
 		if (m_processMsg != null)
@@ -983,4 +1009,45 @@ public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction ,
 		
 		setIsSubcontracting(MPPOrderNode.get(getCtx(), PP_Order_Node_ID, get_TrxName()).isSubcontracting());
 	}
+
+	@Override
+	public int getM_LocatorTo_ID() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getM_AttributeSetInstanceTo_ID() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean isSOTrx() {
+		return false;
+	}
+
+	@Override
+	public int getReversalLine_ID() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public BigDecimal getPriceActual() {
+		// TODO Auto-generated method stub
+		return priceActual ;
+	}
+	
+	public void setPriceActual(BigDecimal cost)
+	{
+		priceActual =  cost;
+	}
+
+	@Override
+	public IDocumentLine getReversalDocumentLine() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }	//	MPPCostCollector

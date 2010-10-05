@@ -222,8 +222,20 @@ public class CostEngine
 	
 	public void createCostDetail(MAcctSchema as, MTransaction mtrx ,IDocumentLine model , MCostElement ce, MCostType ct)
 	{
+		
+		BigDecimal costThisLevel = Env.ZERO;
+		BigDecimal costLowLevel = Env.ZERO;
+		
 		MCost cost = validateCostForCostType(as, ct, ce, model.getM_Product_ID(), model.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
 		
+
+		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && !model.isSOTrx() 
+		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
+		{	
+			costThisLevel = model.getPriceActual();
+		}	
+		
+		//Landed Cost
 		if (ce.isLandedCost())
 		{
 			// skip landed costs for incoming transactions
@@ -235,18 +247,52 @@ public class CostEngine
 				return;
 			else if (!model.isSOTrx())
 			return;
-		}
+		}	
+		
 		if (model instanceof MLandedCostAllocation && !ce.isLandedCost())
 			return;
-		BigDecimal price = Env.ZERO;
 		
-		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()))
-		{	
-			price = model.getPriceActual();
+		//Standard Cost functionality
+		if (MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
+		{
+			if(model instanceof MPPCostCollector)
+			{
+				MPPCostCollector cc = (MPPCostCollector)model;
+				if(MPPCostCollector.COSTCOLLECTORTYPE_MethodChangeVariance.equals(cc.getCostCollectorType()))
+				{
+					createMethodVariances(cc);
+				}
+				else if(MPPCostCollector.COSTCOLLECTORTYPE_UsegeVariance.equals(cc.getCostCollectorType()))
+				{
+					createUsageVariances(cc);
+				}
+				else if(MPPCostCollector.COSTCOLLECTORTYPE_RateVariance.equals(cc.getCostCollectorType()))
+				{
+					createRateVariances(cc);
+				}
+				else if (MPPCostCollector.COSTCOLLECTORTYPE_MixVariance.equals(cc.getCostCollectorType()))
+				{
+				 ; //no implement	
+				}
+			}
+			
+		}
+		
+		if (!MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
+		{
+			if(model instanceof MPPCostCollector)
+			{
+				MPPCostCollector cc = (MPPCostCollector)model;
+				if(MPPCostCollector.COSTCOLLECTORTYPE_MaterialReceipt.equals(cc.getCostCollectorType()))
+				{	
+					//get Actual Cost for Cost Type and Cost Element
+					costLowLevel = MPPOrderCost.getParentActualCostByCostType(cc.getPP_Order(), ct.getM_CostType_ID(), ce.getM_CostElement_ID());
+				}
+			}
 		}	
 		
 		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, ct.getCostingMethod());
-		method.setCostingMethod(as, mtrx, cost, price , model.isSOTrx());
+		method.setCostingMethod(as, mtrx, cost, costThisLevel , costLowLevel, model.isSOTrx());
 		MCostDetail cd = method.process();	
 		final String idColumnName = CostEngine.getIDColumnName(model);		
 		cd.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(model));
@@ -352,7 +398,7 @@ public class CostEngine
 			}
 		
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-			method.setCostingMethod(as, null, cost, model.getPriceActual(), isSOTrx);
+			method.setCostingMethod(as, null, cost, model.getPriceActual(), Env.ZERO, isSOTrx);
 			method.process();
 		}
 	}

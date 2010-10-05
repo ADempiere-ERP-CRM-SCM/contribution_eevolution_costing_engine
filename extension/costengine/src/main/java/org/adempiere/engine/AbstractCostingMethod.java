@@ -34,15 +34,21 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	MAcctSchema m_as;
 	IDocumentLine m_model;
 	MTransaction m_trx; 
-	MCost m_cost;
+	MCost m_dimension;
 	Boolean m_isSOTrx;
-	BigDecimal m_price;
+	BigDecimal m_costThisLevel;
+	BigDecimal m_costLowLevel;
+	BigDecimal m_cost;
 	MCostDetail m_costdetail = null;
 	BigDecimal m_CumulatedAmt = Env.ZERO;
+	BigDecimal m_CumulatedAmtLL = Env.ZERO;
 	BigDecimal m_CumulatedQty = Env.ZERO;
 	BigDecimal m_CurrentCostPrice = Env.ZERO;
+	BigDecimal m_CurrentCostPriceLL = Env.ZERO;
 	BigDecimal m_Amount= Env.ZERO;
+	BigDecimal m_AmountLL= Env.ZERO;
 	BigDecimal m_AdjustCost = Env.ZERO;
+	BigDecimal m_AdjustCostLL = Env.ZERO;
 	MCostDetail m_last_costdetail = null;
 	String costingLevel;
 
@@ -72,7 +78,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			List<CostComponent> ccs = getCalculatedCosts();
 			for (CostComponent cc : ccs)
 			{
-				MCostDetail cd = new MCostDetail(m_trx, m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), cc.getAmount(), cc.getQty(), m_model.get_TrxName());
+				MCostDetail cd = new MCostDetail(m_trx, m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), cc.getAmount(), null, cc.getQty(), m_model.get_TrxName());
 				if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 					throw new AdempiereException("Cannot set "+idColumnName);
 
@@ -95,7 +101,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 		}
 		else //qty and amt is take from documentline
 		{
-			MCostDetail cd = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID() , m_price.multiply(model.getMovementQty()),  model.getMovementQty(), m_model.get_TrxName());
+			MCostDetail cd = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID() , m_costThisLevel.multiply(model.getMovementQty()),  null, model.getMovementQty(), m_model.get_TrxName());
 			int id;
 			if (model instanceof MMatchPO)
 			{
@@ -129,11 +135,13 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	 */
 	public void updateInventoryValue()
 	{
-		m_cost.setCurrentCostPrice(m_CurrentCostPrice);
-		m_cost.setCumulatedAmt(m_CumulatedAmt);
-		m_cost.setCumulatedQty(m_CumulatedQty);
-		m_cost.setCurrentQty(m_CumulatedQty);
-		m_cost.saveEx();
+		m_dimension.setCurrentCostPrice(m_CurrentCostPrice);
+		m_dimension.setCurrentCostPriceLL(m_CurrentCostPriceLL);
+		m_dimension.setCumulatedAmt(m_CumulatedAmt);
+		m_dimension.setCumulatedAmtLL(m_CumulatedAmtLL);
+		m_dimension.setCumulatedQty(m_CumulatedQty);
+		m_dimension.setCurrentQty(m_CumulatedQty);
+		m_dimension.saveEx();
 	}
 	
 	/**
@@ -145,7 +153,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			IDocumentLine model = m_trx.getDocumentLine();
 			String idColumnName = model.get_TableName()+"_ID";
 			
-			MCostDetail original_cd = MCostDetail.getByTransaction(original_trx, m_as.getC_AcctSchema_ID() , m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), costingLevel); 
+			MCostDetail original_cd = MCostDetail.getByTransaction(original_trx, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel); 
 			m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_trx.get_TrxName());
 			m_costdetail.copyValues(original_cd , m_costdetail);
 			m_costdetail.setQty(original_cd.getQty().negate());
@@ -155,6 +163,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			m_costdetail.setCostAdjustmentDate(original_cd.getCostAdjustmentDate());
 			m_costdetail.setCumulatedQty(original_cd.getNewCumulatedQty());
 			m_costdetail.setCumulatedAmt(original_cd.getNewCumulatedAmt());	
+			m_costdetail.setCumulatedAmtLL(original_cd.getNewCumulatedAmtLL());	
 			m_costdetail.setCurrentCostPrice(original_cd.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
 			m_costdetail.setDateAcct(original_cd.getDateAcct());
 			if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
@@ -172,6 +181,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			//Update the new cost detail
 			m_CumulatedQty = m_costdetail.getNewCumulatedQty();
 			m_CumulatedAmt = m_costdetail.getNewCumulatedAmt();
+			m_CumulatedAmtLL = m_costdetail.getNewCumulatedAmtLL();
 			m_CurrentCostPrice = m_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			return m_costdetail;
 	}

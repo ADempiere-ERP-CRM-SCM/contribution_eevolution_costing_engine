@@ -27,17 +27,19 @@ import org.compiere.util.Env;
 public class FifoLifoCostingMethod extends AbstractCostingMethod
 {
 
-	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost cost,
-			BigDecimal price , Boolean isSOTrx)
+	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost dimension,
+			BigDecimal costThisLevel , BigDecimal costLowLevel, Boolean isSOTrx)
 	{ 
 		m_as = as;
 		m_trx  = mtrx;
-		m_cost = cost;
-        m_price = price;
+		m_dimension = dimension;
+		m_costThisLevel = (costThisLevel == null ? Env.ZERO : costThisLevel);
+		m_costLowLevel = (costLowLevel == null ? Env.ZERO : costLowLevel);
+		m_cost = m_costThisLevel.add(m_costLowLevel);
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
 		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
-		m_costdetail = MCostDetail.getByTransaction(mtrx,m_as.getC_AcctSchema_ID(), m_cost.getM_CostType_ID() , m_cost.getM_CostElement_ID(), costingLevel);
+		m_costdetail = MCostDetail.getByTransaction(mtrx,m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID() , m_dimension.getM_CostElement_ID(), costingLevel);
 	}
 	
 	public void calculate()
@@ -49,7 +51,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		pc.setQty(m_trx.getMovementQty());
 		//
 
-		List<CostComponent> ccs = pc.getProductCostsLayers(m_cost, 0, false);
+		List<CostComponent> ccs = pc.getProductCostsLayers(m_dimension, 0, false);
 		if (ccs == null || ccs.size() == 0)
 		{
 			MProduct product = MProduct.get(Env.getCtx(), m_model.getM_Product_ID());
@@ -69,25 +71,25 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 
 	public void updateCurrentCost(MCostDetail m_costdetail)
 	{
-		MCostQueue[] cQueue = MCostQueue.getQueue(m_cost, m_costdetail.getDateAcct(), m_costdetail.get_TrxName());
+		MCostQueue[] cQueue = MCostQueue.getQueue(m_dimension, m_costdetail.getDateAcct(), m_costdetail.get_TrxName());
 		//TODO: need evaluate this!
 		if (cQueue != null)
 		{
-			if (cQueue.length >0 && m_cost.getCostElement().isFifo())
-				m_cost.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
-			else if (cQueue.length > 0 && m_cost.getCostElement().isLandedCost())
-				m_cost.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
+			if (cQueue.length >0 && m_dimension.getCostElement().isFifo())
+				m_dimension.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
+			else if (cQueue.length > 0 && m_dimension.getCostElement().isLandedCost())
+				m_dimension.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
 		}	
-		m_cost.setCurrentQty(m_cost.getCurrentQty().add(m_costdetail.getQty()));
+		m_dimension.setCurrentQty(m_dimension.getCurrentQty().add(m_costdetail.getQty()));
 
 		if (cQueue != null && cQueue.length > 0)
 		{
 			BigDecimal cAmt = cQueue[0].getCurrentCostPrice().multiply(m_costdetail.getQty());
-			m_cost.setCumulatedAmt(m_cost.getCumulatedAmt().add(cAmt));
-			m_cost.setCumulatedQty(m_cost.getCumulatedQty().add(m_costdetail.getQty()));
+			m_dimension.setCumulatedAmt(m_dimension.getCumulatedAmt().add(cAmt));
+			m_dimension.setCumulatedQty(m_dimension.getCumulatedQty().add(m_costdetail.getQty()));
 		}
-		log.finer("QtyAdjust - FiFo/Lifo - " + m_cost);		
-		m_cost.saveEx();
+		log.finer("QtyAdjust - FiFo/Lifo - " + m_dimension);		
+		m_dimension.saveEx();
 	}
 
 	public MCostDetail process()
@@ -101,21 +103,21 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		if(m_model.getReversalLine_ID() > 0)
 		{	
 			createReversalCostDetail();
-			MCostQueue cq = MCostQueue.getQueueForAdjustment(m_costdetail, m_cost, m_model.get_TrxName());
+			MCostQueue cq = MCostQueue.getQueueForAdjustment(m_costdetail, m_dimension, m_model.get_TrxName());
 			if (cq.getCurrentQty().compareTo(m_costdetail.getQty()) == 1 
 					||cq.getCurrentQty().compareTo(m_costdetail.getCurrentQty()) == 0)
 			{
 			cq.setCurrentQty(cq.getCurrentQty().add(m_costdetail.getQty()));
-			m_cost.setCurrentQty(m_cost.getCurrentQty().add(m_costdetail.getQty()));
+			m_dimension.setCurrentQty(m_dimension.getCurrentQty().add(m_costdetail.getQty()));
 			cq.saveEx();
-			m_cost.saveEx();
+			m_dimension.saveEx();
 			}
 			else processCostDetail(m_costdetail);
 			return;
 		}
 		if(m_costdetail == null)
 		{
-			for (MCostDetail cd : createCostDetails(m_cost, m_trx))
+			for (MCostDetail cd : createCostDetails(m_dimension, m_trx))
 			{
 				if (CostDimension.isSameCostDimension(m_as, m_model) && 
 					(m_trx.getMovementType().equals("M+") || m_trx.getMovementType().equals("M-")))
@@ -125,10 +127,10 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				}
 				processCostDetail(cd);	
 				//check if document is entered with delay
-				m_last_costdetail =  MCostDetail.getLastTransaction(m_trx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), costingLevel);
+				m_last_costdetail =  MCostDetail.getLastTransaction(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel);
 				if(m_last_costdetail == null)
 				{
-					m_last_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), Env.ZERO , Env.ZERO, m_trx.get_TrxName());
+					m_last_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), Env.ZERO , null, Env.ZERO, m_trx.get_TrxName());
 					m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));
 				}
 				if (m_costdetail.getDateAcct().compareTo(m_last_costdetail.getDateAcct()) < 0)
@@ -139,10 +141,10 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		}
 		else 
 		{
-			m_Amount = m_model.getMovementQty().multiply(m_price);	
+			m_Amount = m_model.getMovementQty().multiply(m_cost);	
 			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
 			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
-			m_CumulatedQty = m_cost.getCumulatedQty();
+			m_CumulatedQty = m_dimension.getCumulatedQty();
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
 
 			if (m_AdjustCost.compareTo(Env.ZERO) != 0 )
@@ -201,7 +203,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 			}
 			else
 			{
-				BigDecimal amtQueue = MCostQueue.adjustQty(m_cost,
+				BigDecimal amtQueue = MCostQueue.adjustQty(m_dimension,
 						cd.getQty().negate(), cd.getDateAcct(), cd.get_TrxName());
 				amtQueue = amtQueue.negate(); // outgoing amt should be negative
 				if (cd.getAmt().compareTo(amtQueue) != 0)
@@ -223,9 +225,9 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 					}
 				}
 			}
-			cd.setCumulatedQty(m_cost.getCumulatedQty());
-			cd.setCumulatedAmt(m_cost.getCumulatedQty());	
-			cd.setCurrentCostPrice(m_cost.getCurrentCostPrice());
+			cd.setCumulatedQty(m_dimension.getCumulatedQty());
+			cd.setCumulatedAmt(m_dimension.getCumulatedQty());	
+			cd.setCurrentCostPrice(m_dimension.getCurrentCostPrice());
 			updateCurrentCost(cd);
 			cd.saveEx();
 			m_costdetail = cd; 
@@ -247,7 +249,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		{
 			if (cd == null)
 				throw new AdempiereException("Error do not exist adjustment");
-			MCostQueue cq = MCostQueue.getQueueForAdjustment(cd, m_cost, m_model.get_TrxName());
+			MCostQueue cq = MCostQueue.getQueueForAdjustment(cd, m_dimension, m_model.get_TrxName());
 			MTransaction trx = get(cd);
 			//first condition - cost adjustement
 			//second condition - delayed transaction
@@ -260,7 +262,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				cq.addCurrentQty(cd.getQty().negate());
 				cq.saveEx();
 				cd.setProcessed(false);
-				cd.setAmt(cd.getQty().multiply(m_price));
+				cd.setAmt(cd.getQty().multiply(m_cost));
 				cd.saveEx();
 				list.add(cd);
 			}
@@ -283,13 +285,13 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 				cd.setProcessed(false);
 				if (CostDimension.isSameCostDimension(m_as, trx, trxTo))
 				{
-					cd.setAmt(cd.getQty().multiply(m_price));
+					cd.setAmt(cd.getQty().multiply(m_cost));
 					cd.saveEx();
 				}
 				else 
 				{	
 					cq.addCurrentQty(cd.getQty().negate());
-					cd.setAmt(cd.getQty().multiply(m_price));
+					cd.setAmt(cd.getQty().multiply(m_cost));
 					cd.saveEx();
 					if (trx.getMovementType().equals("M+"))
 					    cq.setCurrentCostPrice(cd.getAmt().divide(cd.getQty()));	

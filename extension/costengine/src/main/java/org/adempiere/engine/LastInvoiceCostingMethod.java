@@ -12,6 +12,7 @@ import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MTransaction;
 import org.compiere.util.CLogger;
+import org.compiere.util.Env;
 
 /**
  * @author anca_bradau
@@ -22,12 +23,14 @@ public class LastInvoiceCostingMethod extends AbstractCostingMethod implements I
 
 	
 	public void setCostingMethod (MAcctSchema as,MTransaction mtrx,
-			MCost cost,BigDecimal price, Boolean isSOTrx)
+			MCost dimension,BigDecimal costThisLevel, BigDecimal costLowLevel, Boolean isSOTrx)
 	{
 		m_as = as;
 		m_trx  = mtrx;
-		m_cost = cost;
-		m_price = price;
+		m_dimension = dimension;
+		m_costThisLevel = (costThisLevel == null ? Env.ZERO : costThisLevel);
+		m_costLowLevel = (costLowLevel == null ? Env.ZERO : costLowLevel);
+		m_cost = m_costThisLevel.add(m_costLowLevel);
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
 	}

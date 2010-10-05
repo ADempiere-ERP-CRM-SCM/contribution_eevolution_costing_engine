@@ -17,7 +17,7 @@ import org.compiere.model.MTransaction;
 public interface ICostingMethod
 {
 	public void setCostingMethod(MAcctSchema as,MTransaction mtrx,
-			MCost cost, BigDecimal price, Boolean isSOTrx);
+			MCost dimension, BigDecimal costThisLevel, BigDecimal costLowLevel, Boolean isSOTrx);
 	public MCostDetail process();
 	public void processCostDetail(MCostDetail m_costdetail);//for reversal documents
 }

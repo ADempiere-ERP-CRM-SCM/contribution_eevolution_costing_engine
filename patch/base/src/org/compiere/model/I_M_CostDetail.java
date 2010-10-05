@@ -75,6 +75,19 @@ public interface I_M_CostDetail
 	  */
 	public BigDecimal getAmt();
 
+    /** Column name AmtLL */
+    public static final String COLUMNNAME_AmtLL = "AmtLL";
+
+	/** Set Amount LL.
+	  * Amount Lower Level Cost
+	  */
+	public void setAmtLL (BigDecimal AmtLL);
+
+	/** Get Amount LL.
+	  * Amount Lower Level Cost
+	  */
+	public BigDecimal getAmtLL();
+
     /** Column name C_AcctSchema_ID */
     public static final String COLUMNNAME_C_AcctSchema_ID = "C_AcctSchema_ID";
 
@@ -176,6 +189,32 @@ public interface I_M_CostDetail
 	  */
 	public Timestamp getCostAdjustmentDate();
 
+    /** Column name CostAdjustmentDateLL */
+    public static final String COLUMNNAME_CostAdjustmentDateLL = "CostAdjustmentDateLL";
+
+	/** Set Cost Adjustment Date LL.
+	  * Date Product Cost Adjustment Lower Level
+	  */
+	public void setCostAdjustmentDateLL (Timestamp CostAdjustmentDateLL);
+
+	/** Get Cost Adjustment Date LL.
+	  * Date Product Cost Adjustment Lower Level
+	  */
+	public Timestamp getCostAdjustmentDateLL();
+
+    /** Column name CostAdjustmentLL */
+    public static final String COLUMNNAME_CostAdjustmentLL = "CostAdjustmentLL";
+
+	/** Set Cost Adjustment LL.
+	  * Product Cost Adjustment Lower Level
+	  */
+	public void setCostAdjustmentLL (BigDecimal CostAdjustmentLL);
+
+	/** Get Cost Adjustment LL.
+	  * Product Cost Adjustment Lower Level
+	  */
+	public BigDecimal getCostAdjustmentLL();
+
     /** Column name CostAmt */
     public static final String COLUMNNAME_CostAmt = "CostAmt";
 
@@ -188,6 +227,19 @@ public interface I_M_CostDetail
 	  * Value with Cost
 	  */
 	public BigDecimal getCostAmt();
+
+    /** Column name CostAmtLL */
+    public static final String COLUMNNAME_CostAmtLL = "CostAmtLL";
+
+	/** Set Cost Value LL.
+	  * Value with Cost Lower Level
+	  */
+	public void setCostAmtLL (BigDecimal CostAmtLL);
+
+	/** Get Cost Value LL.
+	  * Value with Cost Lower Level
+	  */
+	public BigDecimal getCostAmtLL();
 
     /** Column name CostingMethod */
     public static final String COLUMNNAME_CostingMethod = "CostingMethod";
@@ -231,6 +283,19 @@ public interface I_M_CostDetail
 	  */
 	public BigDecimal getCumulatedAmt();
 
+    /** Column name CumulatedAmtLL */
+    public static final String COLUMNNAME_CumulatedAmtLL = "CumulatedAmtLL";
+
+	/** Set Accumulated Amt LL.
+	  * Total Amount
+	  */
+	public void setCumulatedAmtLL (BigDecimal CumulatedAmtLL);
+
+	/** Get Accumulated Amt LL.
+	  * Total Amount
+	  */
+	public BigDecimal getCumulatedAmtLL();
+
     /** Column name CumulatedQty */
     public static final String COLUMNNAME_CumulatedQty = "CumulatedQty";
 
@@ -260,12 +325,12 @@ public interface I_M_CostDetail
     /** Column name CurrentCostPriceLL */
     public static final String COLUMNNAME_CurrentCostPriceLL = "CurrentCostPriceLL";
 
-	/** Set Current Cost Price Lower Level.
+	/** Set Current Cost Price LL.
 	  * Current Price Lower Level Is the sum of the costs of the components of this product manufactured for this level.
 	  */
 	public void setCurrentCostPriceLL (BigDecimal CurrentCostPriceLL);
 
-	/** Get Current Cost Price Lower Level.
+	/** Get Current Cost Price LL.
 	  * Current Price Lower Level Is the sum of the costs of the components of this product manufactured for this level.
 	  */
 	public BigDecimal getCurrentCostPriceLL();

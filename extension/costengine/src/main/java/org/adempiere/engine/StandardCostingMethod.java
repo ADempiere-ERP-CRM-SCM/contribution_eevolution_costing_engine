@@ -22,17 +22,18 @@ import org.compiere.util.Util;
  */
 public class StandardCostingMethod extends AbstractCostingMethod implements ICostingMethod {
 	
-	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost cost,
-			BigDecimal price, Boolean isSOTrx)
+	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost dimension,
+			BigDecimal costThisLevel, BigDecimal costLowLevel, Boolean isSOTrx)
 	{
 		m_as = as;
 		m_trx  = mtrx;
-		m_cost = cost;
-		m_price = price;
+		m_dimension = dimension;
+		m_costThisLevel = (costThisLevel == null ? Env.ZERO : costThisLevel);
+		m_costLowLevel = (costLowLevel == null ? Env.ZERO : costLowLevel);
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
 		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
-		m_costdetail = MCostDetail.getByTransaction(mtrx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), costingLevel);
+		m_costdetail = MCostDetail.getByTransaction(mtrx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel);
 	}
 
 	private void calculate()
@@ -42,27 +43,37 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		
 		if(m_trx.getMovementType().endsWith("-"))
 		{	
-			m_CurrentCostPrice = m_cost.getCurrentCostPrice();
+			m_CurrentCostPrice = m_dimension.getCurrentCostPrice();
+			m_CurrentCostPriceLL = m_dimension.getCurrentCostPriceLL();
 			m_Amount = m_model.getMovementQty().multiply(m_CurrentCostPrice);
-			m_CumulatedQty = m_cost.getCumulatedQty().add(m_trx.getMovementQty());
-			m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount);
+			m_AmountLL = m_model.getMovementQty().multiply(m_CurrentCostPriceLL);
+			m_CumulatedQty = m_dimension.getCumulatedQty().add(m_trx.getMovementQty());
+			m_CumulatedAmt = m_dimension.getCumulatedAmt().add(m_Amount);
+			m_CumulatedAmtLL = m_dimension.getCumulatedAmtLL().add(m_AmountLL);
 			return;
 		}	
 		
 		if(m_costdetail != null)
 		{
 			m_Amount = m_trx.getMovementQty().multiply(m_costdetail.getCurrentCostPrice());
+			m_AmountLL = m_trx.getMovementQty().multiply(m_costdetail.getCurrentCostPriceLL());
 			m_CumulatedQty = m_costdetail.getCumulatedQty().add(m_trx.getMovementQty());
 			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount);
+			m_CumulatedAmtLL = m_costdetail.getCumulatedAmtLL().add(m_AmountLL);
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-			m_AdjustCost = m_CurrentCostPrice.multiply(m_cost.getCumulatedQty()).subtract(m_cost.getCumulatedAmt());
+			m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			m_AdjustCost = m_CurrentCostPrice.multiply(m_dimension.getCumulatedQty()).subtract(m_dimension.getCumulatedAmt());
+			m_AdjustCost = m_CurrentCostPriceLL.multiply(m_dimension.getCumulatedQty()).subtract(m_dimension.getCumulatedAmtLL());
 			return;
 		}
 		
-		m_Amount = m_trx.getMovementQty().multiply(m_cost.getCurrentCostPrice());
-		m_CumulatedAmt = m_cost.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
-		m_CumulatedQty = m_cost.getCumulatedQty().add( m_trx.getMovementQty());
-		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);	
+		m_Amount = m_trx.getMovementQty().multiply(m_dimension.getCurrentCostPrice());
+		m_AmountLL = m_trx.getMovementQty().multiply(m_dimension.getCurrentCostPriceLL());
+		m_CumulatedAmt = m_dimension.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
+		m_CumulatedAmtLL = m_dimension.getCumulatedAmtLL().add(m_AmountLL).add(m_AdjustCostLL);
+		m_CumulatedQty = m_dimension.getCumulatedQty().add( m_trx.getMovementQty());
+		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+		m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 	}
 	
 	
@@ -77,7 +88,8 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		
 		if(m_costdetail == null)
 		{	
-			m_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_cost.getM_CostType_ID(), m_cost.getM_CostElement_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_trx.getMovementQty(), m_trx.get_TrxName());
+			m_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_CurrentCostPriceLL.multiply(m_trx.getMovementQty()), m_trx.getMovementQty(), m_trx.get_TrxName());
+			m_costdetail.setDateAcct(m_model.getDateAcct());
 			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
 		}		
 		else
@@ -87,6 +99,13 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 				m_costdetail.setCostAdjustment(m_AdjustCost);
 				m_costdetail.setProcessed(false);
 				m_costdetail.setDescription("Adjust Cost");
+				
+			}
+			if(!m_AdjustCostLL.equals(Env.ZERO))
+			{
+				m_costdetail.setCostAdjustmentLL(m_AdjustCostLL);
+				m_costdetail.setProcessed(false);
+				m_costdetail.setDescription("Adjust Cost LL");
 				
 			}
 			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
@@ -102,10 +121,11 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		else
 			m_costdetail.setIsSOTrx(m_model.isSOTrx());	
 		
-		m_costdetail.setCumulatedQty(m_cost.getCumulatedQty());
-		m_costdetail.setCumulatedAmt(m_cost.getCumulatedAmt());	
-		m_costdetail.setCurrentCostPrice(m_cost.getCurrentCostPrice());
-
+		m_costdetail.setCumulatedQty(m_dimension.getCumulatedQty());
+		m_costdetail.setCumulatedAmt(m_dimension.getCumulatedAmt());	
+		m_costdetail.setCurrentCostPrice(m_dimension.getCurrentCostPrice());
+		m_costdetail.setCumulatedAmtLL(m_dimension.getCumulatedAmtLL());	
+		m_costdetail.setCurrentCostPriceLL(m_dimension.getCurrentCostPriceLL());
 		StringBuilder description = new StringBuilder();
 		if (!Util.isEmpty(m_model.getDescription(), true))
 			description.append(m_model.getDescription());

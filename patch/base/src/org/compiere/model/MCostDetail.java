@@ -47,14 +47,15 @@ import org.compiere.util.Env;
 public class MCostDetail extends X_M_CostDetail
 {
 
-	
-
 	/**
 	 * 
+	 * @param ctx
+	 * @param PP_Order_ID
+	 * @param M_CostType_ID
+	 * @param M_CostElement_ID
+	 * @param trxName
+	 * @return
 	 */
-	private static final long serialVersionUID = 9143151867348554092L;
-
-
 	public static List<MCostDetail> getByOrderLinesAndCostType(Properties ctx, int PP_Order_ID , int M_CostType_ID, int M_CostElement_ID, String trxName)
 	{
 		String whereClause 	= COLUMNNAME_PP_Cost_Collector_ID 
@@ -597,12 +598,13 @@ public class MCostDetail extends X_M_CostDetail
 	/**
 	 * Create Cost Detail based on Cost Dimension
 	 * @param amt Amount
+	 * @param amtLL Amount Low Level
 	 * @param qty Quantity
 	 * @param trxName Transaction Name
 	 * @param ctx Context
 	 * @param dimension Cost dimension
 	 */
-	public MCostDetail(MTransaction mtrx,int C_AcctSchema_ID ,int M_CostType_ID, int M_CostElement_ID, BigDecimal amt, BigDecimal qty, String trxName)
+	public MCostDetail(MTransaction mtrx,int C_AcctSchema_ID ,int M_CostType_ID, int M_CostElement_ID, BigDecimal amt, BigDecimal amtLL, BigDecimal qty, String trxName)
 	{
 		this (mtrx.getCtx(), 0, trxName);
 		setAD_Client_ID(mtrx.getAD_Client_ID());
@@ -615,6 +617,7 @@ public class MCostDetail extends X_M_CostDetail
 		MCostType ct = new MCostType(mtrx.getCtx(), M_CostType_ID, mtrx.get_TrxName());
 		setCostingMethod(ct.getCostingMethod()); 
 		setAmt(amt);
+		setAmtLL(amtLL);
 		setQty(qty);
 	}
 	
@@ -852,7 +855,7 @@ public class MCostDetail extends X_M_CostDetail
 			ICostingMethod cm = cmFactory.getCostingMethod(ce, m_cost.getCostingMethod());
 			cm.process();*/
 		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, m_cost.getCostingMethod());
-		method.setCostingMethod(as, null, m_cost, null, this.isSOTrx());
+		method.setCostingMethod(as, null, m_cost, null, Env.ZERO, this.isSOTrx());
      	method.processCostDetail(this);
 
 			//else if (ce.isLandedCost())
@@ -1390,6 +1393,7 @@ public class MCostDetail extends X_M_CostDetail
 		return m_cost;
 	}
 	
+	
 	public BigDecimal getNewCurrentCostPrice(int scale, int roundingMode)
 	{
 		if(getNewCumulatedQty().signum() != 0)
@@ -1400,6 +1404,18 @@ public class MCostDetail extends X_M_CostDetail
 	public BigDecimal getNewCumulatedAmt()
 	{
 		return getCumulatedAmt().add(getCostAmt()).add(getCostAdjustment());
+	}
+	
+	public BigDecimal getNewCurrentCostPriceLL(int scale, int roundingMode)
+	{
+		if(getNewCumulatedQty().signum() != 0)
+			return getNewCumulatedAmtLL().divide(getNewCumulatedQty(), scale , roundingMode);
+		else return BigDecimal.ZERO;
+	}
+	
+	public BigDecimal getNewCumulatedAmtLL()
+	{
+		return getCumulatedAmtLL().add(getCostAmtLL()).add(getCostAdjustmentLL());
 	}
 	
 	public BigDecimal getNewCumulatedQty()

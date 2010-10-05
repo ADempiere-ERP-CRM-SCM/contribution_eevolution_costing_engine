@@ -36,6 +36,7 @@ import org.compiere.model.Query;
 import org.compiere.process.ProcessInfoParameter;
 import org.compiere.process.SvrProcess;
 import org.compiere.util.DB;
+import org.eevolution.model.MPPCostCollector;
 
 
 /**
@@ -238,6 +239,20 @@ public class GenerateCostDetail extends SvrProcess
 				    			}
 				    		}   	
 				    	}
+				    	
+				    	MProduct product = null;
+				    	
+				    	if(p_M_Product_ID > 0)
+				    	{
+				    		product = new MProduct(getCtx(), p_M_Product_ID, get_TrxName());				    		
+				    	}	
+				    	
+				    	List<MPPCostCollector> ccs = MPPCostCollector.getCostCollectorNotTransaction(product , getAD_Client_ID(), p_DateAcct);
+				    	
+				    	for(MPPCostCollector cc : ccs)
+				    	{
+				    		CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(null, cc);	    		
+    					}
     				}
     			}
 	    	}
