@@ -27,13 +27,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
+import org.adempiere.engine.CostEngineFactory;
+import org.adempiere.engine.IDocumentLine;
+import org.adempiere.engine.StorageEngine;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DocTypeNotFoundException;
 import org.adempiere.exceptions.FillMandatoryException;
 import org.adempiere.exceptions.NoVendorForProductException;
-import org.adempiere.engine.CostEngineFactory;
-import org.adempiere.engine.IDocumentLine;
-import org.adempiere.engine.StorageEngine;
 import org.compiere.model.I_C_UOM;
 import org.compiere.model.MBPartner;
 import org.compiere.model.MDocType;
@@ -48,7 +48,6 @@ import org.compiere.model.MUOM;
 import org.compiere.model.MWarehouse;
 import org.compiere.model.ModelValidationEngine;
 import org.compiere.model.ModelValidator;
-import org.compiere.model.PO;
 import org.compiere.model.Query;
 import org.compiere.print.ReportEngine;
 import org.compiere.process.DocAction;
@@ -72,9 +71,21 @@ import org.eevolution.exceptions.ActivityProcessedException;
  */
 public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction , IDocumentLine
 {
-	private static final long serialVersionUID = 1L;
 	
-	public static List<MPPCostCollector> getCostCollectorNotTransaction(MProduct product,int AD_Client_ÏD, Timestamp dateAcct)
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 365223076601569263L;
+
+	/**
+	 * get Cost Collector That not was generate by inventory transaction
+	 * @param product
+	 * @param AD_Client_ID
+	 * @param dateAcct
+	 * @return Collection the Cost Collector
+	 */
+	public static List<MPPCostCollector> getCostCollectorNotTransaction(MProduct product,int AD_Client_ID, Timestamp dateAcct)
 	{
 		List<Object> params = new ArrayList();
 		final StringBuffer whereClause = new StringBuffer();

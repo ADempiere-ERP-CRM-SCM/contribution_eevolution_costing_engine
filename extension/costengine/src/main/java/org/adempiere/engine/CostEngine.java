@@ -29,6 +29,7 @@ import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_M_Cost;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
+import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MClient;
 import org.compiere.model.MCost;
@@ -49,6 +50,7 @@ import org.compiere.util.Env;
 import org.compiere.util.Util;
 import org.eevolution.model.I_PP_Order_BOMLine;
 import org.eevolution.model.MPPCostCollector;
+import org.eevolution.model.MPPOrder;
 import org.eevolution.model.MPPOrderCost;
 import org.eevolution.model.RoutingService;
 import org.eevolution.model.RoutingServiceFactory;
@@ -62,6 +64,44 @@ public class CostEngine
 {
 	/**	Logger							*/
 	protected transient CLogger	log = CLogger.getCLogger (getClass());
+	
+	/**
+	 * Get Actual Cost of Parent Product Based on Cost Type
+	 * @param order
+	 * @param M_CostType_ID
+	 * @param trxName
+	 * @return
+	 */
+	public static BigDecimal getParentActualCostByCostType(MPPOrder order,int M_CostType_ID, int M_CostElement_ID)
+	{
+		StringBuffer whereClause = new StringBuffer();
+		
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID + "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_PP_Cost_Collector_ID);
+		whereClause.append(" IN (SELECT PP_Cost_Collector_ID FROM PP_Cost_Collector cc WHERE cc.PP_Order_ID=? AND ");
+		whereClause.append(" cc.CostCollectorType <> '").append(MPPCostCollector.COSTCOLLECTORTYPE_MaterialReceipt).append("')");
+		
+		BigDecimal actualCost = new Query(order.getCtx(), I_M_CostDetail.Table_Name, whereClause.toString(), order.get_TrxName())
+		.setClient_ID()
+		.setParameters(M_CostType_ID, M_CostElement_ID, order.getPP_Order_ID())
+		.sum("("+MCostDetail.COLUMNNAME_Amt + "+" + MCostDetail.COLUMNNAME_CostAmtLL+")");
+		
+		whereClause = new StringBuffer();
+		whereClause.append(" EXISTS (SELECT 1 FROM PP_Cost_Collector cc WHERE PP_Cost_Collector_ID=M_Transaction.PP_Cost_Collector_ID AND cc.PP_Order_ID=? AND cc.M_Product_ID=? )");
+		BigDecimal qtyDelivered = new Query(order.getCtx(), I_M_Transaction.Table_Name, whereClause.toString(), order.get_TrxName())
+		.setClient_ID()
+		.setParameters(order.getPP_Order_ID(), order.getM_Product_ID())
+		.sum(MTransaction.COLUMNNAME_MovementQty);
+		
+		if (actualCost==null)
+			actualCost = Env.ZERO;
+		
+		if(qtyDelivered.signum() > 0)
+			actualCost = actualCost.divide(order.getQtyDelivered());
+				
+		return actualCost.negate();
+	}
 	
 	@Deprecated
 	public String getCostingMethod()
@@ -286,7 +326,7 @@ public class CostEngine
 				if(MPPCostCollector.COSTCOLLECTORTYPE_MaterialReceipt.equals(cc.getCostCollectorType()))
 				{	
 					//get Actual Cost for Cost Type and Cost Element
-					costLowLevel = MPPOrderCost.getParentActualCostByCostType(cc.getPP_Order(), ct.getM_CostType_ID(), ce.getM_CostElement_ID());
+					costLowLevel = CostEngine.getParentActualCostByCostType(cc.getPP_Order(), ct.getM_CostType_ID(), ce.getM_CostElement_ID());
 				}
 			}
 		}	

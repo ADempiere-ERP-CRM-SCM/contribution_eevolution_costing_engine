@@ -9,6 +9,7 @@
   <property file="build.properties"/>
   <property name="src" location="extension/costengine/src/main/java"/>
   <property name="patchSrc" location="patch/base/src"/>
+  <property name="liberoPatchSrc" location="patch/libero/src"/>
   <property name="build" location="build"/>
   <property name="dist"  location="dist"/>
 
@@ -43,9 +44,10 @@
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
     <javac srcdir="${src}" destdir="${build}">
-      <src path="${patchSrc}"/>
+      <src path="${patchSrc}:${liberoPatchSrc}"/>
       <include name="**/org/adempiere/engine/*.java"/>
       <include name="**/org/adempiere/exceptions/*.java"/>
+        <include name="**/org/eevolution/model/*.java"/>
       <classpath refid="lib.class.path"/>
     </javac>
 
@@ -88,12 +90,20 @@
   <target name="patchCompile" depends="init"
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
+
     <javac srcdir="${patchSrc}" destdir="${build}">
       <src path="${src}"/>
       <include name="**/org/compiere/acct/*.java"/>
       <include name="**/org/compiere/model/*.java"/>
       <classpath refid="patch.class.path"/>
     </javac>
+  	<javac srcdir="${liberoPatchSrc}" destdir="${build}">
+  	      <src path="${src}"/>
+  	      <include name="**/org/adempiere/engine/*.java"/>
+  	      <include name="**/org/eevolution/model/*.java"/>
+  	      <classpath refid="patch.class.path"/>
+  	</javac>
+
   </target>  
 
   <target name="clean"
