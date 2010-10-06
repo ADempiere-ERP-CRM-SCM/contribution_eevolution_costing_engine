@@ -20,6 +20,7 @@ SELECT t.M_Transaction_ID, t.AD_Client_ID,t.AD_Org_ID,
     t.M_ProductionLine_ID,prdl.M_ProductionPlan_ID,prdp.M_Production_ID,
     -- ProjectIssue
     t.C_ProjectIssue_ID,pjl.C_Project_ID,
+    t.PP_Cost_Collector_ID,
     COALESCE(il.Line,ml.Line,iol.Line,prdl.Line,pjl.Line) AS Line,
     COALESCE(i.movementdate, m.movementdate, io.dateacct, prd.movementdate, pjl.movementdate, cc.dateacct) AS dateacct, 
     COALESCE(i.documentno, m.documentno, io.documentno, prd.name, pj.value, cc.documentno) AS documentno,

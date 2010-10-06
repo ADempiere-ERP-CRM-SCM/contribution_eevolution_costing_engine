@@ -20,6 +20,7 @@ SELECT t.M_Transaction_ID, t.AD_Client_ID,t.AD_Org_ID,
     t.M_ProductionLine_ID,prdl.M_ProductionPlan_ID,prdp.M_Production_ID,
     -- ProjectIssue
     t.C_ProjectIssue_ID,pjl.C_Project_ID,
+    t.PP_Cost_Collector_ID,
     COALESCE(il.Line,ml.Line,iol.Line,prdl.Line,pjl.Line) AS Line,
     COALESCE(i.movementdate, m.movementdate, io.dateacct, prd.movementdate, pjl.movementdate, cc.dateacct) AS dateacct, 
     COALESCE(i.documentno, m.documentno, io.documentno, prd.name, pj.value, cc.documentno) AS documentno,
@@ -40,4 +41,3 @@ FROM M_Transaction t
   LEFT OUTER JOIN C_ProjectIssue pjl ON (t.C_ProjectIssue_ID=pjl.C_ProjectIssue_ID)
   LEFT OUTER JOIN c_project pj ON pjl.c_project_id = pj.c_project_id
   LEFT OUTER JOIN pp_cost_collector cc ON t.pp_cost_collector_id = cc.pp_cost_collector_id;
-  
