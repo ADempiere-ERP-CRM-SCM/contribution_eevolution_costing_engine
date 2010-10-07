@@ -246,7 +246,7 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
+		//+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
 		+ docLine.getTableName() + "_ID=?";
 		return new Query (docLine.getCtx(), I_M_CostDetail.Table_Name, whereClause , docLine.getTrxName())
@@ -255,7 +255,7 @@ public class MCostDetail extends X_M_CostDetail
 				docLine.getAD_Org_ID(), 
 				C_AcctSchema_ID,
 				docLine.getM_Product_ID(),
-				docLine.getM_AttributeSetInstance_ID(),  
+		//		docLine.getM_AttributeSetInstance_ID(),  
 				M_CostType_ID,
 				docLine.get_ID())
 		.list();

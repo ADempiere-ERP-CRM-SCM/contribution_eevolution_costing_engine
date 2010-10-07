@@ -32,7 +32,7 @@ public class X_T_InventoryValue extends PO implements I_T_InventoryValue, I_Pers
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100913L;
+	private static final long serialVersionUID = 20101005L;
 
     /** Standard Constructor */
     public X_T_InventoryValue (Properties ctx, int T_InventoryValue_ID, String trxName)
@@ -154,7 +154,7 @@ public class X_T_InventoryValue extends PO implements I_T_InventoryValue, I_Pers
 	  */
 	public void setCost (BigDecimal Cost)
 	{
-		set_Value (COLUMNNAME_Cost, Cost);
+		set_ValueNoCheck (COLUMNNAME_Cost, Cost);
 	}
 
 	/** Get Cost.
@@ -183,6 +183,26 @@ public class X_T_InventoryValue extends PO implements I_T_InventoryValue, I_Pers
 	public BigDecimal getCostAmt () 
 	{
 		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CostAmt);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Cost Value LL.
+		@param CostAmtLL 
+		Value with Cost Lower Level
+	  */
+	public void setCostAmtLL (BigDecimal CostAmtLL)
+	{
+		set_Value (COLUMNNAME_CostAmtLL, CostAmtLL);
+	}
+
+	/** Get Cost Value LL.
+		@return Value with Cost Lower Level
+	  */
+	public BigDecimal getCostAmtLL () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CostAmtLL);
 		if (bd == null)
 			 return Env.ZERO;
 		return bd;
@@ -223,6 +243,26 @@ public class X_T_InventoryValue extends PO implements I_T_InventoryValue, I_Pers
 	public BigDecimal getCostStandardAmt () 
 	{
 		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CostStandardAmt);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Accumulated Amt.
+		@param CumulatedAmt 
+		Total Amount
+	  */
+	public void setCumulatedAmt (BigDecimal CumulatedAmt)
+	{
+		set_Value (COLUMNNAME_CumulatedAmt, CumulatedAmt);
+	}
+
+	/** Get Accumulated Amt.
+		@return Total Amount
+	  */
+	public BigDecimal getCumulatedAmt () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_CumulatedAmt);
 		if (bd == null)
 			 return Env.ZERO;
 		return bd;

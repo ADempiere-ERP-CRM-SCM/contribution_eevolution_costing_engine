@@ -131,6 +131,19 @@ public interface I_T_InventoryValue
 	  */
 	public BigDecimal getCostAmt();
 
+    /** Column name CostAmtLL */
+    public static final String COLUMNNAME_CostAmtLL = "CostAmtLL";
+
+	/** Set Cost Value LL.
+	  * Value with Cost Lower Level
+	  */
+	public void setCostAmtLL (BigDecimal CostAmtLL);
+
+	/** Get Cost Value LL.
+	  * Value with Cost Lower Level
+	  */
+	public BigDecimal getCostAmtLL();
+
     /** Column name CostStandard */
     public static final String COLUMNNAME_CostStandard = "CostStandard";
 
@@ -156,6 +169,19 @@ public interface I_T_InventoryValue
 	  * Value in Standard Costs
 	  */
 	public BigDecimal getCostStandardAmt();
+
+    /** Column name CumulatedAmt */
+    public static final String COLUMNNAME_CumulatedAmt = "CumulatedAmt";
+
+	/** Set Accumulated Amt.
+	  * Total Amount
+	  */
+	public void setCumulatedAmt (BigDecimal CumulatedAmt);
+
+	/** Get Accumulated Amt.
+	  * Total Amount
+	  */
+	public BigDecimal getCumulatedAmt();
 
     /** Column name DateValue */
     public static final String COLUMNNAME_DateValue = "DateValue";
