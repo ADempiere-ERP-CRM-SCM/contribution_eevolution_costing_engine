@@ -49,26 +49,9 @@ public class MCostDetail extends X_M_CostDetail
 
 	/**
 	 * 
-	 * @param ctx
-	 * @param PP_Order_ID
-	 * @param M_CostType_ID
-	 * @param M_CostElement_ID
-	 * @param trxName
-	 * @return
 	 */
-	public static List<MCostDetail> getByOrderLinesAndCostType(Properties ctx, int PP_Order_ID , int M_CostType_ID, int M_CostElement_ID, String trxName)
-	{
-		String whereClause 	= COLUMNNAME_PP_Cost_Collector_ID 
-							+ " IN (SELECT PP_Cost_Collector_ID  FROM M_Cost_Collector cc INNER JOIN PP_Order pp ON (cc.PP_Order_ID=pp.PP_Order_ID) "
-							+ " WHERE cc.CostCollectorType=100 AND cc.M_Cost_Collector_ID=M_CostDetail.M_Cost_Collector_ID AND pp.PP_Order_ID=? AND M_CostDetail.M_CostElement_ID=?)";
-		return new Query(ctx, Table_Name, whereClause, trxName)
-		.setClient_ID()
-		.setParameters(PP_Order_ID, M_CostType_ID, M_CostElement_ID)
-		.list();
+	private static final long serialVersionUID = -2300885585182665663L;
 		
-	}
-	
-	
 	/**
 	 * get the last entry for a Cost Detail based on the Material Transaction and Cost Dimension
 	 * @param mtrx Transaction Material
@@ -133,7 +116,6 @@ public class MCostDetail extends X_M_CostDetail
 	 * @param costingLevel TODO
 	 * @return MCostDetail
 	 */
-
 	public static MCostDetail getLastTransaction (MTransaction mtrx, int C_AcctSchema_ID, int M_CostType_ID,int M_CostElement_ID, String costingLevel)
 	{	
 		ArrayList<Object> params = new ArrayList();
@@ -193,37 +175,29 @@ public class MCostDetail extends X_M_CostDetail
 
 	/**
 	 * 	
-	 * Get Cost Detail Based on  Material Transaction 
+	 * Get the Cost Detail Based on  Material Transaction 
 	 * @param mtrx Material Transaction
 	 * @param C_AcctSchema_ID Account Schema ID
 	 * @param M_CostType_ID CostType ID
 	 * @param M_CostElement_ID Cost Element ID
-	 * @param costingLevel TODO
+	 * @param costingLevel Cost Level
 	 * @return MCostDetail cost detail
 	 */
 	public static MCostDetail getByTransaction(MTransaction mtrx, int C_AcctSchema_ID, int M_CostType_ID,int M_CostElement_ID, String costingLevel)
-	{
-		
+	{		
 		ArrayList<Object> params = new ArrayList();
 		final StringBuffer whereClause = new StringBuffer(MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ");
 		params.add(mtrx.getAD_Client_ID());
-
-		//if(MAcctSchema.COSTINGLEVEL_Organization.equals(costingLevel))
-		//{	
 		whereClause.append(MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND ");
 		params.add(mtrx.getAD_Org_ID());
-		//}
 		
 		whereClause.append(MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND ");
 		params.add(C_AcctSchema_ID);
 		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ");
 		params.add(mtrx.getM_Product_ID());
-		
-		//if(MAcctSchema.COSTINGLEVEL_BatchLot.equals(costingLevel))
-		//{
-			whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND ");
-			params.add(mtrx.getM_AttributeSetInstance_ID());
-		//}	
+		whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND ");
+		params.add(mtrx.getM_AttributeSetInstance_ID());
+
 		
 		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ");
 		params.add(M_CostElement_ID);
@@ -239,14 +213,19 @@ public class MCostDetail extends X_M_CostDetail
 		.firstOnly();
 	}
 	
-
+	/**
+	 * Get a list of cost detail based on the document line and cost type
+	 * @param docLine Document Line
+	 * @param C_AcctSchema_ID Account Schema
+	 * @param M_CostType_ID Cost type
+	 * @return list MCostDetail 
+	 */
 	public static List<MCostDetail> getByDocLine(DocLine docLine ,int C_AcctSchema_ID, int M_CostType_ID)
 	{
 		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
-		//+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
 		+ docLine.getTableName() + "_ID=?";
 		return new Query (docLine.getCtx(), I_M_CostDetail.Table_Name, whereClause , docLine.getTrxName())
@@ -255,7 +234,6 @@ public class MCostDetail extends X_M_CostDetail
 				docLine.getAD_Org_ID(), 
 				C_AcctSchema_ID,
 				docLine.getM_Product_ID(),
-		//		docLine.getM_AttributeSetInstance_ID(),  
 				M_CostType_ID,
 				docLine.get_ID())
 		.list();
