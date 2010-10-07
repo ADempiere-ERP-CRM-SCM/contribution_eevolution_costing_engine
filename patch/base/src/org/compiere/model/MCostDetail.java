@@ -167,7 +167,8 @@ public class MCostDetail extends X_M_CostDetail
 		if(last_cd == null)
 			return false;
 		
-		if(cd.getDateAcct().compareTo(last_cd.getDateAcct()) < 0) 
+		if(cd.getDateAcct().compareTo(last_cd.getDateAcct()) <= 0 
+		&& cd.getM_CostDetail_ID() != last_cd.getM_CostDetail_ID()) 
 		{
 			return true;
 		}
@@ -813,18 +814,18 @@ public class MCostDetail extends X_M_CostDetail
 
 //		for (MCostType mc : mcost)
 //		{
-		MCostType mc = (MCostType)getM_CostType();
-		m_cost = MCost.get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(),
-				mc, get_TrxName());
+		//MCostType mc = (MCostType)getM_CostType();
+		//m_cost = MCost.get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(),
+		//		mc, get_TrxName());
 		/*if (ce.isFifo() && mc.getName().equalsIgnoreCase("Fifo")   //TODO dont use this!
 				|| ce.isAverageInvoice() && mc.getName().equalsIgnoreCase("Average Invoice"))*/
 
 		/*CostingMethodFactory cmFactory = CostingMethodFactory.get();
 			ICostingMethod cm = cmFactory.getCostingMethod(ce, m_cost.getCostingMethod());
 			cm.process();*/
-		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, m_cost.getCostingMethod());
-		method.setCostingMethod(as, null, m_cost, null, Env.ZERO, this.isSOTrx());
-     	method.processCostDetail(this);
+		//final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, m_cost.getCostingMethod());
+		//method.setCostingMethod(as, null, m_cost, null, Env.ZERO, this.isSOTrx());
+     	//method.processCostDetail(this);
 
 			//else if (ce.isLandedCost())
 			//	{
@@ -1016,7 +1017,7 @@ public class MCostDetail extends X_M_CostDetail
 			{
 				boolean addition = qty.signum() > 0;
 				//
-				if (ce.isgeInvoice())
+				if (ce.isAverageInvoice())
 				{
 					if (addition)
 						cost.setWeightedAverage(amt, qty);
