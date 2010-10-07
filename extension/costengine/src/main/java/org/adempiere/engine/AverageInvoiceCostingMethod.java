@@ -84,13 +84,17 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	    	m_costThisLevel = getNewCurrentCostPrice(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 	    	if(m_costThisLevel.signum() == 0)
 	    		m_costThisLevel = m_last_costdetail.getCurrentCostPrice();
+	    	if(m_costThisLevel.signum() == 0)
+	    		m_costThisLevel = m_dimension.getCurrentCostPrice();
 	    }	
 	    
 	    if (m_costLowLevel == null || m_costLowLevel==Env.ZERO) //m_price is null at physical inventory
 	    {	
 	    	m_costLowLevel = getNewCurrentCostPriceLL( m_last_costdetail, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-	    	if(m_costThisLevel.signum() == 0)
-	    		m_costThisLevel = m_last_costdetail.getCurrentCostPriceLL();
+	    	if(m_costLowLevel.signum() == 0)
+	    		m_costLowLevel = m_last_costdetail.getCurrentCostPriceLL();
+	    	if(m_costLowLevel.signum() == 0)
+	    		m_costLowLevel = m_dimension.getCurrentCostPriceLL();
 	    }	
 	    
 		m_Amount = m_trx.getMovementQty().multiply(m_costThisLevel);	
