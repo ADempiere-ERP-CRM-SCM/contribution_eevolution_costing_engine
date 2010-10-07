@@ -84,4 +84,36 @@ public class LastInvoiceCostingMethod extends AbstractCostingMethod implements I
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public BigDecimal getNewCurrentCostPrice(MCostDetail cd, int scale,
+			int roundingMode) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BigDecimal getNewCumulatedAmt(MCostDetail cd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BigDecimal getNewCurrentCostPriceLL(MCostDetail cd, int scale,
+			int roundingMode) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BigDecimal getNewCumulatedAmtLL(MCostDetail cd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BigDecimal getNewCumulatedQty(MCostDetail cd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

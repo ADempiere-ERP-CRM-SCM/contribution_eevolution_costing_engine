@@ -342,4 +342,36 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		.setParameters(trx.getM_Transaction_ID(), trx.getM_Product_ID(), trx.getMovementQty().negate())
 		.first();
 	}
+
+	@Override
+	public BigDecimal getNewCurrentCostPrice(MCostDetail cd, int scale,
+			int roundingMode) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BigDecimal getNewCumulatedAmt(MCostDetail cd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BigDecimal getNewCurrentCostPriceLL(MCostDetail cd, int scale,
+			int roundingMode) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BigDecimal getNewCumulatedAmtLL(MCostDetail cd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BigDecimal getNewCumulatedQty(MCostDetail cd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

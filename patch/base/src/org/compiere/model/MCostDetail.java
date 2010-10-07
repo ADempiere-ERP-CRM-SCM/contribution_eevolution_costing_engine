@@ -150,6 +150,7 @@ public class MCostDetail extends X_M_CostDetail
 		.setOrderBy(MCostDetail.COLUMNNAME_Created+ " DESC")		
 		.first();
 	}
+	
 	/**
 	 * Detect if Cost Detail delayed entry
 	 * @param cd
@@ -238,8 +239,110 @@ public class MCostDetail extends X_M_CostDetail
 				docLine.get_ID())
 		.list();
 	}
-
 	
+	/**
+	 * Get a list of the Cost Detail After the Accounting Date 
+	 * @param cd Cost Detail
+	 * @param costingLevel Costing Level
+	 * @return MCostDetail List
+	 */
+	public static List<MCostDetail> getAfterDate (MCostDetail cd, String costingLevel)
+	{
+		ArrayList<Object> params = new ArrayList();
+		final StringBuffer whereClause = new StringBuffer(MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND ");
+		params.add(cd.getC_AcctSchema_ID());
+		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ");		
+		params.add(cd.getM_Product_ID());
+		
+		if(MAcctSchema.COSTINGLEVEL_Organization.equals(costingLevel))
+		{	
+		whereClause.append(MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND ");
+		params.add(cd.getAD_Org_ID());
+		}
+		if(MAcctSchema.COSTINGLEVEL_BatchLot.equals(costingLevel))
+		{
+			whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND ");
+			params.add(cd.getM_AttributeSetInstance_ID());
+		}
+		
+		whereClause.append( MCostDetail.COLUMNNAME_M_CostType_ID+"=? AND ");
+		params.add(cd.getM_CostType_ID());
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ");
+		params.add(cd.getM_CostElement_ID());
+		whereClause.append(MCostDetail.COLUMNNAME_DateAcct+ ">? AND ");
+		params.add(cd.getDateAcct());
+		whereClause.append(MCostDetail.COLUMNNAME_Processing + "=? AND ");
+		params.add(false);
+		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + "=?");
+		params.add(false);
+		;
+		return  new Query(cd.getCtx(), Table_Name, whereClause.toString(), cd.get_TrxName())
+		.setClient_ID()
+		.setParameters(params)
+		.setOrderBy(COLUMNNAME_DateAcct)
+		.list();
+	}
+	
+	/**
+	 * Get a list the Cost Detail After the Cost Adjustment Date
+	 * @param cd Cost Detail
+	 * @return Cost Detail List
+	 */
+	public static List<MCostDetail> getAfterAndIncludeCostAdjustmentDate (MCostDetail cd)
+	{
+		final String whereClause = 
+	
+		MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
+		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">=? AND "
+		+ MCostDetail.COLUMNNAME_IsReversal + "=?";
+		;
+		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
+		.setClient_ID()
+		.setParameters(
+				cd.getM_Product_ID(), 
+				cd.getM_CostElement_ID(),
+				cd.getCostingMethod(), 
+				cd.get_ID(), 
+				false)
+		.setOrderBy(COLUMNNAME_M_CostDetail_ID)
+		.list();
+	}
+	
+	/**
+	 * Get a list MCostDetail after the Accounting Date
+	 * @param cd Cost Detail
+	 * @return MCostDetail List
+	 */
+	public static List<MCostDetail> getAfterDateAcct (MCostDetail cd)
+	{
+		final String whereClause = 
+			//MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
+		MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
+		//+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostType_ID+ "=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
+	    + MCostDetail.COLUMNNAME_DateAcct+ ">=? AND "
+		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ "<? AND"
+		+ MCostDetail.COLUMNNAME_Processing + "=? AND "
+		+ MCostDetail.COLUMNNAME_IsReversal + "=?";
+		;
+		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
+		.setClient_ID()
+		.setParameters(new Object[]{
+				//cd.getAD_Org_ID(), 
+				cd.getM_Product_ID(), 
+				//cd.getM_AttributeSetInstance_ID(),
+				cd.getM_CostType_ID(),
+				cd.getM_CostElement_ID(),			
+				cd.getDateAcct(), 
+				cd.get_ID(),
+				false,
+				false})
+		.setOrderBy(COLUMNNAME_M_CostDetail_ID+ " DESC")
+		.list();
+	}
 	/**
 	 * 	Create New Order Cost Detail for Production.
 	 * 	Called from Doc_Production
@@ -336,120 +439,7 @@ public class MCostDetail extends X_M_CostDetail
 		return retValue;
 	}	//	get
 	
-	public static List<MCostDetail> getAfterCostAdjustmentDate (MCostDetail cd)
-	{
-		final String whereClause = MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
-		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">? AND "
-		+ MCostDetail.COLUMNNAME_IsReversal + "=?";
-		;
-		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
-		.setClient_ID()
-		.setParameters(
-				cd.getAD_Org_ID(), 
-				cd.getM_Product_ID(), 
-				cd.getM_AttributeSetInstance_ID(),
-				cd.getM_CostElement_ID(), 
-				cd.getCostingMethod(), 
-				cd.get_ID(), 
-				false)
-		.setOrderBy(COLUMNNAME_M_CostDetail_ID)
-		.list();
-	}
 	
-	public static List<MCostDetail> getAfterDate (MCostDetail cd, String costingLevel)
-	{
-		ArrayList<Object> params = new ArrayList();
-		final StringBuffer whereClause = new StringBuffer(MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND ");
-		params.add(cd.getC_AcctSchema_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ");		
-		params.add(cd.getM_Product_ID());
-		
-		if(MAcctSchema.COSTINGLEVEL_Organization.equals(costingLevel))
-		{	
-		whereClause.append(MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND ");
-		params.add(cd.getAD_Org_ID());
-		}
-		if(MAcctSchema.COSTINGLEVEL_BatchLot.equals(costingLevel))
-		{
-			whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND ");
-			params.add(cd.getM_AttributeSetInstance_ID());
-		}
-		
-		whereClause.append( MCostDetail.COLUMNNAME_M_CostType_ID+"=? AND ");
-		params.add(cd.getM_CostType_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ");
-		params.add(cd.getM_CostElement_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_DateAcct+ ">? AND ");
-		params.add(cd.getDateAcct());
-		whereClause.append(MCostDetail.COLUMNNAME_Processing + "=? AND ");
-		params.add(false);
-		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + "=?");
-		params.add(false);
-		;
-		return  new Query(cd.getCtx(), Table_Name, whereClause.toString(), cd.get_TrxName())
-		.setClient_ID()
-		.setParameters(params)
-		.setOrderBy(COLUMNNAME_DateAcct)
-		.list();
-	}
-	
-	public static List<MCostDetail> getAfterAndIncludeCostAdjustmentDate (MCostDetail cd)
-	{
-		final String whereClause = 
-		//MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
-		MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
-		//+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
-		+ MCostDetail.COLUMNNAME_CostingMethod+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ ">=? AND "
-		+ MCostDetail.COLUMNNAME_IsReversal + "=?";
-		;
-		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
-		.setClient_ID()
-		.setParameters(
-				//cd.getAD_Org_ID(), 
-				cd.getM_Product_ID(), 
-				//cd.getM_AttributeSetInstance_ID(),
-				cd.getM_CostElement_ID(),
-				cd.getCostingMethod(), 
-				cd.get_ID(), 
-				false)
-		.setOrderBy(COLUMNNAME_M_CostDetail_ID)
-		.list();
-	}
-	
-	public static List<MCostDetail> getAfterDateAcct (MCostDetail cd)
-	{
-		final String whereClause = 
-			//MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
-		MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
-		//+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_CostType_ID+ "=? AND "
-		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
-	    + MCostDetail.COLUMNNAME_DateAcct+ ">=? AND "
-		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ "<? AND"
-		+ MCostDetail.COLUMNNAME_Processing + "=? AND "
-		+ MCostDetail.COLUMNNAME_IsReversal + "=?";
-		;
-		return  new Query(cd.getCtx(), Table_Name, whereClause, cd.get_TrxName())
-		.setClient_ID()
-		.setParameters(new Object[]{
-				//cd.getAD_Org_ID(), 
-				cd.getM_Product_ID(), 
-				//cd.getM_AttributeSetInstance_ID(),
-				cd.getM_CostType_ID(),
-				cd.getM_CostElement_ID(),			
-				cd.getDateAcct(), 
-				cd.get_ID(),
-				false,
-				false})
-		.setOrderBy(COLUMNNAME_M_CostDetail_ID+ " DESC")
-		.list();
-	}
 
 	/**
 	 * 	Process Cost Details for product
@@ -1026,7 +1016,7 @@ public class MCostDetail extends X_M_CostDetail
 			{
 				boolean addition = qty.signum() > 0;
 				//
-				if (ce.isAverageInvoice())
+				if (ce.isgeInvoice())
 				{
 					if (addition)
 						cost.setWeightedAverage(amt, qty);
@@ -1236,6 +1226,9 @@ public class MCostDetail extends X_M_CostDetail
 		return ok;
 	}	//	createReceipt
 */
+	/**
+	 * Set Date Acct using the source document
+	 */
 	private void setDateAcct(boolean force)
 	{
 		Timestamp dateAcct = getDateAcct();
@@ -1291,15 +1284,14 @@ public class MCostDetail extends X_M_CostDetail
 		dateAcct = DB.getSQLValueTSEx(get_TrxName(), sql, param1);
 		setDateAcct(dateAcct);
 	}
-
+	
+	/**
+	 * Restore the Posting to that document can be posting again
+	 */
 	private void rePosted()
 	{		
 		if (getC_InvoiceLine_ID() > 0)
 		{
-			/*int id = DB.getSQLValue(get_TrxName(), "SELECT C_Invoice_ID FROM C_InvoiceLine WHERE C_InvoiceLine_ID=?", getC_InvoiceLine_ID());
-			DB.executeUpdate("UPDATE C_Invoice SET Posted='N', Processed='N', ProcessedOn=null WHERE C_Invoice_ID=?", id, get_TrxName());
-			DB.executeUpdate("UPDATE C_InvoiceLine SET Processed='N', WHERE C_Invoice_ID=?", id, get_TrxName());
-			MFactAcct.deleteEx (MInvoice.Table_ID, id, get_TrxName());*/
 			int id = DB.getSQLValue(get_TrxName(), "SELECT M_MatchInv_ID FROM M_MatchInv WHERE C_InvoiceLine_ID=?", getC_InvoiceLine_ID());
 			if(id > 0)
 			{	
@@ -1369,36 +1361,6 @@ public class MCostDetail extends X_M_CostDetail
 	{
 		// TODO: load automatically m_cost if is not set
 		return m_cost;
-	}
-	
-	
-	public BigDecimal getNewCurrentCostPrice(int scale, int roundingMode)
-	{
-		if(getNewCumulatedQty().signum() != 0)
-			return getNewCumulatedAmt().divide(getNewCumulatedQty(), scale , roundingMode);
-		else return BigDecimal.ZERO;
-	}
-	
-	public BigDecimal getNewCumulatedAmt()
-	{
-		return getCumulatedAmt().add(getCostAmt()).add(getCostAdjustment());
-	}
-	
-	public BigDecimal getNewCurrentCostPriceLL(int scale, int roundingMode)
-	{
-		if(getNewCumulatedQty().signum() != 0)
-			return getNewCumulatedAmtLL().divide(getNewCumulatedQty(), scale , roundingMode);
-		else return BigDecimal.ZERO;
-	}
-	
-	public BigDecimal getNewCumulatedAmtLL()
-	{
-		return getCumulatedAmtLL().add(getCostAmtLL()).add(getCostAdjustmentLL());
-	}
-	
-	public BigDecimal getNewCumulatedQty()
-	{
-		return getCumulatedQty().add(getQty());
 	}
 	
 }	//	MCostDetail

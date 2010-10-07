@@ -25,6 +25,7 @@ import org.compiere.util.Util;
 
 /**
  * @author anca_bradau
+ * @param <abtract>
  *
  */
 public abstract class AbstractCostingMethod implements ICostingMethod
@@ -161,10 +162,10 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			m_costdetail.setCostAmt(original_cd.getCostAmt().negate());
 			m_costdetail.setCostAdjustment(original_cd.getCostAdjustment().negate());
 			m_costdetail.setCostAdjustmentDate(original_cd.getCostAdjustmentDate());
-			m_costdetail.setCumulatedQty(original_cd.getNewCumulatedQty());
-			m_costdetail.setCumulatedAmt(original_cd.getNewCumulatedAmt());	
-			m_costdetail.setCumulatedAmtLL(original_cd.getNewCumulatedAmtLL());	
-			m_costdetail.setCurrentCostPrice(original_cd.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
+			m_costdetail.setCumulatedQty(getNewCumulatedQty(original_cd));
+			m_costdetail.setCumulatedAmt(getNewCumulatedAmt(original_cd));	
+			m_costdetail.setCumulatedAmtLL(getNewCumulatedAmtLL(original_cd));	
+			m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
 			m_costdetail.setDateAcct(original_cd.getDateAcct());
 			if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 				throw new AdempiereException("Cannot set "+idColumnName);
@@ -179,11 +180,54 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			original_cd.saveEx(m_trx.get_TrxName());
 			
 			//Update the new cost detail
-			m_CumulatedQty = m_costdetail.getNewCumulatedQty();
-			m_CumulatedAmt = m_costdetail.getNewCumulatedAmt();
-			m_CumulatedAmtLL = m_costdetail.getNewCumulatedAmtLL();
-			m_CurrentCostPrice = m_costdetail.getNewCurrentCostPrice(m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			m_CumulatedQty = getNewCumulatedQty(m_costdetail);
+			m_CumulatedAmt = getNewCumulatedAmt(m_costdetail);
+			m_CumulatedAmtLL = getNewCumulatedAmtLL(m_costdetail);
+			m_CurrentCostPrice = getNewCurrentCostPrice(m_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			return m_costdetail;
 	}
 	
+	/**
+	 * Method to implement the costing method 
+	 * Get the New Current Cost Price This Level
+	 * @param cd Cost Detail
+	 * @param scale Scale
+	 * @param roundingMode Rounding Mode
+	 * @return New Current Cost Price This Level
+	 */
+	abstract public BigDecimal getNewCurrentCostPrice(MCostDetail cd,int scale, int roundingMode);
+	
+	/**
+	 * Method to implement the costing method 
+	 * Get the New Cumulated Amt This Level
+	 * @param cd Cost Detail
+	 * @return  New Cumulated Amt This Level
+	 */
+	abstract public BigDecimal getNewCumulatedAmt(MCostDetail cd);
+	
+	/**
+	 * Method to implement the costing method 
+	 * Get the New Current Cost Price low level
+	 * @param cd Cost Detail
+	 * @param scale Scale
+	 * @param roundingMode Rounding Mode
+	 * @return New Current Cost Price low level
+	 */
+	abstract public BigDecimal getNewCurrentCostPriceLL(MCostDetail cd,int scale, int roundingMode);
+	
+	/**
+	 * Method to implement the costing method 
+	 * Get the new Cumulated Amt Low Level
+	 * @param cd MCostDetail
+	 * @return New Cumulated Am Low Level
+	 */
+	abstract public BigDecimal getNewCumulatedAmtLL(MCostDetail cd);
+	
+	/**
+	 * Method to implement the costing method 
+	 * Get the new Cumulated Qty
+	 * @param cd Cost Detail
+	 * @return New Cumulated Qty
+	 */
+	abstract public BigDecimal getNewCumulatedQty(MCostDetail cd);
 }
