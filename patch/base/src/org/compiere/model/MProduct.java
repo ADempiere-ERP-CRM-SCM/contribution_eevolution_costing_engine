@@ -932,8 +932,8 @@ public class MProduct extends X_M_Product
 	 * Get Product Costing Method
 	 * @param C_AcctSchema_ID accounting schema ID
 	 * @return product costing method
+	 * @deprecated
 	 */
-	/*
 	public String getCostingMethod(MAcctSchema as)
 	{
 		MProductCategoryAcct pca = MProductCategoryAcct.get(getCtx(), getM_Product_Category_ID(), as.get_ID(), get_TrxName());
@@ -943,7 +943,7 @@ public class MProduct extends X_M_Product
 			costingMethod = as.getCostingMethod();
 		}
 		return costingMethod;
-	}*/
+	}
 	
 	/**
 	 * Get Product Costing Method

@@ -369,32 +369,19 @@ public class CostEngine
 				throw new IllegalArgumentException("No Costing Method");
 			}
 		}
-		 		
-		
-		String whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_C_AcctSchema_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_Product_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_CostElement_ID + "=? AND "
-								 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=?";
-
-		MCost cost = new Query(ct.getCtx(), I_M_Cost.Table_Name, whereClause, ct.get_TrxName())
-		.setClient_ID()
-		.setParameters(AD_Org_ID, 
-		as.getC_AcctSchema_ID(), 
-		M_Product_ID, 
-		M_AttributeSetInstance_ID, 
-		ce.getM_CostElement_ID(), 
-		ct.getM_CostType_ID())	
-		.first();
-		if(cost == null)
-		{	
-			cost = new MCost(product, M_AttributeSetInstance_ID, as , AD_Org_ID , ce.getM_CostElement_ID() , ct);
-			cost.saveEx();
-		}	
+		//Get or Create MCost
+		MCost cost = MCost.getOrCreate(product, M_AttributeSetInstance_ID, as, AD_Org_ID, ct.getM_CostType_ID(), ce.getM_CostElement_ID(), ct.get_TrxName());
 		return cost;
 	}
 
+	/**
+	 * Get create Cost Detail
+	 * @param model IDocumentLine
+	 * @param as Account Schema
+	 * @param cc Cost Component
+	 * @param isSOTrx Is SO Trx
+	 * @param setProcessed Processed
+	 */
 	public void createCostDetail (IDocumentLine model ,
 			MAcctSchema as, CostComponent cc,
 			Boolean isSOTrx, boolean setProcessed)

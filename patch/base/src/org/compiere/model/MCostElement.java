@@ -17,6 +17,7 @@
 package org.compiere.model;
 
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -44,6 +45,37 @@ public class MCostElement extends X_M_CostElement
 	 */
 	private static final long serialVersionUID = 6377348444778545116L;
 
+	/**
+	 * get or create Cost Element 
+	 * @param po Persistence Object
+	 * @return get Cost Element
+	 */
+	public static List<MCostElement> getDefaultElements (PO po)
+	{
+		//
+		final String whereClause = "IsDefault=?";
+		List<MCostElement> elements = new Query(po.getCtx(), Table_Name, whereClause, po.get_TrxName())
+			.setParameters(true)
+			.setClient_ID()
+			.setOnlyActiveRecords(true)
+			.setOrderBy("AD_Org_ID DESC")
+			.list();
+		
+		if (elements != null && elements.size() > 0 )
+			return elements;
+		
+		//	Create New
+		MCostElement costElement = MCostElement.getByMaterialCostElementType (po);
+		costElement.setIsDefault(true);
+		costElement.saveEx();
+		
+		elements = new ArrayList();
+		elements.add(costElement);
+		//
+		return elements;
+    }	//	getMaterialCostElement  
+	
+	
     /**
      * Get Cost Element    
      * @param po Persistence Object
@@ -57,7 +89,7 @@ public class MCostElement extends X_M_CostElement
 			.setParameters(COSTELEMENTTYPE_Material)
 			.setClient_ID()
 			.setOnlyActiveRecords(true)
-			.setOrderBy("AD_Org_ID DESC")
+			.setOrderBy("M_CostElement_ID , AD_Org_ID DESC")
 			.first();
 		if (retValue != null)
 			return retValue;
@@ -65,6 +97,7 @@ public class MCostElement extends X_M_CostElement
 		//	Create New
 		retValue = new MCostElement (po.getCtx(), 0, po.get_TrxName());
 		retValue.setClientOrg(po.getAD_Client_ID(), 0);
+		retValue.setName("Material");
 		retValue.setCostElementType(COSTELEMENTTYPE_Material);
 		retValue.saveEx();
 		

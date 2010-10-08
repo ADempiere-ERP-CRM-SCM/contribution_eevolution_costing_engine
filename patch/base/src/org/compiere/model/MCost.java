@@ -52,36 +52,248 @@ import org.compiere.util.Trx;
  *  @author Teo Sarca
  *  	<li>BF [ 2847648 ] Manufacture & shipment cost errors
  *  		https://sourceforge.net/tracker/?func=detail&aid=2847648&group_id=176962&atid=934929
- *  @author victor.perez@e-evolution.com, www.e-evolution.com
  */
 public class MCost extends X_M_Cost
 {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -127982599769472918L;
+    	/**
+         * 
+         */
+        private static final long serialVersionUID = -127982599769472918L;
 
+    	/**
+    	 * Get MCost (Cost Dimension) for this Product 
+    	 * @param as Account Schema
+    	 * @param model Document Line Model
+    	 * @return Cost Dimension List for this product
+    	 */
+    	public static List<MCost> getForProduct(MAcctSchema as, IDocumentLine model)
+    	{
+    		int AD_Org_ID = 0;
+    		int M_AttributeSetInstance_ID = 0;
+    		String CostingLevel = MProduct.get(as.getCtx(), model.getM_Product_ID()).getCostingLevel(as,model.getAD_Org_ID());
+    		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
+    		{
+    			AD_Org_ID = 0;
+    			M_AttributeSetInstance_ID = 0;
+    		}
+    		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+    		{	
+    			AD_Org_ID = model.getAD_Org_ID();
+    			M_AttributeSetInstance_ID = 0;
+    		}	
+    		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
+    		{	
+    			AD_Org_ID = model.getAD_Org_ID();
+    			M_AttributeSetInstance_ID = model.getM_AttributeSetInstance_ID();
+    		}
+    		
+    		final String whereClause = "M_Product_ID=?  AND AD_Org_ID=? AND M_AttributeSetInstance_ID=?" ;
+    		
+    		return new Query(as.getCtx(), Table_Name, whereClause, model.get_TrxName())
+    			.setParameters(model.getM_Product_ID(), AD_Org_ID, M_AttributeSetInstance_ID)
+    			.setClient_ID()
+    			.setOrderBy("AD_Client_ID, AD_Org_ID, M_AttributeSetInstance_ID")
+    			.list();
+    	}   
 
+    	/**
+    	 * get CostComponets
+    	 * @param product
+    	 * @param M_ASI_ID
+    	 * @param as
+    	 * @param Org_ID
+    	 * @param M_CostType_ID
+    	 * @param costingMethod
+    	 * @param qty
+    	 * @param C_OrderLine_ID
+    	 * @param zeroCostsOK
+    	 * @param trxName
+    	 * @param cost
+    	 * @return get List Cost Component
+    	 */
+    	private static List<CostComponent> getCurrentCostLayers (MProduct product, int M_ASI_ID, 
+    			MAcctSchema as, int Org_ID, int M_CostType_ID,  
+    			String costingMethod, BigDecimal qty, int C_OrderLine_ID, 
+    			boolean zeroCostsOK, String trxName, MCost cost)
+    	{
+    		List<CostComponent> list = new ArrayList<CostComponent>();
+    		BigDecimal currentCostPrice = null;
+    		BigDecimal currentCostPriceLL = null;
+    		String costElementType = null;
+    		//int M_CostElement_ID = 0;
+    		BigDecimal percent = null;
+    		//
+    		BigDecimal materialCostEach = Env.ZERO;
+    		BigDecimal otherCostEach = Env.ZERO;
+    		BigDecimal percentage = Env.ZERO;
+    		int count = 0;
+    		//
+    		String sql = "SELECT SUM(c.CurrentCostPrice), ce.CostElementType, c.CostingMethod,"
+    			+ " c.Percent, c.M_CostElement_ID , SUM(c.CurrentCostPriceLL) "					//	4..5
+    			+ "FROM M_Cost c"
+    			+ " LEFT OUTER JOIN M_CostElement ce ON (c.M_CostElement_ID=ce.M_CostElement_ID) "
+    			+ "WHERE c.AD_Client_ID=? AND c.AD_Org_ID=?"		//	#1/2
+    			+ " AND c.M_Product_ID=?"							//	#3
+    			+ " AND (c.M_AttributeSetInstance_ID=? OR c.M_AttributeSetInstance_ID=0)"	//	#4
+    			+ " AND c.M_CostType_ID=? AND c.C_AcctSchema_ID=?"	//	#5/6
+//    			+ " AND (ce.CostingMethod IS NULL OR ce.CostingMethod=?) "	//	#7
+    			+ " AND c.CostingMethod=? "	//	#7
+    			+ "GROUP BY ce.CostElementType, c.CostingMethod, c.Percent, c.M_CostElement_ID";
+    		PreparedStatement pstmt = null;
+    		ResultSet rs = null;
+    		try
+    		{
+    			pstmt = DB.prepareStatement (sql, trxName);
+    			pstmt.setInt (1, product.getAD_Client_ID());
+    			pstmt.setInt (2, Org_ID);
+    			pstmt.setInt (3, product.getM_Product_ID());
+    			pstmt.setInt (4, M_ASI_ID);
+    			pstmt.setInt (5, M_CostType_ID);
+    			pstmt.setInt (6, as.getC_AcctSchema_ID());
+    			pstmt.setString (7, costingMethod);
+    			rs = pstmt.executeQuery ();
+    			while (rs.next ())
+    			{
+    				currentCostPrice = rs.getBigDecimal(1);
+    				currentCostPriceLL = rs.getBigDecimal(6);
+    				costElementType = rs.getString(2);
+    				String cm = rs.getString(3);
+    				percent = rs.getBigDecimal(4);
+    				//	M_CostElement_ID = rs.getInt(5);
+    				s_log.finest("CurrentCostPrice=" + currentCostPrice 
+    						+ ", CostElementType=" + costElementType
+    						+ ", CostingMethod=" + cm
+    						+ ", Percent=" + percent);
+    				//
+    				if (currentCostPrice != null && currentCostPrice.signum() != 0)
+    				{
+    					if (cm != null)
+    					{	
+    						materialCostEach = materialCostEach.add(currentCostPrice).add(currentCostPriceLL);
+    					}	
+    					else
+    						otherCostEach = otherCostEach.add(currentCostPrice).add(currentCostPriceLL);
+    				}
+    				if (percent != null && percent.signum() != 0)
+    					percentage = percentage.add(percent);
+    				count++;
+    			}
+    		}
+    		catch (SQLException e)
+    		{
+    			throw new DBException(e, sql);
+    		}
+    		finally
+    		{
+    			DB.close(rs, pstmt);
+    			rs = null; pstmt = null;
+    		}
+
+    		if (count > 1)	//	Print summary
+    			s_log.finest("MaterialCost=" + materialCostEach 
+    					+ ", OtherCosts=" + otherCostEach
+    					+ ", Percentage=" + percentage);
+
+    		//	Seed Initial Costs
+    		if (materialCostEach.signum() == 0)		//	no costs
+    		{
+    			if (zeroCostsOK)
+    				return new ArrayList<CostComponent>();
+    			materialCostEach = getSeedCosts(product, M_ASI_ID,
+    					as, Org_ID, costingMethod, C_OrderLine_ID);
+    		}
+    		if (materialCostEach == null)
+    			return null;
+    		list.add(new CostComponent(qty, materialCostEach));
+    		list.add(new CostComponent(qty, otherCostEach));
+
+    		//	Standard costs - just Material Costs
+    		if (MCostElement.COSTINGMETHOD_StandardCosting.equals(costingMethod))
+    		{
+    			return list;
+    		}
+    		if (MCostElement.COSTINGMETHOD_Fifo.equals(costingMethod)
+    				|| MCostElement.COSTINGMETHOD_Lifo.equals(costingMethod))
+    		{
+    			list = MCostQueue.getCostLayers(cost, qty, null, trxName);
+    		}
+    		//
+    		for (CostComponent cc : list)
+    		{
+    			cc.setScale(as.getCostingPrecision());
+    			cc.setPercent(percentage);
+    		}
+    		return list;
+    	}
+    	
+    	/**
+    	 * get Cost Component
+    	 * @param cost
+    	 * @param qty
+    	 * @param C_OrderLine_ID
+    	 * @param zeroCostsOK
+    	 * @param trxName
+    	 * @return get list Cost Component
+    	 */
+    	public static List<CostComponent> getCurrentCostLayers (MCost cost, 
+    			BigDecimal qty, int C_OrderLine_ID,
+    			boolean zeroCostsOK, String trxName)
+    	{
+    		MProduct product = MProduct.get(cost.getCtx(), cost.getM_Product_ID());
+    		MAcctSchema as = MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID());
+    		int AD_Org_ID = cost.getAD_Org_ID();
+    		int M_AttributeSetInstance_ID = cost.getM_AttributeSetInstance_ID();
+    		String costingMethod = cost.getCostingMethod(); 
+    		
+    		String CostingLevel = product.getCostingLevel(as,product.getAD_Org_ID());
+    		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
+    		{
+    			AD_Org_ID = 0;
+    			M_AttributeSetInstance_ID = 0;
+    		}
+    		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+    			M_AttributeSetInstance_ID = 0;
+    		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
+    			AD_Org_ID = 0;
+    		//	Costing Method
+    		if (costingMethod == null)
+    		{
+    			costingMethod = product.getCostingMethod(as, AD_Org_ID);
+    			if (costingMethod == null)
+    			{
+    				throw new IllegalArgumentException("No Costing Method");
+    			}
+    		}
+
+    		//	Create/Update Costs
+    	//	MCostDetail.processProduct (product, trxName);
+
+    		return getCurrentCostLayers (
+    				product, M_AttributeSetInstance_ID, 
+    				as, AD_Org_ID, as.getM_CostType_ID(), costingMethod, qty, 
+    				C_OrderLine_ID, zeroCostsOK, trxName, cost);
+    	}
 	/**
 	 * 	Retrieve/Calculate Current Cost Price
 	 *	@param product product
 	 *	@param M_AttributeSetInstance_ID real asi
-	 *	@param as accounting schema	
-	 *	@param AD_Org_ID real org																													
+	 *	@param as accounting schema
+	 *	@param AD_Org_ID real org
 	 *	@param costingMethod AcctSchema.COSTINGMETHOD_*
 	 *	@param qty qty
 	 *	@param C_OrderLine_ID optional order line
 	 *	@param zeroCostsOK zero/no costs are OK
 	 *	@param trxName trx
 	 *	@return current cost price or null
+	 *	@deprecated
 	 */
 	public static BigDecimal getCurrentCost (MProduct product,
 		int M_AttributeSetInstance_ID,
-		MAcctSchema as, int AD_Org_ID, String costingMethod, 
+		MAcctSchema as, int AD_Org_ID, String costingMethod,
 		BigDecimal qty, int C_OrderLine_ID,
 		boolean zeroCostsOK, String trxName)
 	{
-		String CostingLevel = product.getCostingLevel(as, AD_Org_ID);
+		String CostingLevel = product.getCostingLevel(as);
 		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 		{
 			AD_Org_ID = 0;
@@ -94,22 +306,22 @@ public class MCost extends X_M_Cost
 		//	Costing Method
 		if (costingMethod == null)
 		{
-			costingMethod = product.getCostingMethod(as, AD_Org_ID);
+			costingMethod = product.getCostingMethod(as);
 			if (costingMethod == null)
 			{
 				throw new IllegalArgumentException("No Costing Method");
 			}
 		}
-		
+
 		//	Create/Update Costs
 		MCostDetail.processProduct (product, trxName);
-		
+
 		return getCurrentCost (
-			product, M_AttributeSetInstance_ID, 
-			as, AD_Org_ID, as.getM_CostType_ID(), costingMethod, qty, 
-			C_OrderLine_ID, zeroCostsOK, trxName, null);
+			product, M_AttributeSetInstance_ID,
+			as, AD_Org_ID, as.getM_CostType_ID(), costingMethod, qty,
+			C_OrderLine_ID, zeroCostsOK, trxName);
 	}	//	getCurrentCost
-	
+
 	/**
 	 * 	Get Current Cost Price for Costing Level
 	 *	@param product product
@@ -123,16 +335,14 @@ public class MCost extends X_M_Cost
 	 *	@param zeroCostsOK zero/no costs are OK
 	 *	@param trxName trx
 	 *	@return cost price or null
+	 *	@deprecated
 	 */
-	private static BigDecimal getCurrentCost (MProduct product, int M_ASI_ID, 
-		MAcctSchema as, int Org_ID, int M_CostType_ID,  
-		String costingMethod, BigDecimal qty, int C_OrderLine_ID, 
-		boolean zeroCostsOK, String trxName, MCost cost)
+	private static BigDecimal getCurrentCost (MProduct product, int M_ASI_ID,
+		MAcctSchema as, int Org_ID, int M_CostType_ID,
+		String costingMethod, BigDecimal qty, int C_OrderLine_ID,
+		boolean zeroCostsOK, String trxName)
 	{
-		BigDecimal currentCostPrice = null;
-		BigDecimal currentCostPriceLL = null;
 		String costElementType = null;
-		//int M_CostElement_ID = 0;
 		BigDecimal percent = null;
 		//
 		BigDecimal materialCostEach = Env.ZERO;
@@ -140,9 +350,12 @@ public class MCost extends X_M_Cost
 		BigDecimal percentage = Env.ZERO;
 		int count = 0;
 		//
-		String sql = "SELECT SUM(c.CurrentCostPrice), ce.CostElementType, ce.CostingMethod,"
-			+ " c.Percent, c.M_CostElement_ID , SUM(c.CurrentCostPriceLL) "					//	4..5
-			+ "FROM M_Cost c"
+		String sql = "SELECT"
+			+ " COALESCE(SUM(c.CurrentCostPrice),0),"		// 1
+			+ " ce.CostElementType, ce.CostingMethod,"		// 2,3
+			+ " c.Percent, c.M_CostElement_ID ,"			// 4,5
+			+ " COALESCE(SUM(c.CurrentCostPriceLL),0) "		// 6
+			+ " FROM M_Cost c"
 			+ " LEFT OUTER JOIN M_CostElement ce ON (c.M_CostElement_ID=ce.M_CostElement_ID) "
 			+ "WHERE c.AD_Client_ID=? AND c.AD_Org_ID=?"		//	#1/2
 			+ " AND c.M_Product_ID=?"							//	#3
@@ -165,25 +378,28 @@ public class MCost extends X_M_Cost
 			rs = pstmt.executeQuery ();
 			while (rs.next ())
 			{
-				currentCostPrice = rs.getBigDecimal(1);
-				currentCostPriceLL = rs.getBigDecimal(6);
+				BigDecimal currentCostPrice = rs.getBigDecimal(1);
+				BigDecimal currentCostPriceLL = rs.getBigDecimal(6);
 				costElementType = rs.getString(2);
 				String cm = rs.getString(3);
 				percent = rs.getBigDecimal(4);
-			//	M_CostElement_ID = rs.getInt(5);
-				s_log.finest("CurrentCostPrice=" + currentCostPrice 
+				//M_CostElement_ID = rs.getInt(5);
+				s_log.finest("CurrentCostPrice=" + currentCostPrice
+					+ ", CurrentCostPriceLL=" + currentCostPriceLL
 					+ ", CostElementType=" + costElementType
 					+ ", CostingMethod=" + cm
 					+ ", Percent=" + percent);
 				//
-				if (currentCostPrice != null && currentCostPrice.signum() != 0)
+				if (currentCostPrice.signum() != 0 || currentCostPriceLL.signum() != 0)
 				{
 					if (cm != null)
-					{	
+					{
 						materialCostEach = materialCostEach.add(currentCostPrice).add(currentCostPriceLL);
-					}	
+					}
 					else
+					{
 						otherCostEach = otherCostEach.add(currentCostPrice).add(currentCostPriceLL);
+					}
 				}
 				if (percent != null && percent.signum() != 0)
 					percentage = percentage.add(percent);
@@ -199,12 +415,12 @@ public class MCost extends X_M_Cost
 			DB.close(rs, pstmt);
 			rs = null; pstmt = null;
 		}
-		
+
 		if (count > 1)	//	Print summary
-			s_log.finest("MaterialCost=" + materialCostEach 
+			s_log.finest("MaterialCost=" + materialCostEach
 				+ ", OtherCosts=" + otherCostEach
 				+ ", Percentage=" + percentage);
-		
+
 		//	Seed Initial Costs
 		if (materialCostEach.signum() == 0)		//	no costs
 		{
@@ -227,10 +443,11 @@ public class MCost extends X_M_Cost
 		if (MCostElement.COSTINGMETHOD_Fifo.equals(costingMethod)
 			|| MCostElement.COSTINGMETHOD_Lifo.equals(costingMethod))
 		{
-			MCostElement ce = MCostElement.getByMaterialCostElementType(as);
-			materialCost = MCostQueue.getCosts(cost, qty, null, trxName);
+			MCostElement ce = MCostElement.getMaterialCostElement(as, costingMethod);
+			materialCost = MCostQueue.getCosts(product, M_ASI_ID,
+				as, Org_ID, ce, qty, trxName);
 		}
-			
+
 		//	Other Costs
 		BigDecimal otherCost = otherCostEach.multiply(qty);
 
@@ -256,7 +473,7 @@ public class MCost extends X_M_Cost
 		s_log.finer("Sum Costs = " + costs + " (Add=" + percentCost + ")");
 		return costs;
 	}	//	getCurrentCost
-	
+
 	/**
 	 * 	Get Seed Costs
 	 *	@param product product
@@ -267,20 +484,6 @@ public class MCost extends X_M_Cost
 	 *	@param C_OrderLine_ID optional order line
 	 *	@return price or null
 	 */
-	
-	public static BigDecimal getSeedCosts (MCost cost)
-	{
-		return getSeedCosts(
-				MProduct.get(cost.getCtx(), cost.getM_Product_ID()),
-				cost.getM_AttributeSetInstance_ID(),
-				MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID()),
-				cost.getAD_Org_ID(),
-				cost.getCostingMethod(),
-				0 // C_OrderLine_ID
-		);
-	}
-	
-
 	public static BigDecimal getSeedCosts (MProduct product, int M_ASI_ID,
 		MAcctSchema as, int Org_ID, String costingMethod, int C_OrderLine_ID)
 	{
@@ -306,7 +509,7 @@ public class MCost extends X_M_Cost
 		else if (MCostElement.COSTINGMETHOD_StandardCosting.equals(costingMethod))
 		{
 			//	migrate old costs
-			MProductCosting pc = MProductCosting.get(product.getCtx(), product.getM_Product_ID(), 
+			MProductCosting pc = MProductCosting.get(product.getCtx(), product.getM_Product_ID(),
 				as.getC_AcctSchema_ID(), null);
 			if (pc != null)
 				retValue = pc.getCurrentCostPrice();
@@ -331,21 +534,30 @@ public class MCost extends X_M_Cost
 				return retValue;
 			}
 		}
-		
+
 		//	Look for Standard Costs first
 		if (!MCostElement.COSTINGMETHOD_StandardCosting.equals(costingMethod))
 		{
+			/*
+			MCostElement ce = MCostElement.getMaterialCostElement(as, MCostElement.COSTINGMETHOD_StandardCosting);
+			MCost cost = get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID());
+			if (cost != null && cost.getCurrentCostPrice().signum() != 0)
+			{
+				s_log.fine(product.getName() + ", Standard - " + cost);
+				return cost.getCurrentCostPrice();
+			}*/
+			
 			MCostElement ce = MCostElement.getByMaterialCostElementType(as);
 			List<MCostType> costtypes = MCostType.get(product.getCtx(), product.get_TrxName()); 
 			for (MCostType mc : costtypes)
 			{
-			MCost cost = get(product, M_ASI_ID, as, Org_ID, ce.getM_CostElement_ID(), mc);
-			if (cost != null && cost.getCurrentCostPrice().signum() != 0)
-			{
-				s_log.fine(product.getName() + ", Standard - " + retValue);
-				return cost.getCurrentCostPrice();
+				MCost cost = getOrCreate(product, M_ASI_ID, as, Org_ID, mc.getM_CostType_ID(), ce.getM_CostElement_ID(), product.get_TrxName());
+				if (cost != null && cost.getCurrentCostPrice().signum() != 0)
+				{
+					s_log.fine(product.getName() + ", Standard - " + retValue);
+					return cost.getCurrentCostPrice();
+				}
 			}
-		}
 		}
 
 		//	We do not have a price
@@ -376,7 +588,7 @@ public class MCost extends X_M_Cost
 				return retValue;
 			}
 		}
-		
+
 		//	Still Nothing
 		//	Inv second
 		if (MCostElement.COSTINGMETHOD_AveragePO.equals(costingMethod)
@@ -405,19 +617,27 @@ public class MCost extends X_M_Cost
 				return retValue;
 			}
 		}
-		
+
 		//	Still nothing try ProductPO
 		MProductPO[] pos = MProductPO.getOfProduct(product.getCtx(), product.getM_Product_ID(), null);
 		for (int i = 0; i < pos.length; i++)
 		{
 			BigDecimal price = pos[i].getPricePO();
 			if (price == null || price.signum() == 0)
-				price = pos[0].getPriceList();
+				price = pos[i].getPriceList();
 			if (price != null && price.signum() != 0)
 			{
-				price = MConversionRate.convert(product.getCtx(), price, 
-					pos[0].getC_Currency_ID(), as.getC_Currency_ID(), 
+				price = MConversionRate.convert(product.getCtx(), price,
+					pos[i].getC_Currency_ID(), as.getC_Currency_ID(),
 					as.getAD_Client_ID(), Org_ID);
+				if (price != null && price.signum() != 0)
+				{
+					if (pos[i].getC_UOM_ID() != product.getC_UOM_ID())
+					{
+						price = MUOMConversion.convertProductTo (Env.getCtx(), product.getM_Product_ID(),
+								pos[i].getC_UOM_ID(), price);
+					}
+				}
 				if (price != null && price.signum() != 0)
 				{
 					retValue = price;
@@ -426,15 +646,15 @@ public class MCost extends X_M_Cost
 				}
 			}
 		}
-		
+
 		//	Still nothing try Purchase Price List
 		//	....
-		
+
 		s_log.fine(product.getName() + " = " + retValue);
 		return retValue;
 	}	//	getSeedCosts
-	
-	
+
+
 	/**
 	 * 	Get Last Invoice Price in currency
 	 *	@param product product
@@ -443,7 +663,7 @@ public class MCost extends X_M_Cost
 	 *	@param C_Currency_ID accounting currency
 	 *	@return last invoice price in currency
 	 */
-	public static BigDecimal getLastInvoicePrice (MProduct product, 
+	public static BigDecimal getLastInvoicePrice (MProduct product,
 		int M_ASI_ID, int AD_Org_ID, int C_Currency_ID)
 	{
 		BigDecimal retValue = null;
@@ -490,7 +710,7 @@ public class MCost extends X_M_Cost
 		{
 			pstmt = null;
 		}
-		
+
 		if (retValue != null)
 		{
 			s_log.finer(product.getName() + " = " + retValue);
@@ -507,7 +727,7 @@ public class MCost extends X_M_Cost
 	 *	@param C_Currency_ID accounting currency
 	 *	@return last PO price in currency or null
 	 */
-	public static BigDecimal getLastPOPrice (MProduct product, 
+	public static BigDecimal getLastPOPrice (MProduct product,
 		int M_ASI_ID, int AD_Org_ID, int C_Currency_ID)
 	{
 		BigDecimal retValue = null;
@@ -553,7 +773,7 @@ public class MCost extends X_M_Cost
 			DB.close(rs, pstmt);
 			rs = null; pstmt = null;
 		}
-		
+
 		if (retValue != null)
 		{
 			s_log.finer(product.getName() + " = " + retValue);
@@ -605,7 +825,7 @@ public class MCost extends X_M_Cost
 			DB.close(rs, pstmt);
 			rs = null; pstmt = null;
 		}
-		
+
 		if (retValue != null)
 		{
 			s_log.finer(product.getName() + " = " + retValue);
@@ -613,15 +833,17 @@ public class MCost extends X_M_Cost
 		}
 		return null;
 	}	//	getPOPrice
-	
+
 	/**************************************************************************
 	 * 	Create costing for client.
 	 * 	Handles Transaction if not in a transaction
 	 *	@param client client
+	 *
 	 */
+	@Deprecated
 	public static void create (MClient client)
 	{
-		MAcctSchema[] ass = MAcctSchema.getClientAcctSchema(client.getCtx(), client.getAD_Client_ID()); 
+		MAcctSchema[] ass = MAcctSchema.getClientAcctSchema(client.getCtx(), client.getAD_Client_ID());
 		String trxName = client.get_TrxName();
 		String trxNameUsed = trxName;
 		Trx trx = null;
@@ -647,7 +869,7 @@ public class MCost extends X_M_Cost
 				MProduct product = new MProduct (client.getCtx(), rs, trxNameUsed);
 				for (int i = 0; i < ass.length; i++)
 				{
-					BigDecimal cost = getCurrentCost(product, 0, ass[i], 0, 
+					BigDecimal cost = getCurrentCost(product, 0, ass[i], 0,
 						null, Env.ONE, 0, false, trxNameUsed);		//	create non-zero costs
 					s_log.info(product.getName() + " = " + cost);
 				}
@@ -681,8 +903,8 @@ public class MCost extends X_M_Cost
 			trx.close();
 		}
 	}	//	create
-	
-	
+
+
 	/**
 	 * 	Create standard Costing records for Product
 	 *	@param product product
@@ -692,42 +914,35 @@ public class MCost extends X_M_Cost
 			s_log.config(product.getName());
 
 			//	Cost Elements
-			//List <MCostElement> ces = MCostElement.getCostElementsWithCostingMethods(product);
-			List <MCostElement> ces = MCostElement.getCostElement(product.getCtx(), product.get_TrxName());
-						
-			MAcctSchema[] mass = MAcctSchema.getClientAcctSchema(product.getCtx(), 
+			List <MCostElement> ces = MCostElement.getDefaultElements(product);
+
+			MAcctSchema[] mass = MAcctSchema.getClientAcctSchema(product.getCtx(),
 				product.getAD_Client_ID(), product.get_TrxName());
 			MOrg[] orgs = null;
-			
+
 			int M_ASI_ID = 0;		//	No Attribute
 			for (MAcctSchema as : mass)
 			{
-				String cl = product.getCostingLevel(as, product.getAD_Org_ID());
-				
+				String cl = product.getCostingLevel(as);
 				//	Create Std Costing
 				if (MAcctSchema.COSTINGLEVEL_Client.equals(cl))
-				{				
-					for(MCostElement ce : ces)
+				{
+					for (MCostType ct : MCostType.get(product.getCtx(), product.get_TrxName()))
 					{	
-						for (MCostType mc : MCostType.get(product.getCtx(), product.get_TrxName()))
+						for(MCostElement ce : ces)
 						{
-							if (ce.getName().equalsIgnoreCase(mc.getName())) //TODO dont use name!
-							{	
-							MCost cost = MCost.get (product, M_ASI_ID, 
-									as, 0, ce.getM_CostElement_ID(),mc,
-									 product.get_TrxName());
+							MCost cost = MCost.getOrCreate(product, M_ASI_ID,
+								as, 0, ct.getM_CostType_ID() ,ce.getM_CostElement_ID(), product.get_TrxName());
 							if (cost.is_new())
 							{
 								if (cost.save())
-									s_log.config("Std.Cost for " + product.getName() 
-											+ " - " + as.getName());
+									s_log.config("Std.Cost for " + product.getName()
+										+ " - " + as.getName());
 								else
-									s_log.warning("Not created: Std.Cost for " + product.getName() 
-											+ " - " + as.getName());
+									s_log.warning("Not created: Std.Cost for " + product.getName()
+										+ " - " + as.getName());
 							}
-							createLandedCosts(cost);
 						}
-					}
 					}	
 				}
 				else if (MAcctSchema.COSTINGLEVEL_Organization.equals(cl))
@@ -736,27 +951,22 @@ public class MCost extends X_M_Cost
 						orgs = MOrg.getOfClient(product);
 					for (MOrg o : orgs)
 					{
-						for(MCostElement ce : ces)
-						{	
-							for (MCostType mc : MCostType.get(product.getCtx(), product.get_TrxName()))
+						for (MCostType ct : MCostType.get(product.getCtx(), product.get_TrxName()))
+						{
+							for(MCostElement ce : ces)
 							{
-								if (ce.getName().equalsIgnoreCase(mc.getName())) //TODO dont use name!
-								{	
-									MCost cost = MCost.get (product, M_ASI_ID, 
-											as, o.getAD_Org_ID(), ce.getM_CostElement_ID(),mc,
-											 product.get_TrxName());
-									if (cost.is_new())
-									{
-										if (cost.save())
-											s_log.config("Std.Cost for " + product.getName()
-													+ " - " + o.getName()
-													+ " - " + as.getName());
-										else
-											s_log.warning("Not created: Std.Cost for " + product.getName() 
-													+ " - " + o.getName()
-													+ " - " + as.getName());
-									}
-									createLandedCosts(cost);
+								MCost cost = MCost.getOrCreate(product, M_ASI_ID,
+									as, o.getAD_Org_ID(), ct.getM_CostType_ID() , ce.getM_CostElement_ID(), product.get_TrxName());
+								if (cost.is_new())
+								{
+									if (cost.save())
+										s_log.config("Std.Cost for " + product.getName()
+											+ " - " + o.getName()
+											+ " - " + as.getName());
+									else
+										s_log.warning("Not created: Std.Cost for " + product.getName()
+											+ " - " + o.getName()
+											+ " - " + as.getName());
 								}
 							}
 						}	
@@ -764,36 +974,12 @@ public class MCost extends X_M_Cost
 				}
 				else
 				{
-					s_log.warning("Not created: Std.Cost for " + product.getName() 
+					s_log.warning("Not created: Std.Cost for " + product.getName()
 						+ " - Costing Level on Batch/Lot");
 				}
 			}	//	accounting schema loop
 	}	//	create
-	protected static void createLandedCosts (MCost cost)
-	{
-		MCostElement costCE =  MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
-		MAcctSchema as = MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID());
-		
-		for (MCostElement ce : MCostElement.getNonCostingMethods(cost))
-		{
-			MCost costnew = MCost.get ((MProduct) cost.getM_Product(), cost.getM_AttributeSetInstance_ID(), 
-					as, cost.getAD_Org_ID(), ce.getM_CostElement_ID(), (MCostType) cost.getM_CostType(), cost.get_TrxName());
-			//setCostingMethod(costCE.getCostingMethod());
-			if (costnew.is_new())
-			{
-				if (costnew.save())
-					s_log.config("Std.Cost for " + (MProduct) cost.getM_Product()
-							+ " - " + cost.getAD_Org_ID()//o.getName()
-							+ " - " + as.getName());
-				else
-					s_log.warning("Not created: Std.Cost for " + (MProduct) cost.getM_Product() 
-							+ " - " + cost.getAD_Org_ID()//o.getName()
-							+ " - " + as.getName());
-			}
-		}
-		
-	}
-	
+
 	/**
 	 * 	Delete standard Costing records for Product
 	 *	@param product product
@@ -803,30 +989,28 @@ public class MCost extends X_M_Cost
 		s_log.config(product.getName());
 		//	Cost Elements
 		List <MCostElement> ces = MCostElement.getCostElement(product.getCtx(), product.get_TrxName());
-		
-			MAcctSchema[] mass = MAcctSchema.getClientAcctSchema(product.getCtx(), 
+
+			MAcctSchema[] mass = MAcctSchema.getClientAcctSchema(product.getCtx(),
 				product.getAD_Client_ID(), product.get_TrxName());
 			MOrg[] orgs = null;
-			
+
 			int M_ASI_ID = 0;		//	No Attribute
 			for (MAcctSchema as : mass)
 			{
-				String cl = product.getCostingLevel(as,product.getAD_Org_ID());
+				String cl = product.getCostingLevel(as);
 				//	Create Std Costing
 				if (MAcctSchema.COSTINGLEVEL_Client.equals(cl))
 				{
-					for(MCostElement ce : ces)
-					{	
-						//get MCost for all MCostType added by anca
-						List<MCostType> costtypes = MCostType.get(product.getCtx(), product.get_TrxName()); 
-						for (MCostType mc : costtypes)
+					for (MCostType ct : MCostType.get(product.getCtx(), product.get_TrxName()))
+					{
+						for(MCostElement ce : ces)
 						{
-							MCost cost = MCost.get (product, M_ASI_ID, 
-									as, 0, ce.getM_CostElement_ID(), product.get_TrxName(),mc);
+							MCost cost = MCost.getOrCreate(product, M_ASI_ID,
+								as, 0, ct.getM_CostType_ID() , ce.getM_CostElement_ID(), product.get_TrxName());
 							if(cost != null)
-								cost.deleteEx(true);	
+							cost.deleteEx(true);
 						}
-					}
+					}	
 				}
 				else if (MAcctSchema.COSTINGLEVEL_Organization.equals(cl))
 				{
@@ -834,28 +1018,26 @@ public class MCost extends X_M_Cost
 						orgs = MOrg.getOfClient(product);
 					for (MOrg o : orgs)
 					{
-						for(MCostElement ce : ces)
-						{	
-							//get MCost for all MCostType added by anca
-							List<MCostType> costtypes = MCostType.get(product.getCtx(), product.get_TrxName()); 
-							for (MCostType mc : costtypes)
+						for (MCostType ct : MCostType.get(product.getCtx(), product.get_TrxName()))
+						{
+							for(MCostElement ce : ces)
 							{
-								MCost cost = MCost.get (product, M_ASI_ID, 
-										as, o.getAD_Org_ID(), ce.getM_CostElement_ID(), product.get_TrxName(),mc);
+								MCost cost = MCost.getOrCreate (product, M_ASI_ID,
+									as, o.getAD_Org_ID(), ct.getM_CostType_ID() , ce.getM_CostElement_ID(), product.get_TrxName());
 								if(cost != null)
 									cost.deleteEx(true);
 							}
-						}
-				}	//	for all orgs
+						}	
+					}	//	for all orgs
 				}
 				else
 				{
-					s_log.warning("Not created: Std.Cost for " + product.getName() 
+					s_log.warning("Not created: Std.Cost for " + product.getName()
 						+ " - Costing Level on Batch/Lot");
 				}
 			}	//	accounting schema loop
 	}	//	create
-	
+
 	/**************************************************************************
 	 * 	Calculate Average Invoice from Trx
 	 *	@param product product
@@ -864,7 +1046,7 @@ public class MCost extends X_M_Cost
 	 *	@param AD_Org_ID optonal org
 	 *	@return average costs or null
 	 */
-	public static BigDecimal calculateAverageInv (MProduct product, int M_AttributeSetInstance_ID, 
+	public static BigDecimal calculateAverageInv (MProduct product, int M_AttributeSetInstance_ID,
 		MAcctSchema as, int AD_Org_ID)
 	{
 		String sql = "SELECT t.MovementQty, mi.Qty, il.QtyInvoiced, il.PriceActual,"
@@ -917,15 +1099,15 @@ public class MCost extends X_M_Cost
 				int C_ConversionType_ID = rs.getInt(7);
 				int Client_ID = rs.getInt(8);
 				int Org_ID = rs.getInt(9);
-				BigDecimal cost = MConversionRate.convert(product.getCtx(), price, 
-					C_Currency_ID, as.getC_Currency_ID(), 
+				BigDecimal cost = MConversionRate.convert(product.getCtx(), price,
+					C_Currency_ID, as.getC_Currency_ID(),
 					DateAcct, C_ConversionType_ID, Client_ID, Org_ID);
 				//
 				BigDecimal oldAverageAmt = newAverageAmt;
 				BigDecimal averageCurrent = oldStockQty.multiply(oldAverageAmt);
 				BigDecimal averageIncrease = matchQty.multiply(cost);
 				BigDecimal newAmt = averageCurrent.add(averageIncrease);
-				newAmt = newAmt.setScale(as.getCostingPrecision());
+				newAmt = newAmt.setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				newAverageAmt = newAmt.divide(newStockQty, as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				s_log.finer("Movement=" + movementQty + ", StockQty=" + newStockQty
 					+ ", Match=" + matchQty + ", Cost=" + cost + ", NewAvg=" + newAverageAmt);
@@ -957,7 +1139,7 @@ public class MCost extends X_M_Cost
 	 *	@param AD_Org_ID org
 	 *	@return costs or null
 	 */
-	public static BigDecimal calculateAveragePO (MProduct product, int M_AttributeSetInstance_ID, 
+	public static BigDecimal calculateAveragePO (MProduct product, int M_AttributeSetInstance_ID,
 		MAcctSchema as, int AD_Org_ID)
 	{
 		String sql = "SELECT t.MovementQty, mp.Qty, ol.QtyOrdered, ol.PriceCost, ol.PriceActual,"	//	1..5
@@ -1013,15 +1195,15 @@ public class MCost extends X_M_Cost
 				int C_ConversionType_ID = rs.getInt(8);
 				int Client_ID = rs.getInt(9);
 				int Org_ID = rs.getInt(10);
-				BigDecimal cost = MConversionRate.convert(product.getCtx(), price, 
-					C_Currency_ID, as.getC_Currency_ID(), 
+				BigDecimal cost = MConversionRate.convert(product.getCtx(), price,
+					C_Currency_ID, as.getC_Currency_ID(),
 					DateAcct, C_ConversionType_ID, Client_ID, Org_ID);
 				//
 				BigDecimal oldAverageAmt = newAverageAmt;
 				BigDecimal averageCurrent = oldStockQty.multiply(oldAverageAmt);
 				BigDecimal averageIncrease = matchQty.multiply(cost);
 				BigDecimal newAmt = averageCurrent.add(averageIncrease);
-				newAmt = newAmt.setScale(as.getCostingPrecision());
+				newAmt = newAmt.setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				newAverageAmt = newAmt.divide(newStockQty, as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				s_log.finer("Movement=" + movementQty + ", StockQty=" + newStockQty
 					+ ", Match=" + matchQty + ", Cost=" + cost + ", NewAvg=" + newAverageAmt);
@@ -1044,7 +1226,7 @@ public class MCost extends X_M_Cost
 		}
 		return null;
 	}	//	calculateAveragePO
-	
+
 	/**
 	 * 	Calculate FiFo Cost
 	 *	@param product product
@@ -1053,7 +1235,7 @@ public class MCost extends X_M_Cost
 	 *	@param AD_Org_ID org
 	 *	@return costs or null
 	 */
-	public static BigDecimal calculateFiFo (MProduct product, int M_AttributeSetInstance_ID, 
+	public static BigDecimal calculateFiFo (MProduct product, int M_AttributeSetInstance_ID,
 		MAcctSchema as, int AD_Org_ID)
 	{
 		String sql = "SELECT t.MovementQty, mi.Qty, il.QtyInvoiced, il.PriceActual,"
@@ -1135,10 +1317,10 @@ public class MCost extends X_M_Cost
 				int C_ConversionType_ID = rs.getInt(7);
 				int Client_ID = rs.getInt(8);
 				int Org_ID = rs.getInt(9);
-				BigDecimal cost = MConversionRate.convert(product.getCtx(), price, 
-					C_Currency_ID, as.getC_Currency_ID(), 
+				BigDecimal cost = MConversionRate.convert(product.getCtx(), price,
+					C_Currency_ID, as.getC_Currency_ID(),
 					DateAcct, C_ConversionType_ID, Client_ID, Org_ID);
-				
+
 				//	Add Stock
 				boolean used = false;
 				if (fifo.size() == 1)
@@ -1153,7 +1335,7 @@ public class MCost extends X_M_Cost
 							pp.Cost = cost;
 						used = true;
 					}
-					
+
 				}
 				if (!used)
 				{
@@ -1172,7 +1354,7 @@ public class MCost extends X_M_Cost
 			DB.close(rs, pstmt);
 			rs = null; pstmt = null;
 		}
-		
+
 		if (fifo.size() == 0)
 		{
 			return null;
@@ -1190,7 +1372,7 @@ public class MCost extends X_M_Cost
 	 *	@param AD_Org_ID org
 	 *	@return costs or null
 	 */
-	public static BigDecimal calculateLiFo (MProduct product, int M_AttributeSetInstance_ID, 
+	public static BigDecimal calculateLiFo (MProduct product, int M_AttributeSetInstance_ID,
 		MAcctSchema as, int AD_Org_ID)
 	{
 		String sql = "SELECT t.MovementQty, mi.Qty, il.QtyInvoiced, il.PriceActual,"
@@ -1273,8 +1455,8 @@ public class MCost extends X_M_Cost
 				int C_ConversionType_ID = rs.getInt(7);
 				int Client_ID = rs.getInt(8);
 				int Org_ID = rs.getInt(9);
-				BigDecimal cost = MConversionRate.convert(product.getCtx(), price, 
-					C_Currency_ID, as.getC_Currency_ID(), 
+				BigDecimal cost = MConversionRate.convert(product.getCtx(), price,
+					C_Currency_ID, as.getC_Currency_ID(),
 					DateAcct, C_ConversionType_ID, Client_ID, Org_ID);
 				//
 				QtyCost pp = new QtyCost (movementQty, cost);
@@ -1291,7 +1473,7 @@ public class MCost extends X_M_Cost
 			DB.close(rs, pstmt);
 			rs = null; pstmt = null;
 		}
-		
+
 		if (lifo.size() == 0)
 		{
 			return null;
@@ -1301,7 +1483,7 @@ public class MCost extends X_M_Cost
 		return pp.Cost;
 	}	//	calculateLiFo
 
-	
+
 	/**************************************************************************
 	 *	MCost Qty-Cost Pair
 	 */
@@ -1321,7 +1503,7 @@ public class MCost extends X_M_Cost
 		public BigDecimal	Qty = null;
 		/** Cost	*/
 		public BigDecimal	Cost = null;
-		
+
 		/**
 		 * 	String Representation
 		 *	@return info
@@ -1334,7 +1516,6 @@ public class MCost extends X_M_Cost
 		}	//	toString
 	}	//	QtyCost
 	
-	
 	/**
 	 * 	Get/Create Cost Record.
 	 * 	CostingLevel is not validated
@@ -1344,55 +1525,55 @@ public class MCost extends X_M_Cost
 	 *	@param AD_Org_ID costing level org
 	 *	@param M_CostElement_ID element
 	 *	@return cost price or null
+	 *	@deprecated
 	 */
 	public static MCost get (MProduct product, int M_AttributeSetInstance_ID,
-			MAcctSchema as, int AD_Org_ID, int M_CostElement_ID, String trxName, MCostType mc)
+		MAcctSchema as, int AD_Org_ID, int M_CostElement_ID, String trxName)
 	{
-		return get(product, M_AttributeSetInstance_ID, as, AD_Org_ID, M_CostElement_ID, mc, trxName);
+		return MCost.getOrCreate(product, M_AttributeSetInstance_ID, as, AD_Org_ID, as.getM_CostType_ID(), M_CostElement_ID , trxName);
 	}
-	public static MCost get (MProduct product, int M_AttributeSetInstance_ID,
-		MAcctSchema as, int AD_Org_ID, int M_CostElement_ID, MCostType mc, String trxName)
+	/**
+	 * 	Get/Create Cost Record.
+	 * 	CostingLevel is not validated
+	 *	@param product product
+	 *	@param M_AttributeSetInstance_ID costing level asi
+	 *	@param as accounting schema
+	 *	@param AD_Org_ID costing level org
+	 *	@param M_CostType_ID Cost Type
+	 *	@param M_CostElement_ID element
+	 *	@return cost price
+	 */
+	public static MCost getOrCreate (MProduct product, int M_AttributeSetInstance_ID,
+		MAcctSchema as, int AD_Org_ID,  int M_CostType_ID , int M_CostElement_ID, String trxName)
 	{
 		MCost cost = null;
-		//MCostType[] mcost = null;
-		
-		//mcost = MCostType.get(product.getCtx(), trxName); 
-		//for (MCostType mc : mcost)
-		{
-		//FR: [ 2214883 ] Remove SQL code and Replace for Query - red1
-		List<Object> params = new ArrayList<Object>();
-		String whereClause = "AD_Client_ID=? AND AD_Org_ID=?"
+		final String whereClause = "AD_Client_ID=? AND AD_Org_ID=?"
 			+ " AND M_Product_ID=?"
 			+ " AND M_AttributeSetInstance_ID=?"
 			+ " AND M_CostType_ID=? AND C_AcctSchema_ID=?"
 			+ " AND M_CostElement_ID=?";
-		params.add(product.getAD_Client_ID()); 
-		params.add(AD_Org_ID); 
-		params.add(product.getM_Product_ID());
-		params.add(M_AttributeSetInstance_ID);
-		params.add(mc.getM_CostType_ID());
-		params.add(as.getC_AcctSchema_ID());
-		params.add(M_CostElement_ID);
-		cost = new Query(product.getCtx(), MCost.Table_Name, whereClause, trxName)
-		.setParameters(params)
+		cost = new Query(product.getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
+		.setParameters(	product.getAD_Client_ID(),
+						AD_Org_ID,
+						product.getM_Product_ID(),
+						M_AttributeSetInstance_ID,
+						M_CostType_ID,
+						as.getC_AcctSchema_ID(),
+						M_CostElement_ID)
 		.firstOnly();
-		//FR: [ 2214883 ] - end -
-		//	New
 		if (cost == null)
 			cost = new MCost (product, M_AttributeSetInstance_ID,
-				as, AD_Org_ID, M_CostElement_ID, mc);
-		}
+				as, AD_Org_ID, M_CostElement_ID);
 		return cost;
-		//return cost;
 	}	//	get
 	
 	@Deprecated
 	public static MCost get (MProduct product, int M_AttributeSetInstance_ID,
-			MAcctSchema as, int AD_Org_ID, int M_CostElement_ID, MCostType mc)
+			MAcctSchema as, int AD_Org_ID, int M_CostElement_ID)
 	{
-		return get(product, M_AttributeSetInstance_ID, as, AD_Org_ID, M_CostElement_ID, product.get_TrxName(), mc);
+		return get(product, M_AttributeSetInstance_ID, as, AD_Org_ID, M_CostElement_ID, product.get_TrxName());
 	}
-	
+
 	/**
 	 * Get Cost Record
 	 * @param ctx context
@@ -1406,7 +1587,7 @@ public class MCost extends X_M_Cost
 	 * @param trxName transaction name
 	 * @return cost or null
 	 */
-	public static MCost get (Properties ctx, int AD_Client_ID, int AD_Org_ID, int M_Product_ID, 
+	public static MCost get (Properties ctx, int AD_Client_ID, int AD_Org_ID, int M_Product_ID,
 		int M_CostType_ID, int C_AcctSchema_ID, int M_CostElement_ID,
 		int M_AttributeSetInstance_ID,
 		String trxName)
@@ -1425,46 +1606,9 @@ public class MCost extends X_M_Cost
 					.setParameters(params)
 					.firstOnly();
 	}	//	get
-	
-	/**
-	 * Get MCost (Cost Dimension) for this Product 
-	 * @param as Account Schema
-	 * @param model Document Line Model
-	 * @param trxName Transaction Line
-	 * @return Cost Dimension List for this product
-	 */
-	public static List<MCost> getForProduct(MAcctSchema as, IDocumentLine model )
-	{
-		int AD_Org_ID = 0;
-		int M_AttributeSetInstance_ID = 0;
-		String CostingLevel = MProduct.get(as.getCtx(), model.getM_Product_ID()).getCostingLevel(as,model.getAD_Org_ID());
-		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
-		{
-			AD_Org_ID = 0;
-			M_AttributeSetInstance_ID = 0;
-		}
-		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
-		{	
-			AD_Org_ID = model.getAD_Org_ID();
-			M_AttributeSetInstance_ID = 0;
-		}	
-		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
-		{	
-			AD_Org_ID = model.getAD_Org_ID();
-			M_AttributeSetInstance_ID = model.getM_AttributeSetInstance_ID();
-		}
-		
-		final String whereClause = "M_Product_ID=?  AND AD_Org_ID=? AND M_AttributeSetInstance_ID=?" ;
-		
-		return new Query(as.getCtx(), Table_Name, whereClause, model.get_TrxName())
-			.setParameters(model.getM_Product_ID(), AD_Org_ID, M_AttributeSetInstance_ID)
-			.setClient_ID()
-			.setOrderBy("AD_Client_ID, AD_Org_ID, M_AttributeSetInstance_ID")
-			.list();
-	}
-	
+
 	@Deprecated
-	public static MCost get (Properties ctx, int AD_Client_ID, int AD_Org_ID, int M_Product_ID, 
+	public static MCost get (Properties ctx, int AD_Client_ID, int AD_Org_ID, int M_Product_ID,
 			int M_CostType_ID, int C_AcctSchema_ID, int M_CostElement_ID,
 			int M_AttributeSetInstance_ID)
 	{
@@ -1473,11 +1617,11 @@ public class MCost extends X_M_Cost
 				M_AttributeSetInstance_ID,
 				null); // trxName
 	}
-	
+
 	/**	Logger	*/
 	private static CLogger 	s_log = CLogger.getCLogger (MCost.class);
- 
-	
+
+
 	/**************************************************************************
 	 * 	Standard Constructor
 	 *	@param ctx context
@@ -1524,24 +1668,24 @@ public class MCost extends X_M_Cost
 	 *	@param as Acct Schema
 	 *	@param AD_Org_ID org
 	 *	@param M_CostElement_ID cost element
-	 * @param mc 
 	 */
-	public MCost (MProduct product, int M_AttributeSetInstance_ID, 
-		MAcctSchema as, int AD_Org_ID, int M_CostElement_ID, MCostType mc)
+	public MCost (MProduct product, int M_AttributeSetInstance_ID,
+		MAcctSchema as, int AD_Org_ID, int M_CostElement_ID)
 	{
 		this (product.getCtx(), 0, product.get_TrxName());
 		setClientOrg(product.getAD_Client_ID(), AD_Org_ID);
 		setC_AcctSchema_ID(as.getC_AcctSchema_ID());
-		setM_CostType_ID(mc.getM_CostType_ID());
+		setM_CostType_ID(as.getM_CostType_ID());
 		setM_Product_ID(product.getM_Product_ID());
 		setM_AttributeSetInstance_ID(M_AttributeSetInstance_ID);
 		setM_CostElement_ID(M_CostElement_ID);
+		//
 		m_manual = false;
 	}	//	MCost
 
 	/** Data is entered Manually		*/
 	private boolean m_manual = true;
-	
+
 	/**
 	 * 	Add Cumulative Amt/Qty and Current Qty
 	 *	@param amt amt
@@ -1588,7 +1732,7 @@ public class MCost extends X_M_Cost
 			return as.getCostingPrecision();
 		return 6;
 	}	//	gerPrecision
-	
+
 	/**
 	 * 	Set Current Cost Price
 	 *	@param currentCostPrice if null set to 0
@@ -1600,7 +1744,7 @@ public class MCost extends X_M_Cost
 		else
 			super.setCurrentCostPrice (Env.ZERO);
 	}	//	setCurrentCostPrice
-	
+
 	/**
 	 * 	Get History Average (Amt/Qty)
 	 *	@return average if amt/aty <> 0 otherwise null
@@ -1611,10 +1755,10 @@ public class MCost extends X_M_Cost
 		if (getCumulatedQty().signum() != 0
 			&& getCumulatedAmt().signum() != 0)
 			retValue = getCumulatedAmt()
-				.divide(getCumulatedQty(), getPrecision(), BigDecimal.ROUND_HALF_UP); 
+				.divide(getCumulatedQty(), getPrecision(), BigDecimal.ROUND_HALF_UP);
 		return retValue;
 	}	//	getHistoryAverage
-	
+
 	/**
 	 * 	String Representation
 	 *	@return info
@@ -1628,8 +1772,8 @@ public class MCost extends X_M_Cost
 		sb.append (",M_Product_ID=").append (getM_Product_ID());
 		if (getM_AttributeSetInstance_ID() != 0)
 			sb.append (",AD_ASI_ID=").append (getM_AttributeSetInstance_ID());
-		sb.append (",C_AcctSchema_ID=").append (getC_AcctSchema_ID());
-		sb.append (",M_CostType_ID=").append (getM_CostType_ID());
+	//	sb.append (",C_AcctSchema_ID=").append (getC_AcctSchema_ID());
+	//	sb.append (",M_CostType_ID=").append (getM_CostType_ID());
 		sb.append (",M_CostElement_ID=").append (getM_CostElement_ID());
 		//
 		sb.append (", CurrentCost=").append (getCurrentCostPrice())
@@ -1650,7 +1794,7 @@ public class MCost extends X_M_Cost
 			return null;
 		return MCostElement.get(getCtx(), M_CostElement_ID);
 	}	//	getCostElement
-	
+
 	/**
 	 * 	Before Save
 	 *	@param newRecord new
@@ -1658,15 +1802,15 @@ public class MCost extends X_M_Cost
 	 */
 	protected boolean beforeSave (boolean newRecord)
 	{
-		//The method getCostElement() not should be cached because is a transaction 
-		//MCostElement ce = getCostElement(); 
+		//The method getCostElement() not should be cached because is a transaction
+		//MCostElement ce = getCostElement();
 		MCostElement ce = (MCostElement)getM_CostElement();
 		//	Check if data entry makes sense
 		if (m_manual)
 		{
 			MAcctSchema as = new MAcctSchema (getCtx(), getC_AcctSchema_ID(), null);
 			MProduct product = MProduct.get(getCtx(), getM_Product_ID());
-			String CostingLevel = product.getCostingLevel(as, product.getAD_Org_ID());
+			String CostingLevel = product.getCostingLevel(as);
 			if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
 			{
 				if (getAD_Org_ID() != 0 || getM_AttributeSetInstance_ID() != 0)
@@ -1677,7 +1821,7 @@ public class MCost extends X_M_Cost
 			}
 			else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
 			{
-				if (getM_AttributeSetInstance_ID() == 0 
+				if (getM_AttributeSetInstance_ID() == 0
 					&& ce.isCostingMethod())
 				{
 					log.saveError("FillMandatory", Msg.getElement(getCtx(), "M_AttributeSetInstance_ID"));
@@ -1687,20 +1831,18 @@ public class MCost extends X_M_Cost
 					setAD_Org_ID(0);
 			}
 		}
-		
+
 		//	Cannot enter calculated
-		/*
-		if (m_manual && ce != null)
+		if (m_manual && ce != null && ce.isCalculated())
 		{
 			log.saveError("Error", Msg.getElement(getCtx(), "IsCalculated"));
 			return false;
-		}*/
-		
+		}
 		//	Percentage
 		if (ce != null)
 		{
-			if (ce.isCalculated() 
-				|| MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) 
+			if (ce.isCalculated()
+				|| MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType())
 				&& getPercent() != 0)
 				setPercent(0);
 		}
@@ -1717,8 +1859,8 @@ public class MCost extends X_M_Cost
 		}
 		return true;
 	}	//	beforeSave
-	
-	
+
+
 	/**
 	 * 	Before Delete
 	 *	@return true
@@ -1728,7 +1870,7 @@ public class MCost extends X_M_Cost
 		return true;
 	}	//	beforeDelete
 
-	
+
 	/**
 	 * 	Test
 	 *	@param args ignored
@@ -1737,12 +1879,12 @@ public class MCost extends X_M_Cost
 	{
 		/**
 		DELETE M_Cost c
-		WHERE EXISTS (SELECT * FROM M_CostElement ce 
+		WHERE EXISTS (SELECT * FROM M_CostElement ce
 		    WHERE c.M_CostElement_ID=ce.M_CostElement_ID AND ce.IsCalculated='Y')
 		/
 		UPDATE M_Cost
 		  SET CumulatedAmt=0, CumulatedQty=0
-		/  
+		/
 		UPDATE M_CostDetail
 		  SET Processed='N'
 		WHERE Processed='Y'
@@ -1750,168 +1892,11 @@ public class MCost extends X_M_Cost
 		COMMIT
 		/
 		**/
-		
+
 		Adempiere.startup(true);
 		MClient client = MClient.get(Env.getCtx(), 11);	//	GardenWorld
 		create(client);
-		
+
 	}	//	main
-
-	private static List<CostComponent> getCurrentCostLayers (MProduct product, int M_ASI_ID, 
-			MAcctSchema as, int Org_ID, int M_CostType_ID,  
-			String costingMethod, BigDecimal qty, int C_OrderLine_ID, 
-			boolean zeroCostsOK, String trxName, MCost cost)
-	{
-		List<CostComponent> list = new ArrayList<CostComponent>();
-		BigDecimal currentCostPrice = null;
-		BigDecimal currentCostPriceLL = null;
-		String costElementType = null;
-		//int M_CostElement_ID = 0;
-		BigDecimal percent = null;
-		//
-		BigDecimal materialCostEach = Env.ZERO;
-		BigDecimal otherCostEach = Env.ZERO;
-		BigDecimal percentage = Env.ZERO;
-		int count = 0;
-		//
-		String sql = "SELECT SUM(c.CurrentCostPrice), ce.CostElementType, c.CostingMethod,"
-			+ " c.Percent, c.M_CostElement_ID , SUM(c.CurrentCostPriceLL) "					//	4..5
-			+ "FROM M_Cost c"
-			+ " LEFT OUTER JOIN M_CostElement ce ON (c.M_CostElement_ID=ce.M_CostElement_ID) "
-			+ "WHERE c.AD_Client_ID=? AND c.AD_Org_ID=?"		//	#1/2
-			+ " AND c.M_Product_ID=?"							//	#3
-			+ " AND (c.M_AttributeSetInstance_ID=? OR c.M_AttributeSetInstance_ID=0)"	//	#4
-			+ " AND c.M_CostType_ID=? AND c.C_AcctSchema_ID=?"	//	#5/6
-//			+ " AND (ce.CostingMethod IS NULL OR ce.CostingMethod=?) "	//	#7
-			+ " AND c.CostingMethod=? "	//	#7
-			+ "GROUP BY ce.CostElementType, c.CostingMethod, c.Percent, c.M_CostElement_ID";
-		PreparedStatement pstmt = null;
-		ResultSet rs = null;
-		try
-		{
-			pstmt = DB.prepareStatement (sql, trxName);
-			pstmt.setInt (1, product.getAD_Client_ID());
-			pstmt.setInt (2, Org_ID);
-			pstmt.setInt (3, product.getM_Product_ID());
-			pstmt.setInt (4, M_ASI_ID);
-			pstmt.setInt (5, M_CostType_ID);
-			pstmt.setInt (6, as.getC_AcctSchema_ID());
-			pstmt.setString (7, costingMethod);
-			rs = pstmt.executeQuery ();
-			while (rs.next ())
-			{
-				currentCostPrice = rs.getBigDecimal(1);
-				currentCostPriceLL = rs.getBigDecimal(6);
-				costElementType = rs.getString(2);
-				String cm = rs.getString(3);
-				percent = rs.getBigDecimal(4);
-				//	M_CostElement_ID = rs.getInt(5);
-				s_log.finest("CurrentCostPrice=" + currentCostPrice 
-						+ ", CostElementType=" + costElementType
-						+ ", CostingMethod=" + cm
-						+ ", Percent=" + percent);
-				//
-				if (currentCostPrice != null && currentCostPrice.signum() != 0)
-				{
-					if (cm != null)
-					{	
-						materialCostEach = materialCostEach.add(currentCostPrice).add(currentCostPriceLL);
-					}	
-					else
-						otherCostEach = otherCostEach.add(currentCostPrice).add(currentCostPriceLL);
-				}
-				if (percent != null && percent.signum() != 0)
-					percentage = percentage.add(percent);
-				count++;
-			}
-		}
-		catch (SQLException e)
-		{
-			throw new DBException(e, sql);
-		}
-		finally
-		{
-			DB.close(rs, pstmt);
-			rs = null; pstmt = null;
-		}
-
-		if (count > 1)	//	Print summary
-			s_log.finest("MaterialCost=" + materialCostEach 
-					+ ", OtherCosts=" + otherCostEach
-					+ ", Percentage=" + percentage);
-
-		//	Seed Initial Costs
-		if (materialCostEach.signum() == 0)		//	no costs
-		{
-			if (zeroCostsOK)
-				return new ArrayList<CostComponent>();
-			materialCostEach = getSeedCosts(product, M_ASI_ID,
-					as, Org_ID, costingMethod, C_OrderLine_ID);
-		}
-		if (materialCostEach == null)
-			return null;
-		list.add(new CostComponent(qty, materialCostEach));
-		list.add(new CostComponent(qty, otherCostEach));
-
-		//	Standard costs - just Material Costs
-		if (MCostElement.COSTINGMETHOD_StandardCosting.equals(costingMethod))
-		{
-			return list;
-		}
-		if (MCostElement.COSTINGMETHOD_Fifo.equals(costingMethod)
-				|| MCostElement.COSTINGMETHOD_Lifo.equals(costingMethod))
-		{
-			list = MCostQueue.getCostLayers(cost, qty, null, trxName);
-		}
-		//
-		for (CostComponent cc : list)
-		{
-			cc.setScale(as.getCostingPrecision());
-			cc.setPercent(percentage);
-		}
-		return list;
-	}
-	public static List<CostComponent> getCurrentCostLayers (MCost cost, 
-			BigDecimal qty, int C_OrderLine_ID,
-			boolean zeroCostsOK, String trxName)
-	{
-		MProduct product = MProduct.get(cost.getCtx(), cost.getM_Product_ID());
-		MAcctSchema as = MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID());
-		int AD_Org_ID = cost.getAD_Org_ID();
-		int M_AttributeSetInstance_ID = cost.getM_AttributeSetInstance_ID();
-		String costingMethod = cost.getCostingMethod(); 
-		
-		String CostingLevel = product.getCostingLevel(as,product.getAD_Org_ID());
-		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
-		{
-			AD_Org_ID = 0;
-			M_AttributeSetInstance_ID = 0;
-		}
-		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
-			M_AttributeSetInstance_ID = 0;
-		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
-			AD_Org_ID = 0;
-		//	Costing Method
-		if (costingMethod == null)
-		{
-			costingMethod = product.getCostingMethod(as, AD_Org_ID);
-			if (costingMethod == null)
-			{
-				throw new IllegalArgumentException("No Costing Method");
-			}
-		}
-
-		//	Create/Update Costs
-	//	MCostDetail.processProduct (product, trxName);
-
-		return getCurrentCostLayers (
-				product, M_AttributeSetInstance_ID, 
-				as, AD_Org_ID, as.getM_CostType_ID(), costingMethod, qty, 
-				C_OrderLine_ID, zeroCostsOK, trxName, cost);
-	}
-
-	public String getCostingMethod() {
-		return getM_CostType().getCostingMethod();
-	}
 
 }	//	MCost

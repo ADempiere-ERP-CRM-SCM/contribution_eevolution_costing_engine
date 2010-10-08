@@ -381,6 +381,7 @@ public class ProductCost
 	 *  @param C_OrderLine_ID optional order line
 	 *	@param zeroCostsOK zero/no costs are OK
 	 *  @return cost or null, if qty or costs cannot be determined
+	 *  @deprecated
 	 */
 	public BigDecimal getProductCosts (MAcctSchema as, int AD_Org_ID, 
 		String costingMethod, int C_OrderLine_ID, boolean zeroCostsOK)

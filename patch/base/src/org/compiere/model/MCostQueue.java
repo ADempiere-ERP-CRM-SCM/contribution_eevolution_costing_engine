@@ -17,16 +17,19 @@
 package org.compiere.model;
 
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
 
 import org.adempiere.engine.CostComponent;
 import org.adempiere.exceptions.CostInsufficientQtyException;
 import org.compiere.util.CLogMgt;
 import org.compiere.util.CLogger;
+import org.compiere.util.DB;
 import org.compiere.util.Env;
 
 /**
@@ -190,7 +193,69 @@ public class MCostQueue extends X_M_CostQueue
 		return list.toArray(new MCostQueue[list.size()]);
 	}	//	getQueue
 
-	
+	/**
+	 * 	Get Cost Queue Records in Lifo/Fifo order
+	 *	@param product product
+	 *	@param M_ASI_ID costing level ASI
+	 *	@param as accounting schema
+	 *	@param Org_ID costing level org
+	 *	@param ce Cost Element
+	 *	@param trxName transaction
+	 *	@return cost queue or null
+	 *	@deprecated
+	 */
+	public static MCostQueue[] getQueue (MProduct product, int M_ASI_ID,
+		MAcctSchema as, int Org_ID, MCostElement ce, String trxName)
+	{
+		ArrayList<MCostQueue> list = new ArrayList<MCostQueue>();
+		String sql = "SELECT * FROM M_CostQueue "
+			+ "WHERE AD_Client_ID=? AND AD_Org_ID=?"
+			+ " AND M_Product_ID=?"
+			+ " AND M_CostType_ID=? AND C_AcctSchema_ID=?"
+			+ " AND M_CostElement_ID=?";
+		if (M_ASI_ID != 0)
+			sql += " AND M_AttributeSetInstance_ID=?";
+		sql += " AND CurrentQty<>0 "
+			+ "ORDER BY M_AttributeSetInstance_ID ";
+		if (!ce.isFifo())
+			sql += "DESC";
+		PreparedStatement pstmt = null;
+		try
+		{
+			pstmt = DB.prepareStatement (sql, trxName);
+			pstmt.setInt (1, product.getAD_Client_ID());
+			pstmt.setInt (2, Org_ID);
+			pstmt.setInt (3, product.getM_Product_ID());
+			pstmt.setInt (4, as.getM_CostType_ID());
+			pstmt.setInt (5, as.getC_AcctSchema_ID());
+			pstmt.setInt (6, ce.getM_CostElement_ID());
+			if (M_ASI_ID != 0)
+				pstmt.setInt (7, M_ASI_ID);
+			ResultSet rs = pstmt.executeQuery ();
+			while (rs.next ())
+				list.add(new MCostQueue (product.getCtx(), rs, trxName)); 
+			rs.close ();
+			pstmt.close ();
+			pstmt = null;
+		}
+		catch (Exception e)
+		{
+			s_log.log (Level.SEVERE, sql, e);
+		}
+		try
+		{
+			if (pstmt != null)
+				pstmt.close ();
+			pstmt = null;
+		}
+		catch (Exception e)
+		{
+			pstmt = null;
+		}
+		MCostQueue[] costQ = new MCostQueue[list.size()];
+		list.toArray(costQ);
+		return costQ;
+	}	//	getQueue
 	/**
 	 * 	Adjust Qty based on in Lifo/Fifo order
 	 *	@param product product
@@ -296,6 +361,97 @@ public class MCostQueue extends X_M_CostQueue
 		}
 		return costs;
 	}
+	
+	/**
+	 * 	Calculate Cost based on Qty based on in Lifo/Fifo order
+	 *	@param product product
+	 *	@param M_ASI_ID costing level ASI
+	 *	@param as accounting schema
+	 *	@param Org_ID costing level org
+	 *	@param ce Cost Element
+	 *	@param Qty quantity to be reduced
+	 *	@param trxName transaction
+	 *	@return cost for qty or null of error
+	 *	@deprecated
+	 */
+	public static BigDecimal getCosts (MProduct product, int M_ASI_ID,
+		MAcctSchema as, int Org_ID, MCostElement ce, BigDecimal Qty, 
+		String trxName)
+	{
+		if (Qty.signum() == 0)
+			return Env.ZERO;
+		MCostQueue[] costQ = getQueue(product, M_ASI_ID, 
+			as, Org_ID, ce, trxName);
+		//
+		BigDecimal cost = Env.ZERO;
+		BigDecimal remainingQty = Qty;
+		BigDecimal firstPrice = null;
+		BigDecimal lastPrice = null;
+		//
+		for (int i = 0; i < costQ.length; i++)
+		{
+			MCostQueue queue = costQ[i];
+			//	Negative Qty i.e. add
+			if (remainingQty.signum() <= 0)
+			{
+				BigDecimal oldQty = queue.getCurrentQty();
+				lastPrice = queue.getCurrentCostPrice();
+				BigDecimal costBatch = lastPrice.multiply(remainingQty);
+				cost = cost.add(costBatch);
+				s_log.config("ASI=" + queue.getM_AttributeSetInstance_ID()
+					+ " - Cost=" + lastPrice + " * Qty=" + remainingQty + "(!) = " + costBatch);
+				return cost;
+			}
+			
+			//	Positive queue
+			if (queue.getCurrentQty().signum() > 0)
+			{
+				BigDecimal reduction = remainingQty;
+				if (reduction.compareTo(queue.getCurrentQty()) > 0)
+					reduction = queue.getCurrentQty();
+				BigDecimal oldQty = queue.getCurrentQty();
+				lastPrice = queue.getCurrentCostPrice();
+				BigDecimal costBatch = lastPrice.multiply(reduction);
+				cost = cost.add(costBatch);
+				s_log.fine("ASI=" + queue.getM_AttributeSetInstance_ID()
+					+ " - Cost=" + lastPrice + " * Qty=" + reduction + " = " + costBatch);
+				remainingQty = remainingQty.subtract(reduction);
+				//	Done
+				if (remainingQty.signum() == 0)
+				{
+					s_log.config("Cost=" + cost);
+					return cost;
+				}
+				if (firstPrice == null)
+					firstPrice = lastPrice;
+			}
+		}	//	for queue
+
+		if (lastPrice == null)
+		{
+			lastPrice = MCost.getSeedCosts(product, M_ASI_ID, as, Org_ID, 
+				ce.getCostingMethod(), 0);
+			if (lastPrice == null)
+			{
+				s_log.info("No Price found");
+				return null;
+			}
+			s_log.info("No Cost Queue");
+		}
+		BigDecimal costBatch = lastPrice.multiply(remainingQty);
+		s_log.fine("RemainingQty=" + remainingQty + " * LastPrice=" + lastPrice + " = " + costBatch);
+		cost = cost.add(costBatch);
+		s_log.config("Cost=" + cost);
+		return cost;
+	}	//	getCosts
+	/**
+	 * get Cost Componebt
+	 * @param cost
+	 * @param Qty
+	 * @param dateAcct
+	 * @param trxName
+	 * @return
+	 */
 	public static List<CostComponent> getCostLayers (MCost cost, BigDecimal Qty,
 			Timestamp dateAcct, String trxName)
 			{
@@ -362,7 +518,14 @@ public class MCostQueue extends X_M_CostQueue
 		// TODO: arhipac: teo_sarca: implement "Insufficient Qty Cost Option"
 		if (lastPrice == null)
 		{
-			lastPrice = MCost.getSeedCosts(cost);
+			lastPrice = MCost.getSeedCosts(
+					MProduct.get(cost.getCtx(), cost.getM_Product_ID()),
+					cost.getM_AttributeSetInstance_ID(),
+					MAcctSchema.get(cost.getCtx(), cost.getC_AcctSchema_ID()),
+					cost.getAD_Org_ID(),
+					cost.getCostingMethod(),
+					0 // C_OrderLine_ID
+			);
 			if (lastPrice == null)
 			{
 				s_log.info("No Price found");

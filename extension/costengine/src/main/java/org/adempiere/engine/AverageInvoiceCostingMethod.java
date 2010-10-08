@@ -18,7 +18,6 @@ import org.compiere.util.Env;
 import org.compiere.util.Util;
 
 /**
- * @author anca_bradau
  * @author victor.perez@e-evolution.com, www.e-evolution.com
  * 
  */
@@ -66,8 +65,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		//The cost detail was create before
 		if(m_costdetail != null)
 		{
-		 	m_Amount = m_trx.getMovementQty().multiply(m_costThisLevel); //m_costdetail.getNewCumulatedAmt();	
-		 	m_AmountLL = m_trx.getMovementQty().multiply(m_costLowLevel); // m_costdetail.getNewCumulatedAmtLL();	
+		 	m_Amount = m_trx.getMovementQty().multiply(m_costThisLevel);
+		 	m_AmountLL = m_trx.getMovementQty().multiply(m_costLowLevel);
 			m_CumulatedQty = getNewCumulatedQty(m_last_costdetail).add(m_trx.getMovementQty());
 			m_CumulatedAmt = getNewCumulatedAmt(m_last_costdetail).add(m_Amount);
 			m_CumulatedAmtLL = getNewCumulatedAmtLL(m_last_costdetail).add(m_AmountLL);
