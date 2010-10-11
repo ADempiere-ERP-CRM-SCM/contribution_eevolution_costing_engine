@@ -229,6 +229,10 @@ public class CostEngine
 	
 	public void createCostDetail (MTransaction mtrx ,IDocumentLine model)
 	{
+		// happen when you create invoice from Purchase Order
+		if(mtrx == null)
+			return;
+		
 		for(MAcctSchema as : MAcctSchema.getClientAcctSchema(mtrx.getCtx(), mtrx.getAD_Client_ID()))
 		{
 				createCostDetail(mtrx, model , as,model.isSOTrx());
