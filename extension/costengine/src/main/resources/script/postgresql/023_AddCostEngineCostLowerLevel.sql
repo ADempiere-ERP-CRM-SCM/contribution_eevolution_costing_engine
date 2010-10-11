@@ -58,16 +58,6 @@ INSERT INTO AD_Column_Trl (AD_Language,AD_Column_ID, Name, IsTranslated,AD_Clien
 ALTER TABLE M_CostDetail ADD COLUMN CostAdjustmentLL NUMERIC DEFAULT NULL 
 ;
 
--- Oct 2, 2010 9:02:59 PM CDT
--- Cost Engine
-INSERT INTO AD_Column (AD_Client_ID,AD_Column_ID,AD_Element_ID,AD_Org_ID,AD_Reference_ID,AD_Table_ID,ColumnName,Created,CreatedBy,Description,EntityType,FieldLength,Help,IsActive,IsAllowLogging,IsAlwaysUpdateable,IsAutocomplete,IsEncrypted,IsIdentifier,IsKey,IsMandatory,IsParent,IsSelectionColumn,IsSyncDatabase,IsTranslated,IsUpdateable,Name,SeqNo,Updated,UpdatedBy,Version) VALUES (0,59896,54313,0,15,808,'CostAdjustmentDateLL',TO_TIMESTAMP('2010-10-02 21:02:56','YYYY-MM-DD HH24:MI:SS'),100,'Date Product Cost Adjustment Lower Level','D',8,'Date product cost adjustments Lower Level','Y','Y','N','N','N','N','N','N','N','N','N','N','Y','Cost Adjustment Date Lower Level',0,TO_TIMESTAMP('2010-10-02 21:02:56','YYYY-MM-DD HH24:MI:SS'),100,0)
-;
-
--- Oct 2, 2010 9:02:59 PM CDT
--- Cost Engine
-INSERT INTO AD_Column_Trl (AD_Language,AD_Column_ID, Name, IsTranslated,AD_Client_ID,AD_Org_ID,Created,Createdby,Updated,UpdatedBy) SELECT l.AD_Language,t.AD_Column_ID, t.Name, 'N',t.AD_Client_ID,t.AD_Org_ID,t.Created,t.Createdby,t.Updated,t.UpdatedBy FROM AD_Language l, AD_Column t WHERE l.IsActive='Y' AND l.IsSystemLanguage='Y' AND l.IsBaseLanguage='N' AND t.AD_Column_ID=59896 AND NOT EXISTS (SELECT * FROM AD_Column_Trl tt WHERE tt.AD_Language=l.AD_Language AND tt.AD_Column_ID=t.AD_Column_ID)
-;
-
 -- Oct 2, 2010 9:03:26 PM CDT
 -- Cost Engine
 ALTER TABLE M_CostDetail ADD COLUMN CostAdjustmentDateLL TIMESTAMP DEFAULT NULL 
@@ -106,16 +96,6 @@ INSERT INTO AD_Field (AD_Client_ID,AD_Column_ID,AD_Field_ID,AD_Org_ID,AD_Tab_ID,
 -- Oct 2, 2010 9:06:48 PM CDT
 -- Cost Engine
 INSERT INTO AD_Field_Trl (AD_Language,AD_Field_ID, Description,Help,Name, IsTranslated,AD_Client_ID,AD_Org_ID,Created,Createdby,Updated,UpdatedBy) SELECT l.AD_Language,t.AD_Field_ID, t.Description,t.Help,t.Name, 'N',t.AD_Client_ID,t.AD_Org_ID,t.Created,t.Createdby,t.Updated,t.UpdatedBy FROM AD_Language l, AD_Field t WHERE l.IsActive='Y' AND l.IsSystemLanguage='Y' AND l.IsBaseLanguage='N' AND t.AD_Field_ID=59666 AND NOT EXISTS (SELECT * FROM AD_Field_Trl tt WHERE tt.AD_Language=l.AD_Language AND tt.AD_Field_ID=t.AD_Field_ID)
-;
-
--- Oct 2, 2010 9:06:50 PM CDT
--- Cost Engine
-INSERT INTO AD_Field (AD_Client_ID,AD_Column_ID,AD_Field_ID,AD_Org_ID,AD_Tab_ID,Created,CreatedBy,Description,DisplayLength,EntityType,Help,IsActive,IsCentrallyMaintained,IsDisplayed,IsEncrypted,IsFieldOnly,IsHeading,IsReadOnly,IsSameLine,Name,Updated,UpdatedBy) VALUES (0,59896,59667,0,748,TO_TIMESTAMP('2010-10-02 21:06:49','YYYY-MM-DD HH24:MI:SS'),100,'Date Product Cost Adjustment LL',8,'D','Date product cost adjustments Lower Level','Y','Y','Y','N','N','N','N','N','Cost Adjustment Date Lower Level',TO_TIMESTAMP('2010-10-02 21:06:49','YYYY-MM-DD HH24:MI:SS'),100)
-;
-
--- Oct 2, 2010 9:06:50 PM CDT
--- Cost Engine
-INSERT INTO AD_Field_Trl (AD_Language,AD_Field_ID, Description,Help,Name, IsTranslated,AD_Client_ID,AD_Org_ID,Created,Createdby,Updated,UpdatedBy) SELECT l.AD_Language,t.AD_Field_ID, t.Description,t.Help,t.Name, 'N',t.AD_Client_ID,t.AD_Org_ID,t.Created,t.Createdby,t.Updated,t.UpdatedBy FROM AD_Language l, AD_Field t WHERE l.IsActive='Y' AND l.IsSystemLanguage='Y' AND l.IsBaseLanguage='N' AND t.AD_Field_ID=59667 AND NOT EXISTS (SELECT * FROM AD_Field_Trl tt WHERE tt.AD_Language=l.AD_Language AND tt.AD_Field_ID=t.AD_Field_ID)
 ;
 
 -- Oct 2, 2010 9:06:50 PM CDT
@@ -406,6 +386,26 @@ UPDATE AD_Element_Trl SET IsTranslated='N' WHERE AD_Element_ID=54310
 -- Oct 2, 2010 9:19:20 PM CDT
 -- Cost Engine
 UPDATE AD_Column SET ColumnName='AmtLL', Name='Amount LL', Description='Amount Lower Level Cost', Help='Amount Lower Level Cost' WHERE AD_Element_ID=54310
+;
+
+-- Oct 2, 2010 9:02:59 PM CDT
+-- Cost Engine
+INSERT INTO AD_Column (AD_Client_ID,AD_Column_ID,AD_Element_ID,AD_Org_ID,AD_Reference_ID,AD_Table_ID,ColumnName,Created,CreatedBy,Description,EntityType,FieldLength,Help,IsActive,IsAllowLogging,IsAlwaysUpdateable,IsAutocomplete,IsEncrypted,IsIdentifier,IsKey,IsMandatory,IsParent,IsSelectionColumn,IsSyncDatabase,IsTranslated,IsUpdateable,Name,SeqNo,Updated,UpdatedBy,Version) VALUES (0,59896,54313,0,15,808,'CostAdjustmentDateLL',TO_TIMESTAMP('2010-10-02 21:02:56','YYYY-MM-DD HH24:MI:SS'),100,'Date Product Cost Adjustment Lower Level','D',8,'Date product cost adjustments Lower Level','Y','Y','N','N','N','N','N','N','N','N','N','N','Y','Cost Adjustment Date Lower Level',0,TO_TIMESTAMP('2010-10-02 21:02:56','YYYY-MM-DD HH24:MI:SS'),100,0)
+;
+
+-- Oct 2, 2010 9:02:59 PM CDT
+-- Cost Engine
+INSERT INTO AD_Column_Trl (AD_Language,AD_Column_ID, Name, IsTranslated,AD_Client_ID,AD_Org_ID,Created,Createdby,Updated,UpdatedBy) SELECT l.AD_Language,t.AD_Column_ID, t.Name, 'N',t.AD_Client_ID,t.AD_Org_ID,t.Created,t.Createdby,t.Updated,t.UpdatedBy FROM AD_Language l, AD_Column t WHERE l.IsActive='Y' AND l.IsSystemLanguage='Y' AND l.IsBaseLanguage='N' AND t.AD_Column_ID=59896 AND NOT EXISTS (SELECT * FROM AD_Column_Trl tt WHERE tt.AD_Language=l.AD_Language AND tt.AD_Column_ID=t.AD_Column_ID)
+;
+
+-- Oct 2, 2010 9:06:50 PM CDT
+-- Cost Engine
+INSERT INTO AD_Field (AD_Client_ID,AD_Column_ID,AD_Field_ID,AD_Org_ID,AD_Tab_ID,Created,CreatedBy,Description,DisplayLength,EntityType,Help,IsActive,IsCentrallyMaintained,IsDisplayed,IsEncrypted,IsFieldOnly,IsHeading,IsReadOnly,IsSameLine,Name,Updated,UpdatedBy) VALUES (0,59896,59667,0,748,TO_TIMESTAMP('2010-10-02 21:06:49','YYYY-MM-DD HH24:MI:SS'),100,'Date Product Cost Adjustment LL',8,'D','Date product cost adjustments Lower Level','Y','Y','Y','N','N','N','N','N','Cost Adjustment Date Lower Level',TO_TIMESTAMP('2010-10-02 21:06:49','YYYY-MM-DD HH24:MI:SS'),100)
+;
+
+-- Oct 2, 2010 9:06:50 PM CDT
+-- Cost Engine
+INSERT INTO AD_Field_Trl (AD_Language,AD_Field_ID, Description,Help,Name, IsTranslated,AD_Client_ID,AD_Org_ID,Created,Createdby,Updated,UpdatedBy) SELECT l.AD_Language,t.AD_Field_ID, t.Description,t.Help,t.Name, 'N',t.AD_Client_ID,t.AD_Org_ID,t.Created,t.Createdby,t.Updated,t.UpdatedBy FROM AD_Language l, AD_Field t WHERE l.IsActive='Y' AND l.IsSystemLanguage='Y' AND l.IsBaseLanguage='N' AND t.AD_Field_ID=59667 AND NOT EXISTS (SELECT * FROM AD_Field_Trl tt WHERE tt.AD_Language=l.AD_Language AND tt.AD_Field_ID=t.AD_Field_ID)
 ;
 
 -- Oct 2, 2010 9:19:20 PM CDT
