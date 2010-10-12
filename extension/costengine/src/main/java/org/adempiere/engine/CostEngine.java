@@ -26,7 +26,6 @@ import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.I_AD_WF_Node;
 import org.compiere.model.I_C_InvoiceLine;
 import org.compiere.model.I_C_OrderLine;
-import org.compiere.model.I_M_Cost;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
 import org.compiere.model.I_M_Transaction;
@@ -65,6 +64,13 @@ public class CostEngine
 	/**	Logger							*/
 	protected transient CLogger	log = CLogger.getCLogger (getClass());
 	
+	public static boolean isLandedCost(IDocumentLine model)
+	{
+		if(model instanceof MLandedCostAllocation)
+			return true;
+		
+		return false;
+	}
 	/**
 	 * Get Actual Cost of Parent Product Based on Cost Type
 	 * @param order
@@ -280,7 +286,7 @@ public class CostEngine
 		}	
 		
 		//Landed Cost
-		if (ce.isLandedCost())
+		if (isLandedCost(model))
 		{
 			// skip landed costs for incoming transactions
 		    if (cost.getCurrentQty().equals(Env.ZERO) && mtrx.getMovementType().endsWith("-"))
@@ -293,7 +299,7 @@ public class CostEngine
 			return;
 		}	
 		
-		if (model instanceof MLandedCostAllocation && !ce.isLandedCost())
+		if (model instanceof MLandedCostAllocation && !isLandedCost(model))
 			return;
 		
 		//Standard Cost functionality
@@ -422,7 +428,7 @@ public class CostEngine
 		for (MCost cost : costs)
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
-			if (ce.isLandedCost())
+			if (isLandedCost(model))
 			{
 				// skip landed costs
 				continue;
@@ -462,7 +468,7 @@ public class CostEngine
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
 			
-			if (ce.isLandedCost()) 
+			if (isLandedCost(model)) 
 			{
 				  	MCostDetail	cd = new MCostDetail(as, model.getAD_Org_ID(), model.getM_Product_ID(), model.getM_AttributeSetInstance_ID(),ce.getM_CostElement_ID(),  cc.getAmount() ,cc.getQty() , ce.getDescription() , model.get_TrxName() , cost.getM_CostType_ID()); 
 
@@ -952,5 +958,5 @@ public class CostEngine
 			id = ((MMatchInv) model).getC_InvoiceLine_ID();
 		}
 		return id ;
-	}
+	}	
 }

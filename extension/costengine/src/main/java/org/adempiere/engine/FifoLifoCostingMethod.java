@@ -14,6 +14,7 @@ import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostQueue;
+import org.compiere.model.MCostType;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.ProductCost;
@@ -75,9 +76,10 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		//TODO: need evaluate this!
 		if (cQueue != null)
 		{
-			if (cQueue.length >0 && m_dimension.getCostElement().isFifo())
+			MCostType ct = (MCostType) m_dimension.getM_CostType();
+			if (cQueue.length >0 && ct.isFifo())
 				m_dimension.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
-			else if (cQueue.length > 0 && m_dimension.getCostElement().isLandedCost())
+			else if (cQueue.length > 0 && CostEngine.isLandedCost(m_model))
 				m_dimension.setCurrentCostPrice(cQueue[0].getCurrentCostPrice());
 		}	
 		m_dimension.setCurrentQty(m_dimension.getCurrentQty().add(m_costdetail.getQty()));

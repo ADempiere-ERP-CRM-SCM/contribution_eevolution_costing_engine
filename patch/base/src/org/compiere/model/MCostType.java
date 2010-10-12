@@ -146,4 +146,94 @@ public class MCostType extends X_M_CostType
 		}
 		return true;
 	}	//	beforeDelete
+	
+	/**
+	 * 	Is Avg PO Costing Method
+	 *	@return true if AveragePO
+	 */
+	public boolean isAveragePO()
+	{
+		String cm = getCostingMethod();
+		return cm != null 
+			&& cm.equals(COSTINGMETHOD_AveragePO);
+	}	//	isAveragePO
+
+	
+	/**
+	 * 	Is FiFo Costing Method
+	 *	@return true if Fifo
+	 */
+	public boolean isFifo()
+	{
+		String cm = getCostingMethod();
+		return cm != null 
+			&& cm.equals(COSTINGMETHOD_Fifo);
+	}	//	isFifo
+	
+	/**
+	 * 	Is Last Invoice Costing Method
+	 *	@return true if LastInvoice
+	 */
+	public boolean isLastInvoice()
+	{
+		String cm = getCostingMethod();
+		return cm != null 
+			&& cm.equals(COSTINGMETHOD_LastInvoice);
+	}	//	isLastInvoice
+	
+	/**
+	 * 	Is Last PO Costing Method
+	 *	@return true if LastPOPrice
+	 */
+	public boolean isLastPOPrice()
+	{
+		String cm = getCostingMethod();
+		return cm != null 
+			&& cm.equals(COSTINGMETHOD_LastPOPrice);
+	}	//	isLastPOPrice
+	
+
+	/**
+	 * 	Is LiFo Costing Method
+	 *	@return true if Lifo
+	 */
+	public boolean isLifo()
+	{
+		String cm = getCostingMethod();
+		return cm != null 
+			&& cm.equals(COSTINGMETHOD_Lifo);
+	}	//	isLiFo
+	/**
+	 * 	Is Std Costing Method
+	 *	@return true if StandardCosting
+	 */
+	public boolean isStandardCosting()
+	{
+		String cm = getCostingMethod();
+		return cm != null 
+			&& cm.equals(COSTINGMETHOD_StandardCosting);
+	}	//	isStandardCosting
+	
+	/**
+	 * 	Is Avg Invoice Costing Method
+	 *	@return true if AverageInvoice
+	 */
+	public boolean isAverageInvoice()
+	{
+		String cm = getCostingMethod();
+		return cm != null 
+			&& cm.equals(COSTINGMETHOD_AverageInvoice);
+	}	//	isAverageInvoice
+	
+
+	/**
+	 * 	Is User Costing Method
+	 *	@return true if User Defined
+	 */
+	public boolean isUserDefined()
+	{
+		String cm = getCostingMethod();
+		return cm != null 
+			&& cm.equals(COSTINGMETHOD_UserDefined);
+	}	//	isAveragePO
 }	//	MCostType

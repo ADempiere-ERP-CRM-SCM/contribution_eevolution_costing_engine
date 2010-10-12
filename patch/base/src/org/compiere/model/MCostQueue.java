@@ -131,32 +131,32 @@ public class MCostQueue extends X_M_CostQueue
     }
 	public static MCostQueue[] getQueue (MCost cost, Timestamp dateAcct, String trxName)
 	{
-		final String costingMethod = cost.getCostingMethod();
+		final MCostType ct = (MCostType) cost.getM_CostType();
 		final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
 		
 		String orderByFlag = null;
-		if (costingMethod != null)
+		if (ct.getCostingMethod() != null)
 		{
-			if (MCostElement.COSTINGMETHOD_Fifo.equals(costingMethod))
+			if (MCostElement.COSTINGMETHOD_Fifo.equals(ct.getCostingMethod()))
 				orderByFlag = " ASC";
-			else if (MCostElement.COSTINGMETHOD_Lifo.equals(costingMethod))
+			else if (MCostElement.COSTINGMETHOD_Lifo.equals(ct.getCostingMethod()))
 				orderByFlag = " DESC";
 		}
-		else if (ce != null && ce.isFifo())
+		else if (ce != null && ct.isFifo())
 		{
 			orderByFlag = " ASC";
 		}
-		else if (ce != null && ce.isLifo())
+		else if (ce != null && ct.isLifo())
 		{
 			orderByFlag = " DESC";
 		}
-		else if (ce.isLandedCost())
+		/*else if (ce.isLandedCost())
 		{
 			orderByFlag = " ASC";
-		}
+		}*/
 		if (orderByFlag == null)
 		{
-			throw new IllegalArgumentException("Cost element should be FIFO or LIFO - "+ce+", CostingMethod="+costingMethod);
+			throw new IllegalArgumentException("Cost element should be FIFO or LIFO - "+ce+", CostingMethod="+ct.getCostingMethod());
 		}
 		String orderBy = COLUMNNAME_DateAcct+orderByFlag
 					+","+COLUMNNAME_M_CostQueue_ID+orderByFlag;

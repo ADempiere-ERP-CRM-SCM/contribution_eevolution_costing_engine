@@ -426,6 +426,7 @@ public class MCostElement extends X_M_CostElement
 	/**
 	 * 	Is Avg Invoice Costing Method
 	 *	@return true if AverageInvoice
+	 *	@deprecated
 	 */
 	public boolean isAverageInvoice()
 	{
@@ -438,6 +439,7 @@ public class MCostElement extends X_M_CostElement
 	/**
 	 * 	Is Avg PO Costing Method
 	 *	@return true if AveragePO
+	 *	@deprecated
 	 */
 	public boolean isAveragePO()
 	{
@@ -449,6 +451,7 @@ public class MCostElement extends X_M_CostElement
 	/**
 	 * 	Is FiFo Costing Method
 	 *	@return true if Fifo
+	 *	@deprecated
 	 */
 	public boolean isFifo()
 	{
@@ -460,6 +463,7 @@ public class MCostElement extends X_M_CostElement
 	/**
 	 * 	Is Last Invoice Costing Method
 	 *	@return true if LastInvoice
+	 *	@deprecated
 	 */
 	public boolean isLastInvoice()
 	{
@@ -471,6 +475,7 @@ public class MCostElement extends X_M_CostElement
 	/**
 	 * 	Is Last PO Costing Method
 	 *	@return true if LastPOPrice
+	 *	@deprecated
 	 */
 	public boolean isLastPOPrice()
 	{
@@ -482,6 +487,7 @@ public class MCostElement extends X_M_CostElement
 	/**
 	 * 	Is LiFo Costing Method
 	 *	@return true if Lifo
+	 *	@deprecated
 	 */
 	public boolean isLifo()
 	{
@@ -493,6 +499,7 @@ public class MCostElement extends X_M_CostElement
 	/**
 	 * 	Is Std Costing Method
 	 *	@return true if StandardCosting
+	 *	@deprecated
 	 */
 	public boolean isStandardCosting()
 	{
@@ -504,6 +511,7 @@ public class MCostElement extends X_M_CostElement
 	/**
 	 * 	Is User Costing Method
 	 *	@return true if User Defined
+	 *	@deprecated
 	 */
 	public boolean isUserDefined()
 	{
@@ -526,10 +534,4 @@ public class MCostElement extends X_M_CostElement
 			.append ("]");
 		return sb.toString ();
 	} //	toString
-	
-	public boolean isLandedCost()
-	{
-		//TODO: vpj-cd 	create logic to detect the model that is landed cost
-		return false;
-	}
 }	//	MCostElement
