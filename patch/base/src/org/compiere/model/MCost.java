@@ -1546,25 +1546,29 @@ public class MCost extends X_M_Cost
 	public static MCost getOrCreate (MProduct product, int M_AttributeSetInstance_ID,
 		MAcctSchema as, int AD_Org_ID,  int M_CostType_ID , int M_CostElement_ID, String trxName)
 	{
-		MCost cost = null;
-		final String whereClause = "AD_Client_ID=? AND AD_Org_ID=?"
-			+ " AND M_Product_ID=?"
-			+ " AND M_AttributeSetInstance_ID=?"
-			+ " AND M_CostType_ID=? AND C_AcctSchema_ID=?"
-			+ " AND M_CostElement_ID=?";
-		cost = new Query(product.getCtx(), I_M_Cost.Table_Name, whereClause, trxName)
-		.setParameters(	product.getAD_Client_ID(),
-						AD_Org_ID,
-						product.getM_Product_ID(),
-						M_AttributeSetInstance_ID,
-						M_CostType_ID,
-						as.getC_AcctSchema_ID(),
-						M_CostElement_ID)
-		.firstOnly();
+		String whereClause = I_M_Cost.COLUMNNAME_AD_Org_ID + "=? AND "
+		 + I_M_Cost.COLUMNNAME_C_AcctSchema_ID + "=? AND "
+		 + I_M_Cost.COLUMNNAME_M_Product_ID + "=? AND "
+		 + I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID + "=? AND "
+		 + I_M_Cost.COLUMNNAME_M_CostElement_ID + "=? AND "
+		 + I_M_Cost.COLUMNNAME_M_CostType_ID + "=?";
+
+		MCost cost = new Query(product.getCtx(), I_M_Cost.Table_Name, whereClause, product.get_TrxName())
+		.setClient_ID()
+		.setParameters(AD_Org_ID, 
+		as.getC_AcctSchema_ID(), 
+		product.getM_Product_ID(), 
+		M_AttributeSetInstance_ID, 
+		M_CostElement_ID, 
+		M_CostType_ID)	
+		.first();
+
 		if (cost == null)
 			cost = new MCost (product, M_AttributeSetInstance_ID,
-				as, AD_Org_ID, M_CostElement_ID);
+					as.getC_AcctSchema_ID(), AD_Org_ID, M_CostType_ID, M_CostElement_ID);
 		return cost;
+		
+
 	}	//	get
 	
 	@Deprecated
@@ -1664,18 +1668,19 @@ public class MCost extends X_M_Cost
 	/**
 	 * 	Parent Constructor
 	 *	@param product Product
-	 *	@param M_AttributeSetInstance_ID asi
-	 *	@param as Acct Schema
-	 *	@param AD_Org_ID org
-	 *	@param M_CostElement_ID cost element
+	 * @param M_AttributeSetInstance_ID asi
+	 * @param as Acct Schema
+	 * @param AD_Org_ID org
+	 * @param M_CostType_ID TODO
+	 * @param M_CostElement_ID cost element
 	 */
 	public MCost (MProduct product, int M_AttributeSetInstance_ID,
-		MAcctSchema as, int AD_Org_ID, int M_CostElement_ID)
+		int C_AcctSchema_ID, int AD_Org_ID, int M_CostType_ID, int M_CostElement_ID)
 	{
 		this (product.getCtx(), 0, product.get_TrxName());
 		setClientOrg(product.getAD_Client_ID(), AD_Org_ID);
-		setC_AcctSchema_ID(as.getC_AcctSchema_ID());
-		setM_CostType_ID(as.getM_CostType_ID());
+		setC_AcctSchema_ID(C_AcctSchema_ID);
+		setM_CostType_ID(M_CostType_ID);
 		setM_Product_ID(product.getM_Product_ID());
 		setM_AttributeSetInstance_ID(M_AttributeSetInstance_ID);
 		setM_CostElement_ID(M_CostElement_ID);
