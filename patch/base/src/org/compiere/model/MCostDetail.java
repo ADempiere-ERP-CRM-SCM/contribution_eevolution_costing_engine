@@ -102,8 +102,7 @@ public class MCostDetail extends X_M_CostDetail
 		params.add(false);
 		return  new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
 		.setParameters(params)	
-		.setOrderBy(MCostDetail.COLUMNNAME_DateAcct + " DESC ," +
-					MCostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")	
+		.setOrderBy("M_Product_ID, M_CostType_ID, M_CostElement_ID, DateAcct DESC, M_Transaction_ID DESC")
 		.first();
 	}
 	
@@ -280,7 +279,7 @@ public class MCostDetail extends X_M_CostDetail
 		return  new Query(cd.getCtx(), Table_Name, whereClause.toString(), cd.get_TrxName())
 		.setClient_ID()
 		.setParameters(params)
-		.setOrderBy(COLUMNNAME_DateAcct)
+		.setOrderBy("DateAcct,M_Transaction_ID")
 		.list();
 	}
 	
@@ -608,8 +607,6 @@ public class MCostDetail extends X_M_CostDetail
 	 */
 	public void setQty (BigDecimal Qty)
 	{
-		if (isProcessed())
-			throw new IllegalStateException("Cannot change Qty - processed");
 		if (Qty == null)
 			super.setQty (Env.ZERO);
 		else
