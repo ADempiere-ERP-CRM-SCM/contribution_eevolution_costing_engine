@@ -152,47 +152,79 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		return m_costdetail;
 	}
 
+	/**
+	 * Average Invoice 
+	 * Get the New Current Cost Price This Level
+	 * @param cd Cost Detail
+	 * @param scale Scale
+	 * @param roundingMode Rounding Mode
+	 * @return New Current Cost Price This Level
+	 */
+	public BigDecimal getNewCurrentCostPrice(MCostDetail cd, int scale,
+			int roundingMode) 
+	{		
+		if(getNewCumulatedQty(cd).signum() != 0)
+			return cd.getCurrentCostPrice();
+		else return BigDecimal.ZERO;
+	}
+
+
+	/**
+	 * Average Invoice 
+	 * Get the New Cumulated Amt This Level
+	 * @param cd Cost Detail
+	 * @return  New Cumulated Amt This Level
+	 */
+	public BigDecimal getNewCumulatedAmt(MCostDetail cd) {
+		return cd.getCumulatedAmt().add(cd.getCostAmt()).add(cd.getCostAdjustment());
+	}
+
+
+	/**
+	 * Average Invoice 
+	 * Get the New Current Cost Price low level
+	 * @param cd Cost Detail
+	 * @param scale Scale
+	 * @param roundingMode Rounding Mode
+	 * @return New Current Cost Price low level
+	 */
+	public BigDecimal getNewCurrentCostPriceLL(MCostDetail cd, int scale,
+			int roundingMode) {
+		if(getNewCumulatedQty(cd).signum() != 0)
+			return cd.getCurrentCostPriceLL();
+		else return BigDecimal.ZERO;
+	}
+
+
+	/**
+	 *  Average Invoice 
+	 * Get the new Cumulated Amt Low Level
+	 * @param cd MCostDetail
+	 * @return New Cumulated Am Low Level
+	 */
+	public BigDecimal getNewCumulatedAmtLL(MCostDetail cd) {
+		return cd.getCumulatedAmtLL().add(cd.getCostAmtLL()).add(cd.getCostAdjustmentLL());
+	}
+
+
+	/**
+	 * Average Invoice 
+	 * Get the new Cumulated Qty
+	 * @param cd Cost Detail
+	 * @return New Cumulated Qty
+	 */
+	public BigDecimal getNewCumulatedQty(MCostDetail cd) {
+		return cd.getCumulatedQty().add(cd.getQty());
+	}
+
 	@Override
-	public void processCostDetail(MCostDetail mCostdetail) {
+	public void processCostDetail(MCostDetail m_costdetail) {
 		// TODO Auto-generated method stub
 		
 	}
 
-
 	@Override
 	protected List<CostComponent> getCalculatedCosts() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public BigDecimal getNewCurrentCostPrice(MCostDetail cd, int scale,
-			int roundingMode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public BigDecimal getNewCumulatedAmt(MCostDetail cd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public BigDecimal getNewCurrentCostPriceLL(MCostDetail cd, int scale,
-			int roundingMode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public BigDecimal getNewCumulatedAmtLL(MCostDetail cd) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public BigDecimal getNewCumulatedQty(MCostDetail cd) {
 		// TODO Auto-generated method stub
 		return null;
 	}

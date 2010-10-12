@@ -444,12 +444,12 @@ public class MMatchInv extends X_M_MatchInv implements IDocumentLine
 				//
 				cd.setAmt(price.multiply(cd.getQty().subtract(qty)));
 				cd.setQty(cd.getQty().subtract(qty));
-				if (!cd.isProcessed())
+				/*if (!cd.isProcessed())
 				{
 					MClient client = MClient.get(getCtx(), getAD_Client_ID());
 					if (client.isCostImmediate())
 						cd.process();
-				}
+				}*/
 				if (cd.getQty().compareTo(Env.ZERO) == 0)
 				{
 					cd.setProcessed(false);
