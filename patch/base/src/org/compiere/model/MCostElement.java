@@ -529,6 +529,7 @@ public class MCostElement extends X_M_CostElement
 	
 	public boolean isLandedCost()
 	{
-		return getCostingMethod() == null;
+		//TODO: vpj-cd 	create logic to detect the model that is landed cost
+		return false;
 	}
 }	//	MCostElement
