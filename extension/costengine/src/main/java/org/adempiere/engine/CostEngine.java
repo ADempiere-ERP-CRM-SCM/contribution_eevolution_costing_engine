@@ -64,13 +64,6 @@ public class CostEngine
 	/**	Logger							*/
 	protected transient CLogger	log = CLogger.getCLogger (getClass());
 	
-	public static boolean isLandedCost(IDocumentLine model)
-	{
-		if(model instanceof MLandedCostAllocation)
-			return true;
-		
-		return false;
-	}
 	/**
 	 * Get Actual Cost of Parent Product Based on Cost Type
 	 * @param order
@@ -278,15 +271,14 @@ public class CostEngine
 		
 		MCost cost = validateCostForCostType(as, ct, ce, model.getM_Product_ID(), model.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
 		
-
-		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && !model.isSOTrx() 
-		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
-		{	
-			costThisLevel = model.getPriceActual();
-		}	
+		if (model instanceof MLandedCostAllocation && MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
+		{
+			 MLandedCostAllocation allocation =  (MLandedCostAllocation) model;
+			 costThisLevel = allocation.getPriceActual();
+		}
 		
 		//Landed Cost
-		if (isLandedCost(model))
+		if (MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 		{
 			// skip landed costs for incoming transactions
 		    if (cost.getCurrentQty().equals(Env.ZERO) && mtrx.getMovementType().endsWith("-"))
@@ -295,12 +287,19 @@ public class CostEngine
 				return;
 		    if (!model.isSOTrx() && model instanceof MMovementLine)
 				return;
-			else if (!model.isSOTrx())
+			else if (model.isSOTrx())
 			return;
 		}	
 		
-		if (model instanceof MLandedCostAllocation && !isLandedCost(model))
-			return;
+
+		
+		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && !model.isSOTrx() 
+		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
+		{	
+			costThisLevel = model.getPriceActual();
+		}	
+		
+		
 		
 		//Standard Cost functionality
 		if (MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
@@ -346,6 +345,11 @@ public class CostEngine
 		MCostDetail cd = method.process();	
 		final String idColumnName = CostEngine.getIDColumnName(model);		
 		cd.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(model));
+		if (model instanceof MLandedCostAllocation && MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
+		{
+			 cd.setM_Transaction_ID(mtrx.getM_Transaction_ID());
+			 cd.setM_InOutLine_ID(mtrx.getM_InOutLine_ID());
+		}
 		cd.saveEx();
 	}
 	
@@ -428,7 +432,7 @@ public class CostEngine
 		for (MCost cost : costs)
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
-			if (isLandedCost(model))
+			if(MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 			{
 				// skip landed costs
 				continue;
@@ -468,7 +472,7 @@ public class CostEngine
 		{
 			final MCostElement ce = MCostElement.get(cost.getCtx(), cost.getM_CostElement_ID());
 			
-			if (isLandedCost(model)) 
+			if (MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 			{
 				  	MCostDetail	cd = new MCostDetail(as, model.getAD_Org_ID(), model.getM_Product_ID(), model.getM_AttributeSetInstance_ID(),ce.getM_CostElement_ID(),  cc.getAmount() ,cc.getQty() , ce.getDescription() , model.get_TrxName() , cost.getM_CostType_ID()); 
 

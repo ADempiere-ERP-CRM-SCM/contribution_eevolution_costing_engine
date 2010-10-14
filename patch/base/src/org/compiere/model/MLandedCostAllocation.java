@@ -36,10 +36,12 @@ import org.compiere.util.Env;
  */
 public class MLandedCostAllocation extends X_C_LandedCostAllocation implements IDocumentLine
 {	
+
+
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -8645283018475474574L;
+	private static final long serialVersionUID = 1574659174124528372L;
 
 
 	/**
@@ -175,8 +177,8 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 
 	@Override //ancabradau
 	public BigDecimal getPriceActual()
-	{
-		return this.getAmt().divide(getQty());
+	{	
+		return getAmt().divide(getQty(), BigDecimal.ROUND_HALF_UP);
 	}
 
 	@Override

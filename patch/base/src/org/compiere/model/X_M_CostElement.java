@@ -19,7 +19,6 @@ package org.compiere.model;
 
 import java.sql.ResultSet;
 import java.util.Properties;
-import org.compiere.model.*;
 import org.compiere.util.KeyNamePair;
 
 /** Generated Model for M_CostElement
@@ -31,7 +30,7 @@ public class X_M_CostElement extends PO implements I_M_CostElement, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20101007L;
+	private static final long serialVersionUID = 20101013L;
 
     /** Standard Constructor */
     public X_M_CostElement (Properties ctx, int M_CostElement_ID, String trxName)
@@ -86,6 +85,8 @@ public class X_M_CostElement extends PO implements I_M_CostElement, I_Persistent
 	public static final String COSTELEMENTTYPE_OutsideProcessing = "X";
 	/** Resource = R */
 	public static final String COSTELEMENTTYPE_Resource = "R";
+	/** Landed Cost = L */
+	public static final String COSTELEMENTTYPE_LandedCost = "L";
 	/** Set Cost Element Type.
 		@param CostElementType 
 		Type of Cost Element

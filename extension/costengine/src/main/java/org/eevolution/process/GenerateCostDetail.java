@@ -28,6 +28,8 @@ import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
 import org.compiere.model.MInOutLine;
+import org.compiere.model.MLandedCost;
+import org.compiere.model.MLandedCostAllocation;
 import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
 import org.compiere.model.MProduct;
@@ -236,6 +238,20 @@ public class GenerateCostDetail extends SvrProcess
 				    			{
 				    				if(match.getC_InvoiceLine_ID()==match.getC_InvoiceLine_ID())
 				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as , trx, match , ce , ct);
+				    			}
+				    			
+				    			if(MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
+				    			{	
+					    			List<MLandedCost> landedCosts = MLandedCost.getLandedCosts(line);
+					    			for(MLandedCost landedCost : landedCosts)
+					    			{
+					    				MLandedCostAllocation[] allocations = MLandedCostAllocation
+					    				.getOfInvoiceLine(landedCost.getCtx(), landedCost.getC_InvoiceLine_ID(), landedCost.get_TrxName()); 
+					    				for (MLandedCostAllocation allocation : allocations)
+					    				{
+					    					CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx , allocation , ce , ct);
+					    				}
+					    			}
 				    			}
 				    		}   	
 				    	}
