@@ -277,22 +277,6 @@ public class CostEngine
 			 costThisLevel = allocation.getPriceActual();
 		}
 		
-		//Landed Cost
-		if (MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
-		{
-			// skip landed costs for incoming transactions
-		    if (cost.getCurrentQty().equals(Env.ZERO) && mtrx.getMovementType().endsWith("-"))
-				return;
-		    else if (!(model instanceof MLandedCostAllocation) && mtrx.getMovementType().equals("V+"))
-				return;
-		    if (!model.isSOTrx() && model instanceof MMovementLine)
-				return;
-			else if (model.isSOTrx())
-			return;
-		}	
-		
-
-		
 		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && !model.isSOTrx() 
 		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
 		{	
