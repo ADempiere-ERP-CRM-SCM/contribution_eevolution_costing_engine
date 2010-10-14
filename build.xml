@@ -48,6 +48,7 @@
       <include name="**/org/adempiere/engine/*.java"/>
       <include name="**/org/adempiere/exceptions/*.java"/>
         <include name="**/org/eevolution/model/*.java"/>
+        <include name="**/org/eevolution/process/*.java"/>
       <classpath refid="lib.class.path"/>
     </javac>
 
@@ -95,6 +96,7 @@
       <src path="${src}"/>
       <include name="**/org/compiere/acct/*.java"/>
       <include name="**/org/compiere/model/*.java"/>
+      <include name="**/org/compiere/process/*.java"/>
       <classpath refid="patch.class.path"/>
     </javac>
   	<javac srcdir="${liberoPatchSrc}" destdir="${build}">
