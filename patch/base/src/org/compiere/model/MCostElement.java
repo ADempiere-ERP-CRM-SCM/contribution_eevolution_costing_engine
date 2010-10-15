@@ -61,7 +61,7 @@ public class MCostElement extends X_M_CostElement
 			.setOrderBy("AD_Org_ID DESC")
 			.list();
 		
-		if (elements != null && elements.size() > 0 )
+		if (elements != null)
 			return elements;
 		
 		//	Create New
@@ -88,16 +88,23 @@ public class MCostElement extends X_M_CostElement
 		MCostElement retValue = new Query(po.getCtx(), Table_Name, whereClause, po.get_TrxName())
 			.setParameters(COSTELEMENTTYPE_Material)
 			.setClient_ID()
-			.setOnlyActiveRecords(true)
 			.setOrderBy("M_CostElement_ID , AD_Org_ID DESC")
 			.first();
 		if (retValue != null)
+		{	
+			if (!retValue.isActive())
+			{	
+				retValue.setIsActive(true);
+				retValue.saveEx();
+			}		
 			return retValue;
+		}
 		
 		//	Create New
 		retValue = new MCostElement (po.getCtx(), 0, po.get_TrxName());
 		retValue.setClientOrg(po.getAD_Client_ID(), 0);
 		retValue.setName("Material");
+		retValue.setIsActive(true);
 		retValue.setCostElementType(COSTELEMENTTYPE_Material);
 		retValue.saveEx();
 		
