@@ -257,33 +257,40 @@ public class CostEngine
 		{	
 			for (MCostElement ce : ces)
 			{		
-					createCostDetail(as, mtrx , model , ce , ct);
+					createCostDetail(as, mtrx , model , ct , ce);
 			}		
 		}
 	}
-	
-	public void createCostDetail(MAcctSchema as, MTransaction mtrx ,IDocumentLine model , MCostElement ce, MCostType ct)
+	/**
+	 * Create Cost Detail
+	 * @param as Account Schema
+	 * @param mtrx Material Trx ID
+	 * @param model IDocumentLine
+	 * @param ct Cost Type ID
+	 * @param ce Cost Element ID
+	 */
+	public void createCostDetail(MAcctSchema as, MTransaction mtrx ,IDocumentLine model , MCostType ct, MCostElement ce)
 	{
 		
 		BigDecimal costThisLevel = Env.ZERO;
 		BigDecimal costLowLevel = Env.ZERO;
 		
-		MCost cost = validateCostForCostType(as, ct, ce, model.getM_Product_ID(), model.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
-		
-		if (model instanceof MLandedCostAllocation && MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
+		if (model instanceof MLandedCostAllocation && !MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
+				return;
+		else if (model instanceof MLandedCostAllocation && MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 		{
 			 MLandedCostAllocation allocation =  (MLandedCostAllocation) model;
 			 costThisLevel = allocation.getPriceActual();
 		}
-		
+
+		MCost cost = validateCostForCostType(as, ct, ce, model.getM_Product_ID(), model.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
+
 		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && !model.isSOTrx() 
 		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
 		{	
 			costThisLevel = model.getPriceActual();
 		}	
-		
-		
-		
+
 		//Standard Cost functionality
 		if (MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
 		{
@@ -332,6 +339,7 @@ public class CostEngine
 		{
 			 cd.setM_Transaction_ID(mtrx.getM_Transaction_ID());
 			 cd.setM_InOutLine_ID(mtrx.getM_InOutLine_ID());
+			 cd.setProcessed(false);
 		}
 		cd.saveEx();
 	}

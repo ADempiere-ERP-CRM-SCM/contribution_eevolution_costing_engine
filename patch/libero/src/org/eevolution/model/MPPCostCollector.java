@@ -85,7 +85,7 @@ public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction ,
 	 * @param dateAcct
 	 * @return Collection the Cost Collector
 	 */
-	public static List<MPPCostCollector> getCostCollectorNotTransaction(MProduct product,int AD_Client_ID, Timestamp dateAcct)
+	public static List<MPPCostCollector> getCostCollectorNotTransaction(Properties ctx, MProduct product,int AD_Client_ID, Timestamp dateAcct, String trxName)
 	{
 		List<Object> params = new ArrayList();
 		final StringBuffer whereClause = new StringBuffer();
@@ -99,7 +99,7 @@ public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction ,
 		  whereClause.append(MPPCostCollector.COLUMNNAME_DateAcct + ">=?");
 		  params.add(dateAcct);
 		 
-		return new Query(product.getCtx(), I_PP_Cost_Collector.Table_Name, whereClause.toString() , product.get_TrxName())
+		return new Query(ctx, I_PP_Cost_Collector.Table_Name, whereClause.toString() , trxName)
 					.setClient_ID()
 					.setParameters(params)
 					.list();

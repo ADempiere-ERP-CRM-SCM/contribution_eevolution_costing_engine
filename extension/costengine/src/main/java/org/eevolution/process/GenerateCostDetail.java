@@ -221,7 +221,7 @@ public class GenerateCostDetail extends SvrProcess
 		    			
 				    	for (MTransaction trx : trxs)
 				    	{				    						    		
-				    		CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx, trx.getDocumentLine(), ce, ct);
+				    		CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx, trx.getDocumentLine(), ct, ce);
 				    		
 				    		if(MTransaction.MOVEMENTTYPE_VendorReceipts.equals(trx.getMovementType()))
 				    		{
@@ -230,14 +230,14 @@ public class GenerateCostDetail extends SvrProcess
 				    			for(MMatchPO match: orderMatches)
 				    			{	
 				    				if(match.getM_InOutLine_ID() == line.getM_InOutLine_ID())
-				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx, match , ce, ct );
+				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx, match , ct, ce );
 				    			}
 				    			
 				    			MMatchInv[] invoiceMatches = MMatchInv.getInOutLine(getCtx(), line.getM_InOutLine_ID(), get_TrxName());
 				    			for (MMatchInv match: invoiceMatches)
 				    			{
 				    				if(match.getC_InvoiceLine_ID()==match.getC_InvoiceLine_ID())
-				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as , trx, match , ce , ct);
+				    				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as , trx, match , ct , ce);
 				    			}
 				    			
 				    			if(MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
@@ -249,7 +249,7 @@ public class GenerateCostDetail extends SvrProcess
 					    				.getOfInvoiceLine(landedCost.getCtx(), landedCost.getC_InvoiceLine_ID(), landedCost.get_TrxName()); 
 					    				for (MLandedCostAllocation allocation : allocations)
 					    				{
-					    					CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx , allocation , ce , ct);
+					    					CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx , allocation , ct , ce);
 					    				}
 					    			}
 				    			}

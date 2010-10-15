@@ -17,18 +17,10 @@
 
 package org.eevolution.model;
 
-import java.math.BigDecimal;
 import java.sql.ResultSet;
-import java.util.List;
 import java.util.Properties;
 
-import org.compiere.model.I_M_CostDetail;
-import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MCost;
-import org.compiere.model.MCostDetail;
-import org.compiere.model.MTransaction;
-import org.compiere.model.Query;
-import org.compiere.util.Env;
 
 /**
  * PP Order Cost Model.

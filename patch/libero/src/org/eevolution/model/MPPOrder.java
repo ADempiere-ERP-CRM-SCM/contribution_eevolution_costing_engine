@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.TreeSet;
 
+import org.adempiere.engine.CostDimension;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DocTypeNotFoundException;
-import org.adempiere.engine.CostDimension;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MClient;
 import org.compiere.model.MCost;

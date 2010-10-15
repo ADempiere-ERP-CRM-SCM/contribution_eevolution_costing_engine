@@ -240,7 +240,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 					MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
 					MCostType ct = (MCostType) cd.getM_CostType();
 					MCostElement ce =(MCostElement) cd.getM_CostElement();
-					CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(m_as,trx,trx.getDocumentLine(),ce,ct);
+					CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(m_as,trx,trx.getDocumentLine(),ct,ce);
 					cd.setProcessing(false);
 					cd.saveEx();
 				}
