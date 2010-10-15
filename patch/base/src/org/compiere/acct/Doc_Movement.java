@@ -141,7 +141,7 @@ public class Doc_Movement extends Doc
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 				costs = cost.getAmt();
-				total = total.add(costs);
+				total = total.add(costs.abs());
 				//  ** Inventory       DR      CR
 				dr = fact.createLine(line,
 					line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
