@@ -20,16 +20,12 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
-import org.adempiere.exceptions.AdempiereException;
-import org.adempiere.engine.CostEngineFactory;
-import org.adempiere.engine.IDocumentLine;
-import org.adempiere.engine.CostComponent;
+
 import org.compiere.print.ReportEngine;
 import org.compiere.process.DocAction;
 import org.compiere.process.DocumentEngine;

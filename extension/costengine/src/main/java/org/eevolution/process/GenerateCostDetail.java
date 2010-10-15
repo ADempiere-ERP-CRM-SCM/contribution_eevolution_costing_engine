@@ -263,7 +263,7 @@ public class GenerateCostDetail extends SvrProcess
 				    		product = new MProduct(getCtx(), p_M_Product_ID, get_TrxName());				    		
 				    	}	
 				    	
-				    	List<MPPCostCollector> ccs = MPPCostCollector.getCostCollectorNotTransaction(product , getAD_Client_ID(), p_DateAcct);
+				    	List<MPPCostCollector> ccs = MPPCostCollector.getCostCollectorNotTransaction(getCtx(), product , getAD_Client_ID(), p_DateAcct , get_TrxName());
 				    	
 				    	for(MPPCostCollector cc : ccs)
 				    	{

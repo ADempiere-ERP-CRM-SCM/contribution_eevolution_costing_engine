@@ -6,7 +6,6 @@ package org.adempiere.engine;
 import java.math.BigDecimal;
 import java.util.List;
 
-
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;

@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
-import org.adempiere.engine.CostingMethodFactory;
-import org.adempiere.engine.ICostingMethod;
 import org.compiere.acct.DocLine;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;

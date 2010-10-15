@@ -28,7 +28,6 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import org.adempiere.engine.CostEngineFactory;
-import org.adempiere.engine.IDocumentLine;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.BPartnerNoAddressException;
 import org.adempiere.exceptions.DBException;
@@ -42,7 +41,6 @@ import org.compiere.util.Env;
 import org.compiere.util.Msg;
 import org.eevolution.model.MPPProductBOM;
 import org.eevolution.model.MPPProductBOMLine;
-import org.compiere.model.MLandedCostAllocation;
 
 /**
  *	Invoice Model.

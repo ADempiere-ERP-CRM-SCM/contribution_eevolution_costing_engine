@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Properties;
+
 import org.compiere.util.Env;
 
 /** Generated Model for T_InventoryValue

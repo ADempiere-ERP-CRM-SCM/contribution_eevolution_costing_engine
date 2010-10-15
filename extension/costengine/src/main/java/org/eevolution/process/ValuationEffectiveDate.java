@@ -22,7 +22,6 @@ import org.adempiere.exceptions.FillMandatoryException;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MProduct;
 import org.compiere.model.MWarehouse;
-import org.compiere.model.X_T_InventoryValue;
 import org.compiere.process.ProcessInfoParameter;
 import org.compiere.process.SvrProcess;
 import org.compiere.util.DB;
