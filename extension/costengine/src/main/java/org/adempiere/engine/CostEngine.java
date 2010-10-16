@@ -35,9 +35,11 @@ import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
+import org.compiere.model.MInventoryLine;
 import org.compiere.model.MLandedCostAllocation;
 import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
+import org.compiere.model.MMovementLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.model.PO;
@@ -277,6 +279,7 @@ public class CostEngine
 		
 		if (model instanceof MLandedCostAllocation && !MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 				return;
+		
 		else if (model instanceof MLandedCostAllocation && MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 		{
 			 MLandedCostAllocation allocation =  (MLandedCostAllocation) model;
@@ -288,7 +291,24 @@ public class CostEngine
 		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && !model.isSOTrx() 
 		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
 		{	
+			if (model instanceof MMovementLine && mtrx.getMovementType().contains("+") 
+			||  model instanceof MInventoryLine)
+			{	
+				String costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
+				MCostDetail m_last_costdetail =  MCostDetail.getLastTransaction(mtrx, as.getC_AcctSchema_ID(), ct.getM_CostType_ID(), ce.getM_CostElement_ID(), model.getDateAcct(), costingLevel);
+				if(m_last_costdetail != null)
+				{	
+					costThisLevel = m_last_costdetail.getCumulatedAmt().divide(m_last_costdetail.getCumulatedQty(), as.getCostingPrecision(),BigDecimal.ROUND_HALF_UP);
+				}
+				if (model instanceof MInventoryLine && costThisLevel.signum() == 0)
+				{
+					costThisLevel = cost.getCurrentCostPrice();
+				}
+			}
+			else
+			{	
 			costThisLevel = model.getPriceActual();
+			}
 		}	
 
 		//Standard Cost functionality

@@ -265,19 +265,22 @@ public class MCostDetail extends X_M_CostDetail
 		
 		whereClause.append( MCostDetail.COLUMNNAME_M_CostType_ID+"=? AND ");
 		params.add(cd.getM_CostType_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ((");
 		params.add(cd.getM_CostElement_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_DateAcct+ ">? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_DateAcct+ "=? AND  ");
+		params.add(cd.getDateAcct());
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostDetail_ID + ">? ) OR (");
+		params.add(cd.getM_CostDetail_ID());
+		whereClause.append(MCostDetail.COLUMNNAME_DateAcct+ ">?)) AND ");
 		params.add(cd.getDateAcct());
 		whereClause.append(MCostDetail.COLUMNNAME_Processing + "=? AND ");
 		params.add(false);
-		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + "=?");
+		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + "=? ");
 		params.add(false);
-		;
 		return  new Query(cd.getCtx(), Table_Name, whereClause.toString(), cd.get_TrxName())
 		.setClient_ID()
 		.setParameters(params)
-		.setOrderBy("DateAcct,M_Transaction_ID")
+		.setOrderBy("DateAcct , M_Transaction_ID")
 		.list();
 	}
 	

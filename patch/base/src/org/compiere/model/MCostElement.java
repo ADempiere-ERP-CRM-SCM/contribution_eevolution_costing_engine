@@ -61,21 +61,37 @@ public class MCostElement extends X_M_CostElement
 			.setOrderBy("AD_Org_ID DESC")
 			.list();
 		
-		if (elements != null)
-			return elements;
+		if (elements != null && elements.size() > 0)
+			return elements;	
 		
+		MCostElement costElement = MCostElement.getByMaterialCostElementType(po);
+		
+		if (costElement != null)
+		{	
+			if (!costElement.isActive())
+			{	
+				costElement.setIsActive(true);
+				costElement.saveEx();
+			}		
+		}
+		else
+		{
 		//	Create New
-		MCostElement costElement = MCostElement.getByMaterialCostElementType (po);
-		costElement.setIsDefault(true);
-		costElement.saveEx();
+			costElement = new MCostElement (po.getCtx(), 0, po.get_TrxName());
+			costElement.setClientOrg(po.getAD_Client_ID(), 0);
+			costElement.setName("Material");
+			costElement.setIsDefault(true);
+			costElement.setIsActive(true);
+			costElement.setCostElementType(COSTELEMENTTYPE_Material);
+			costElement.saveEx();
+		}	
 		
 		elements = new ArrayList();
 		elements.add(costElement);
 		//
 		return elements;
     }	//	getMaterialCostElement  
-	
-	
+		
     /**
      * Get Cost Element    
      * @param po Persistence Object
@@ -83,31 +99,12 @@ public class MCostElement extends X_M_CostElement
      */
 	public static MCostElement getByMaterialCostElementType (PO po)
 	{
-		//
 		final String whereClause = "CostElementType=?";
 		MCostElement retValue = new Query(po.getCtx(), Table_Name, whereClause, po.get_TrxName())
 			.setParameters(COSTELEMENTTYPE_Material)
 			.setClient_ID()
-			.setOrderBy("M_CostElement_ID , AD_Org_ID DESC")
+			.setOrderBy("M_CostElement_ID ,IsDefault, AD_Org_ID DESC")
 			.first();
-		if (retValue != null)
-		{	
-			if (!retValue.isActive())
-			{	
-				retValue.setIsActive(true);
-				retValue.saveEx();
-			}		
-			return retValue;
-		}
-		
-		//	Create New
-		retValue = new MCostElement (po.getCtx(), 0, po.get_TrxName());
-		retValue.setClientOrg(po.getAD_Client_ID(), 0);
-		retValue.setName("Material");
-		retValue.setIsActive(true);
-		retValue.setCostElementType(COSTELEMENTTYPE_Material);
-		retValue.saveEx();
-		
 		//
 		return retValue;
     }	//	getMaterialCostElement  

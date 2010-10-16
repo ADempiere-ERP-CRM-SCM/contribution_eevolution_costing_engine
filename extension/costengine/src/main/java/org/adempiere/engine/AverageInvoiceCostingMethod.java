@@ -76,25 +76,6 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			m_AdjustCostLL = m_costLowLevel.multiply(m_trx.getMovementQty()).subtract(m_costdetail.getCostAmtLL());
 			return;
 		}
-		
-		
-	    if (m_costThisLevel == null || m_costThisLevel==Env.ZERO) //m_price is null at physical inventory
-	    {	
-	    	m_costThisLevel = getNewCurrentCostPrice(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-	    	if(m_costThisLevel.signum() == 0)
-	    		m_costThisLevel = m_last_costdetail.getCurrentCostPrice();
-	    	if(m_costThisLevel.signum() == 0)
-	    		m_costThisLevel = m_dimension.getCurrentCostPrice();
-	    }	
-	    
-	    if (m_costLowLevel == null || m_costLowLevel==Env.ZERO) //m_price is null at physical inventory
-	    {	
-	    	m_costLowLevel = getNewCurrentCostPriceLL( m_last_costdetail, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-	    	if(m_costLowLevel.signum() == 0)
-	    		m_costLowLevel = m_last_costdetail.getCurrentCostPriceLL();
-	    	if(m_costLowLevel.signum() == 0)
-	    		m_costLowLevel = m_dimension.getCurrentCostPriceLL();
-	    }	
 	    
 		m_Amount = m_trx.getMovementQty().multiply(m_costThisLevel);	
 		m_AmountLL = m_trx.getMovementQty().multiply(m_costLowLevel);	
@@ -129,10 +110,10 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			if(m_AdjustCost.signum() != 0)
 			{
 				m_costdetail.setCostAdjustmentDate(m_model.getDateAcct());
-				m_costdetail.setCostAdjustment(m_AdjustCost);
+				m_costdetail.setCostAdjustment(m_costdetail.getCostAdjustment().add(m_AdjustCost));
 				m_costdetail.setProcessed(false);
-				m_costdetail.setAmt(m_costdetail.getCostAmt().add(m_AdjustCost));
-				m_costdetail.setDescription("Adjust Cost:"+ m_AdjustCost);
+				m_costdetail.setAmt(m_costdetail.getCostAmt().add(m_costdetail.getCostAdjustment()));
+				m_costdetail.setDescription(m_costdetail.getDescription() + " Adjust Cost:"+ m_AdjustCost);
 			}
 			else
 			{	
@@ -146,10 +127,10 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			if(m_AdjustCostLL.signum() != 0)
 			{
 				m_costdetail.setCostAdjustmentDateLL(m_model.getDateAcct());
-				m_costdetail.setCostAdjustmentLL(m_AdjustCostLL);
+				m_costdetail.setCostAdjustmentLL(m_costdetail.getCostAdjustmentLL().add(m_AdjustCostLL));
 				m_costdetail.setProcessed(false);
-				m_costdetail.setAmtLL(m_costdetail.getCostAmtLL().add(m_AdjustCostLL));
-				m_costdetail.setDescription("Adjust Cost LL:"+ m_AdjustCost);
+				m_costdetail.setAmtLL(m_costdetail.getCostAmtLL().add(m_costdetail.getCostAdjustmentLL()));
+				m_costdetail.setDescription(m_costdetail.getDescription() +" Adjust Cost LL:"+ m_AdjustCost);
 			}
 			else
 			{	
@@ -160,7 +141,6 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 				if(m_trx.getMovementType().contains("-"))
 					m_costdetail.setCostAmtLL(m_costdetail.getAmtLL());
 			}
-			m_costdetail.setDateAcct(m_model.getDateAcct());
 			m_costdetail.saveEx();
 			return;
 		}
