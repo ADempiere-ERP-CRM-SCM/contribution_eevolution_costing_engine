@@ -7,3 +7,4 @@ oracle.home=
 #sqlplus connection string
 oracle.connect.param=adempiere/adempiere
 
+adempiere.trunk=
