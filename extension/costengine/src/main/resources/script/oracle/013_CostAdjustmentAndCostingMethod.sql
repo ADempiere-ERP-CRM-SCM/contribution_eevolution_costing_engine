@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Jul 9, 2010 6:31:26 PM CDT
 -- Costing Engine
 INSERT INTO AD_Element (AD_Client_ID,AD_Element_ID,AD_Org_ID,ColumnName,Created,CreatedBy,Description,EntityType,Help,IsActive,Name,PrintName,Updated,UpdatedBy) VALUES (0,54251,0,'CostAdjustment',TO_DATE('2010-07-09 18:31:20','YYYY-MM-DD HH24:MI:SS'),0,'Product Cost Adjustment','D','product cost adjustments','Y','Cost Adjustment','Cost Adjustment',TO_DATE('2010-07-09 18:31:20','YYYY-MM-DD HH24:MI:SS'),0)

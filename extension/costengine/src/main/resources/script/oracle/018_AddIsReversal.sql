@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Sep 7, 2010 6:51:00 PM CDT
 -- Cost Engine
 INSERT INTO AD_Column (AD_Client_ID,AD_Column_ID,AD_Element_ID,AD_Org_ID,AD_Reference_ID,AD_Table_ID,ColumnName,Created,CreatedBy,DefaultValue,Description,EntityType,FieldLength,Help,IsActive,IsAllowLogging,IsAlwaysUpdateable,IsAutocomplete,IsEncrypted,IsIdentifier,IsKey,IsMandatory,IsParent,IsSelectionColumn,IsSyncDatabase,IsTranslated,IsUpdateable,Name,SeqNo,Updated,UpdatedBy,Version) VALUES (0,59788,1476,0,20,808,'IsReversal',TO_DATE('2010-09-07 18:50:55','YYYY-MM-DD HH24:MI:SS'),100,'N','This is a reversing transaction','D',1,'The Reversal check box indicates if this is a reversal of a prior transaction.','Y','Y','N','N','N','N','N','N','N','N','N','N','Y','Reversal',0,TO_DATE('2010-09-07 18:50:55','YYYY-MM-DD HH24:MI:SS'),100,0)

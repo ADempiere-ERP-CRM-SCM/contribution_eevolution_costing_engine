@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Oct 13, 2010 7:01:11 PM CDT
 -- Cost Engine
 INSERT INTO AD_Ref_List (AD_Client_ID,AD_Org_ID,AD_Ref_List_ID,AD_Reference_ID,Created,CreatedBy,EntityType,IsActive,Name,Updated,UpdatedBy,Value) VALUES (0,0,53649,338,TO_DATE('2010-10-13 19:01:09','YYYY-MM-DD HH24:MI:SS'),100,'D','Y','Landed Cost',TO_DATE('2010-10-13 19:01:09','YYYY-MM-DD HH24:MI:SS'),100,'L')

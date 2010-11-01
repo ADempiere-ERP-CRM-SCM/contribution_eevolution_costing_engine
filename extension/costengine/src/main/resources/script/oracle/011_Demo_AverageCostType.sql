@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Jul 2, 2010 4:12:53 PM CDT
 -- Costing Engine
 INSERT INTO M_CostType (Created,Updated,M_CostType_ID,UpdatedBy,AD_Org_ID,CreatedBy,Description,IsActive,Name,AD_Client_ID) VALUES (TO_DATE('2010-07-02 16:12:50','YYYY-MM-DD HH24:MI:SS'),TO_DATE('2010-07-02 16:12:50','YYYY-MM-DD HH24:MI:SS'),50000,100,0,100,'Average Invoice Consting Method','Y','Average Invoice',11)

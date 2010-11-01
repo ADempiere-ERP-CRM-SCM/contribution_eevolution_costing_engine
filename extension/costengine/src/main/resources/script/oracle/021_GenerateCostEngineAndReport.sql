@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Sep 17, 2010 4:26:33 PM CDT
 -- Cost Engine Report
 UPDATE AD_ReportView SET AD_Table_ID=478, Description='Inventory valuation', EntityType='D', IsActive='Y', Name='RV_T_InventoryValue', OrderByClause=NULL, WhereClause=NULL,Updated=TO_DATE('2010-09-17 16:26:33','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_ReportView_ID=124

@@ -1,3 +1,5 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
 
 -- Sep 17, 2010 7:00:43 PM CDT
 -- Cost Engine Report

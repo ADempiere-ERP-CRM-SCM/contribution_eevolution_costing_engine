@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Apr 27, 2010 11:32:45 AM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
 INSERT INTO AD_Column (AD_Client_ID,AD_Column_ID,AD_Element_ID,AD_Org_ID,AD_Reference_ID,AD_Table_ID,ColumnName,Created,CreatedBy,EntityType,FieldLength,IsActive,IsAllowLogging,IsAlwaysUpdateable,IsAutocomplete,IsEncrypted,IsIdentifier,IsKey,IsMandatory,IsParent,IsSelectionColumn,IsSyncDatabase,IsTranslated,IsUpdateable,Name,SeqNo,Updated,UpdatedBy,Version) VALUES (0,1000100,1035,0,13,808,'M_Transaction_ID',TO_DATE('2010-04-27 11:32:45','YYYY-MM-DD HH24:MI:SS'),0,'U',10,'Y','Y','N','N','N','N','N','N','N','N','N','N','Y','Inventory Transaction',0,TO_DATE('2010-04-27 11:32:45','YYYY-MM-DD HH24:MI:SS'),0,0)

@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Aug 1, 2010 4:30:05 PM CDT
 -- Costing Engine
 UPDATE M_CostType SET CostingMethod='I',Updated=TO_DATE('2010-08-01 16:30:05','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE M_CostType_ID=50000

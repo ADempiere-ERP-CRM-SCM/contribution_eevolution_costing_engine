@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Sep 13, 2010 12:14:14 PM CDT
 -- Cost Engine
 INSERT INTO AD_Column (AD_Client_ID,AD_Column_ID,AD_Element_ID,AD_Org_ID,AD_Reference_ID,AD_Table_ID,ColumnName,Created,CreatedBy,Description,EntityType,FieldLength,Help,IsActive,IsAllowLogging,IsAlwaysUpdateable,IsAutocomplete,IsEncrypted,IsIdentifier,IsKey,IsMandatory,IsParent,IsSelectionColumn,IsSyncDatabase,IsTranslated,IsUpdateable,Name,SeqNo,Updated,UpdatedBy,Version) VALUES (0,59790,2071,0,19,478,'M_CostType_ID',TO_DATE('2010-09-13 12:14:10','YYYY-MM-DD HH24:MI:SS'),0,'Type of Cost (e.g. Current, Plan, Future)','D',10,'You can define multiple cost types. A cost type selected in an Accounting Schema is used for accounting.','Y','Y','N','N','N','N','N','N','N','N','N','N','Y','Cost Type',0,TO_DATE('2010-09-13 12:14:10','YYYY-MM-DD HH24:MI:SS'),0,0)

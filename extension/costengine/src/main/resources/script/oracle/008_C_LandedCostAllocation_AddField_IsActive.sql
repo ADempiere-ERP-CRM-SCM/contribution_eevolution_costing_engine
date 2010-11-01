@@ -1,3 +1,5 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
 
 -- Jun 29, 2010 9:33:17 AM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator

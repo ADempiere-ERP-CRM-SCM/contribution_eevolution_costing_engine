@@ -1,3 +1,6 @@
+SET SQLBLANKLINES ON
+SET DEFINE OFF
+
 -- Oct 7, 2010 11:30:09 PM CDT
 -- Cost Engine
 INSERT INTO AD_Column (AD_Client_ID,AD_Column_ID,AD_Element_ID,AD_Org_ID,AD_Reference_ID,AD_Table_ID,ColumnName,Created,CreatedBy,Description,EntityType,FieldLength,Help,IsActive,IsAllowLogging,IsAlwaysUpdateable,IsAutocomplete,IsEncrypted,IsIdentifier,IsKey,IsMandatory,IsParent,IsSelectionColumn,IsSyncDatabase,IsTranslated,IsUpdateable,Name,SeqNo,Updated,UpdatedBy,Version) VALUES (0,59917,1103,0,20,770,'IsDefault',TO_DATE('2010-10-07 23:30:04','YYYY-MM-DD HH24:MI:SS'),100,'Default value','D',1,'The Default Checkbox indicates if this record will be used as a default value.','Y','Y','N','N','N','N','N','N','N','N','N','N','Y','Default',0,TO_DATE('2010-10-07 23:30:04','YYYY-MM-DD HH24:MI:SS'),100,0)
