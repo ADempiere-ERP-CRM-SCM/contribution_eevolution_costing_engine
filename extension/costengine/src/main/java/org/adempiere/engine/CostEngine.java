@@ -35,6 +35,7 @@ import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
+import org.compiere.model.MInOutLine;
 import org.compiere.model.MInventoryLine;
 import org.compiere.model.MLandedCostAllocation;
 import org.compiere.model.MMatchInv;
@@ -277,6 +278,10 @@ public class CostEngine
 		BigDecimal costThisLevel = Env.ZERO;
 		BigDecimal costLowLevel = Env.ZERO;
 		
+		//The Change of price  in the Invoice Line is not generated cost adjustment for Average PO Consting method  
+		if(model instanceof MMatchInv && MCostType.COSTINGMETHOD_AveragePO.equals(ct.getCostingMethod()))
+			return;
+		
 		if (model instanceof MLandedCostAllocation && !MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 				return;
 		
@@ -287,18 +292,20 @@ public class CostEngine
 		}
 
 		MCost cost = validateCostForCostType(as, ct, ce, model.getM_Product_ID(), model.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
-
-		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && !model.isSOTrx() 
+		
+		//get the cost for + transaction
+		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && mtrx.getMovementType().contains("+")
 		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
 		{	
-			if (model instanceof MMovementLine && mtrx.getMovementType().contains("+") 
-			||  model instanceof MInventoryLine)
+			if (model instanceof MMovementLine  
+			||  model instanceof MInventoryLine
+			|| (model instanceof MInOutLine && MTransaction.MOVEMENTTYPE_CustomerReturns.equals(mtrx.getMovementType())))
 			{	
 				String costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
 				MCostDetail m_last_costdetail =  MCostDetail.getLastTransaction(mtrx, as.getC_AcctSchema_ID(), ct.getM_CostType_ID(), ce.getM_CostElement_ID(), model.getDateAcct(), costingLevel);
 				if(m_last_costdetail != null)
 				{	
-					costThisLevel = m_last_costdetail.getCumulatedAmt().divide(m_last_costdetail.getCumulatedQty(), as.getCostingPrecision(),BigDecimal.ROUND_HALF_UP);
+					costThisLevel = m_last_costdetail.getCumulatedAmt().add(m_last_costdetail.getCostAmt()).divide(m_last_costdetail.getCumulatedQty().add(m_last_costdetail.getQty()), as.getCostingPrecision(),BigDecimal.ROUND_HALF_UP);
 				}
 				if (model instanceof MInventoryLine && costThisLevel.signum() == 0)
 				{

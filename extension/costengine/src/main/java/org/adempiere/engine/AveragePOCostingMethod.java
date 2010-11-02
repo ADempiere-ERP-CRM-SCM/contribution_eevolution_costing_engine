@@ -12,7 +12,6 @@ import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
-import org.compiere.model.MMatchInv;
 import org.compiere.model.MProduct;
 import org.compiere.model.MTransaction;
 import org.compiere.util.Env;
@@ -23,8 +22,6 @@ import org.compiere.util.Util;
  * 
  */
 public class AveragePOCostingMethod extends  AbstractCostingMethod implements ICostingMethod {
-
-	
 	public void setCostingMethod (MAcctSchema as, MTransaction mtrx, MCost dimension,BigDecimal costThisLevel,
 			BigDecimal costLowLevel, Boolean isSOTrx)
 	{
@@ -78,25 +75,6 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 			m_AdjustCostLL = m_costLowLevel.multiply(m_trx.getMovementQty()).subtract(m_costdetail.getCostAmtLL());
 			return;
 		}
-		
-		
-	    if (m_costThisLevel == null || m_costThisLevel==Env.ZERO) //m_price is null at physical inventory
-	    {	
-	    	m_costThisLevel = getNewCurrentCostPrice(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-	    	if(m_costThisLevel.signum() == 0)
-	    		m_costThisLevel = m_last_costdetail.getCurrentCostPrice();
-	    	if(m_costThisLevel.signum() == 0)
-	    		m_costThisLevel = m_dimension.getCurrentCostPrice();
-	    }	
-	    
-	    if (m_costLowLevel == null || m_costLowLevel==Env.ZERO) //m_price is null at physical inventory
-	    {	
-	    	m_costLowLevel = getNewCurrentCostPriceLL( m_last_costdetail, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-	    	if(m_costLowLevel.signum() == 0)
-	    		m_costLowLevel = m_last_costdetail.getCurrentCostPriceLL();
-	    	if(m_costLowLevel.signum() == 0)
-	    		m_costLowLevel = m_dimension.getCurrentCostPriceLL();
-	    }	
 	    
 		m_Amount = m_trx.getMovementQty().multiply(m_costThisLevel);	
 		m_AmountLL = m_trx.getMovementQty().multiply(m_costLowLevel);	
@@ -131,10 +109,10 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 			if(m_AdjustCost.signum() != 0)
 			{
 				m_costdetail.setCostAdjustmentDate(m_model.getDateAcct());
-				m_costdetail.setCostAdjustment(m_AdjustCost);
+				m_costdetail.setCostAdjustment(m_costdetail.getCostAdjustment().add(m_AdjustCost));
 				m_costdetail.setProcessed(false);
-				m_costdetail.setAmt(m_costdetail.getCostAmt().add(m_AdjustCost));
-				m_costdetail.setDescription("Adjust Cost:"+ m_AdjustCost);
+				m_costdetail.setAmt(m_costdetail.getCostAmt().add(m_costdetail.getCostAdjustment()));
+				m_costdetail.setDescription(m_costdetail.getDescription() + " Adjust Cost:"+ m_AdjustCost);
 			}
 			else
 			{	
@@ -148,10 +126,10 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 			if(m_AdjustCostLL.signum() != 0)
 			{
 				m_costdetail.setCostAdjustmentDateLL(m_model.getDateAcct());
-				m_costdetail.setCostAdjustmentLL(m_AdjustCostLL);
+				m_costdetail.setCostAdjustmentLL(m_costdetail.getCostAdjustmentLL().add(m_AdjustCostLL));
 				m_costdetail.setProcessed(false);
-				m_costdetail.setAmtLL(m_costdetail.getCostAmtLL().add(m_AdjustCostLL));
-				m_costdetail.setDescription("Adjust Cost LL:"+ m_AdjustCost);
+				m_costdetail.setAmtLL(m_costdetail.getCostAmtLL().add(m_costdetail.getCostAdjustmentLL()));
+				m_costdetail.setDescription(m_costdetail.getDescription() +" Adjust Cost LL:"+ m_AdjustCost);
 			}
 			else
 			{	
@@ -162,7 +140,6 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 				if(m_trx.getMovementType().contains("-"))
 					m_costdetail.setCostAmtLL(m_costdetail.getAmtLL());
 			}
-			m_costdetail.setDateAcct(m_model.getDateAcct());
 			m_costdetail.saveEx();
 			return;
 		}
@@ -207,9 +184,6 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 
 	public MCostDetail process() {
 
-		if(m_model instanceof MMatchInv)
-			return m_costdetail;
-		
 		calculate();
 		createCostDetail();		
 		updateInventoryValue();
@@ -270,7 +244,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 
 
 	/**
-	 * Average Purchase Order 
+	 * Average Invoice 
 	 * Get the New Current Cost Price This Level
 	 * @param cd Cost Detail
 	 * @param scale Scale
@@ -287,7 +261,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 
 
 	/**
-	 * Average Purchase Order 
+	 * Average Invoice 
 	 * Get the New Cumulated Amt This Level
 	 * @param cd Cost Detail
 	 * @return  New Cumulated Amt This Level
@@ -298,7 +272,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 
 
 	/**
-	 * Average Purchase Order 
+	 * Average Invoice 
 	 * Get the New Current Cost Price low level
 	 * @param cd Cost Detail
 	 * @param scale Scale
@@ -314,7 +288,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 
 
 	/**
-	 *  Average Purchase Order 
+	 *  Average Invoice 
 	 * Get the new Cumulated Amt Low Level
 	 * @param cd MCostDetail
 	 * @return New Cumulated Am Low Level
@@ -325,7 +299,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 
 
 	/**
-	 * Average Purchase Order 
+	 * Average Invoice 
 	 * Get the new Cumulated Qty
 	 * @param cd Cost Detail
 	 * @return New Cumulated Qty

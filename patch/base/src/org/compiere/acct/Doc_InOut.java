@@ -166,11 +166,11 @@ public class Doc_InOut extends Doc
 				
 				for (MCostDetail cost :  line.getCostDetail(as))
 				{	
-					if (cost.getAmt().signum() == 0)
+					if (cost.getCostAmt().signum() == 0)
 						continue;
 					//get costing method for product
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-					costs = cost.getAmt();
+					costs = cost.getCostAmt();
 					total = total.add(costs);
 					
 					//  CoGS            DR
@@ -267,9 +267,9 @@ public class Doc_InOut extends Doc
 				MProduct product = line.getProduct();
 				for (MCostDetail cost : line.getCostDetail(as))
 				{	
-					if (cost.getAmt().signum() == 0)
+					if (cost.getCostAmt().signum() == 0)
 						continue;
-					costs = cost.getAmt();
+					costs = cost.getCostAmt();
 					total = total.add(costs);
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 										
@@ -355,10 +355,10 @@ public class Doc_InOut extends Doc
 				MProduct product = line.getProduct();
 				for (MCostDetail cost : line.getCostDetail(as))
 				{	
-						if (cost.getAmt().signum() == 0)
+						if (cost.getCostAmt().signum() == 0)
 						continue;
 						//get costing method for product
-						costs = cost.getAmt();
+						costs = cost.getCostAmt();
 						total = total.add(costs);
 						
 						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();						
@@ -448,9 +448,9 @@ public class Doc_InOut extends Doc
 				MProduct product = line.getProduct();
 				for(MCostDetail cost : line.getCostDetail(as))
 				{	
-						if (cost.getAmt().signum() == 0)
+						if (cost.getCostAmt().signum() == 0)
 						continue;
-						costs = cost.getAmt();	//	current costs
+						costs = cost.getCostAmt();	//	current costs
 						total = total.add(costs);
 						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 						

@@ -24,6 +24,7 @@ import org.compiere.model.MAccount;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MAcctSchemaElement;
 import org.compiere.model.MConversionRate;
+import org.compiere.model.MCostType;
 import org.compiere.model.MInOut;
 import org.compiere.model.MInOutLine;
 import org.compiere.model.MInvoice;
@@ -135,6 +136,8 @@ public class Doc_MatchInv extends Doc
 			return facts;
 		}
 		
+		MCostType ct = MCostType.get(as, getM_Product_ID(), getAD_Org_ID());
+		
 		//  create Fact Header
 		Fact fact = new Fact(this, as, Fact.POST_Actual);
 		setC_Currency_ID (as.getC_Currency_ID());
@@ -203,7 +206,8 @@ public class Doc_MatchInv extends Doc
 				if (ipv.signum() != 0)
 				{
 					int ACCTTYPE_P = 0;
-					if(MAcctSchema.COSTINGMETHOD_StandardCosting.equals(as.getCostingMethod()))
+					if(MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()) 
+					|| MCostType.COSTINGMETHOD_AveragePO.equals(ct.getCostingMethod()))
 						ACCTTYPE_P  = ProductCost.ACCTTYPE_P_IPV;
 					else
 						ACCTTYPE_P  = ProductCost.ACCTTYPE_P_Asset;
@@ -292,7 +296,8 @@ public class Doc_MatchInv extends Doc
 		if (ipv.signum() != 0)
 		{
 			int ACCTTYPE_P = 0;
-			if(MAcctSchema.COSTINGMETHOD_StandardCosting.equals(as.getCostingMethod()))
+			if(MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod())
+			|| MCostType.COSTINGMETHOD_AveragePO.equals(ct.getCostingMethod()))
 				ACCTTYPE_P  = ProductCost.ACCTTYPE_P_IPV;
 			else
 				ACCTTYPE_P  = ProductCost.ACCTTYPE_P_Asset;

@@ -38,6 +38,37 @@ public class MCostType extends X_M_CostType
 	/**	Cache of AcctSchemas 					**/
 	private static CCache<Integer,MCostType> s_cache = new CCache<Integer,MCostType>("MCostType", 3);	//  3 accounting schemas
 	
+	/**
+	 * get Cost Type 
+	 * @param as
+	 * @param product
+	 * @param AD_Org_ID
+	 * @return return Cost Type 
+	 */
+	public static MCostType get(MAcctSchema as ,int M_Product_ID , int AD_Org_ID)
+	{
+		MProduct product = MProduct.get(as.getCtx(), M_Product_ID);
+		MCostType ct = MCostType.getByOrg(as.getCtx(), AD_Org_ID, as.get_TrxName());
+		
+		if(product != null)
+		{
+			MProductCategoryAcct pca = MProductCategoryAcct.get(as.getCtx(), product.getM_Product_Category_ID(), as.getC_AcctSchema_ID(), AD_Org_ID, as.get_TrxName());
+			
+			if(pca.getCostingMethod() != null && pca.getCostingMethod().length() > 0)
+			{				
+				ct = MCostType.getByMethodCosting(as.getCtx(), pca.getCostingMethod(), as.get_TrxName());
+			}
+			else if (ct == null)
+			{
+				ct = MCostType.getByMethodCosting(as.getCtx(), as.getCostingMethod(), as.get_TrxName());				 
+			}
+		}		
+		if(ct == null)
+			throw new IllegalStateException("Do not exist Cost Type with this Costing method");
+		
+		return ct;
+	}
+	
 	public static MCostType get (Properties ctx, int M_CostType_ID)
 	{
 		return get(ctx, M_CostType_ID, null);

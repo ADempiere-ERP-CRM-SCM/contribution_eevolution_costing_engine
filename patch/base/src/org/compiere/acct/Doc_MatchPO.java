@@ -175,17 +175,15 @@ public class Doc_MatchPO extends Doc
 		//	Calculate PPV for standard costing
 		
 		//get standard cost and also make sure cost for other costing method is updated
-		//BigDecimal costs = m_pc.getProductCosts(as, getAD_Org_ID(), 
-		//	MAcctSchema.COSTINGMETHOD_StandardCosting, m_C_OrderLine_ID, false);	//	non-zero costs
 		MProduct product = MProduct.get(getCtx(), getM_Product_ID());
-		String costingMethod = product.getCostingMethod(as , getAD_Org_ID());
+		MCostType ct =  MCostType.get(as, getM_Product_ID(), getAD_Org_ID());
+		String costingMethod = ct.getCostingMethod();
 		MInOutLine ioLine = MInOutLine.get(getCtx(), m_M_InOutLine_ID);
 		BigDecimal costs = Env.ZERO;
 		for (MTransaction trx: MTransaction.getByInOutLine(ioLine))
 		{
 		    String costingLevel = MProduct.get(getCtx(), trx.getM_Product_ID()).getCostingLevel(as, trx.getAD_Org_ID());
 		    MCostElement element = MCostElement.getByMaterialCostElementType(trx);
-		    MCostType ct = MCostType.getByMethodCosting(getCtx(), costingMethod, getTrxName());
 		    MCostDetail cd = MCostDetail.getByTransaction(trx, as.getC_AcctSchema_ID(), ct.getM_CostType_ID(), element.getM_CostElement_ID(), costingLevel);
 		    if(cd != null)
 		    {
@@ -193,7 +191,7 @@ public class Doc_MatchPO extends Doc
 		    }
 		}
 		
-		if (MAcctSchema.COSTINGMETHOD_StandardCosting.equals(costingMethod))
+		if (MCostType.COSTINGMETHOD_StandardCosting.equals(costingMethod))
 		{
 			//	No Costs yet - no PPV
 			if (costs == null || costs.signum() == 0)
