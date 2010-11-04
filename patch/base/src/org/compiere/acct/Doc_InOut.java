@@ -157,11 +157,11 @@ public class Doc_InOut extends Doc
 		//  *** Sales - Shipment
 		if (getDocumentType().equals(DOCTYPE_MatShipment) && isSOTrx())
 		{
+			BigDecimal total = Env.ZERO;
 			for (int i = 0; i < p_lines.length; i++)
 			{
 				DocLine line = p_lines[i];
-				BigDecimal costs = null;
-				BigDecimal total = Env.ZERO;
+				BigDecimal costs = null;			
 				MProduct product = line.getProduct();
 				
 				for (MCostDetail cost :  line.getCostDetail(as))
@@ -259,11 +259,11 @@ public class Doc_InOut extends Doc
         //	  *** Sales - Return
 		else if ( getDocumentType().equals(DOCTYPE_MatReceipt) && isSOTrx() )
 		{
+			BigDecimal total = Env.ZERO;
 			for (int i = 0; i < p_lines.length; i++)
 			{
 				DocLine line = p_lines[i];
-				BigDecimal costs = null;
-				BigDecimal total = Env.ZERO;
+				BigDecimal costs = null;				
 				MProduct product = line.getProduct();
 				for (MCostDetail cost : line.getCostDetail(as))
 				{	
@@ -345,13 +345,13 @@ public class Doc_InOut extends Doc
 		//  *** Purchasing - Receipt
 		else if (getDocumentType().equals(DOCTYPE_MatReceipt) && !isSOTrx())
 		{
+			BigDecimal total = Env.ZERO;
 			for (int i = 0; i < p_lines.length; i++)
 			{
 				int C_Currency_ID = as.getC_Currency_ID();
 				//
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
-				BigDecimal total = Env.ZERO;
 				MProduct product = line.getProduct();
 				for (MCostDetail cost : line.getCostDetail(as))
 				{	
@@ -437,6 +437,7 @@ public class Doc_InOut extends Doc
 				//	  *** Purchasing - return
 		else if (getDocumentType().equals(DOCTYPE_MatShipment) && !isSOTrx())
 		{
+			BigDecimal total = Env.ZERO;
 			for (int i = 0; i < p_lines.length; i++)
 			{
 
@@ -444,7 +445,7 @@ public class Doc_InOut extends Doc
 				//
 				DocLine line = p_lines[i];
 				BigDecimal costs = null;
-				BigDecimal total = Env.ZERO;
+				
 				MProduct product = line.getProduct();
 				for(MCostDetail cost : line.getCostDetail(as))
 				{	

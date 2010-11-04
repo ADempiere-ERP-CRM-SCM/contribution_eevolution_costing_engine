@@ -142,20 +142,20 @@ public class Doc_Inventory extends Doc
 		//  Line pointers
 		FactLine dr = null;
 		FactLine cr = null;
-
+		BigDecimal total=Env.ZERO;
 		for (int i = 0; i < p_lines.length; i++)
 		{
 			DocLine line = p_lines[i];
 			
 			BigDecimal costs=Env.ZERO;
-			BigDecimal total=Env.ZERO;
+			
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
-				if(cost.getAmt().signum() == 0)
+				if(cost.getCostAmt().signum() == 0)
 					continue;
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-				costs = cost.getAmt();				
+				costs = cost.getCostAmt();				
 				total = total.add(costs);	
 				//  Inventory       DR      CR
 				dr = fact.createLine(line,

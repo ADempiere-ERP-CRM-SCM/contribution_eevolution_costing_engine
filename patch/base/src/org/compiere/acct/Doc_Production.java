@@ -170,12 +170,12 @@ public class Doc_Production extends Doc
 
 		//  Line pointer
 		FactLine fl = null;
+		BigDecimal total = Env.ZERO;
 		for (int i = 0; i < p_lines.length; i++)
 		{
 			DocLine line = p_lines[i];
 			MProduct product = line.getProduct();
-			BigDecimal costs = Env.ZERO;
-			BigDecimal total = Env.ZERO;
+			BigDecimal costs = Env.ZERO;			
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
 				if(cost.getAmt().signum() == 0)
@@ -185,7 +185,7 @@ public class Doc_Production extends Doc
 				costs = cost.getAmt();	
 				if (cost != null)
 				{	
-					costs = cost.getAmt();
+					costs = cost.getCostAmt();
 					total = total.add(costs);
 				}	
 				else
