@@ -142,7 +142,7 @@ public class Doc_ProjectIssue extends Doc
 			{	
 				if(cost.getAmt().signum() == 0)
 					continue;
-				costs = costs.add(cost.getAmt());
+				costs = costs.add(cost.getAmt()).setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				total = total.add(costs);
 			}	
 		}	

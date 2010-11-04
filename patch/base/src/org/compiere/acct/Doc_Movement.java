@@ -19,11 +19,13 @@ package org.compiere.acct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MMovement;
 import org.compiere.model.MMovementLine;
+import org.compiere.model.MTransaction;
 import org.compiere.model.ProductCost;
 import org.compiere.util.Env;
 
@@ -139,48 +141,57 @@ public class Doc_Movement extends Doc
 					continue;
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-				costs = cost.getCostAmt();
+				costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				total = total.add(costs.abs());
-				//  ** Inventory       DR      CR
-				dr = fact.createLine(line,
-					line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
-					as.getC_Currency_ID(), costs.negate());		//	from (-) CR
-				if (dr == null)
-					continue;
-				dr.setM_Locator_ID(line.getM_Locator_ID());
-				dr.addDescription(description);
-				dr.setQty(line.getQty().negate());	//	outgoing
-				if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
-				{
-					//	Set AmtAcctDr from Original Movement
-					if (!dr.updateReverseLine (MMovement.Table_ID, 
-							m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
-					{
-						p_Error = "Original Inventory Move not posted yet";
-						return null;
-					}
-				}
 				
-				//  ** InventoryTo     DR      CR
-				cr = fact.createLine(line,
-					line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
-					as.getC_Currency_ID(), costs);			//	to (+) DR
-				if (cr == null)
-					continue;
-				cr.setM_Locator_ID(line.getM_LocatorTo_ID());
-				cr.addDescription(description);
-				cr.setQty(line.getQty());
-				if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
-				{
-					//	Set AmtAcctCr from Original Movement
-					if (!cr.updateReverseLine (MMovement.Table_ID, 
-							m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
+				MTransaction trx =  new MTransaction(getCtx(), cost.getM_Transaction_ID() , getTrxName());
+				if(MTransaction.MOVEMENTTYPE_MovementTo.equals(trx.getMovementType()))
+				{	
+					
+					//  ** Inventory       DR      CR
+					dr = fact.createLine(line,
+						line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
+						as.getC_Currency_ID(), costs);		//	from (-) CR
+					if (dr == null)
+						continue;
+					dr.setM_Locator_ID(line.getM_Locator_ID());
+					dr.addDescription(description);
+					dr.setQty(line.getQty().negate());	//	outgoing
+					if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
 					{
-						p_Error = "Original Inventory Move not posted yet";
-						return null;
+						//	Set AmtAcctDr from Original Movement
+						if (!dr.updateReverseLine (MMovement.Table_ID, 
+								m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
+						{
+							p_Error = "Original Inventory Move not posted yet";
+							return null;
+						}
 					}
-					costs = cr.getAcctBalance(); //get original cost
-				}		
+					continue;
+				}
+				if(MTransaction.MOVEMENTTYPE_MovementFrom.equals(trx.getMovementType()))
+				{	
+					//  ** InventoryTo     DR      CR
+					cr = fact.createLine(line,
+						line.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
+						as.getC_Currency_ID(), costs);			//	to (+) DR
+					if (cr == null)
+						continue;
+					cr.setM_Locator_ID(line.getM_LocatorTo_ID());
+					cr.addDescription(description);
+					cr.setQty(line.getQty());
+					if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
+					{
+						//	Set AmtAcctCr from Original Movement
+						if (!cr.updateReverseLine (MMovement.Table_ID, 
+								m_Reversal_ID, line.getReversalLine_ID(),Env.ONE))
+						{
+							p_Error = "Original Inventory Move not posted yet";
+							return null;
+						}
+						costs = cr.getAcctBalance(); //get original cost
+					}		
+				}	
 			}
 			if (total == null || total.signum() == 0)
 			{

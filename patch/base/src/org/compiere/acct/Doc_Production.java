@@ -182,10 +182,9 @@ public class Doc_Production extends Doc
 					continue;	 
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-				costs = cost.getAmt();	
+				costs = cost.getAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);	
 				if (cost != null)
 				{	
-					costs = cost.getCostAmt();
 					total = total.add(costs);
 				}	
 				else

@@ -170,7 +170,7 @@ public class Doc_InOut extends Doc
 						continue;
 					//get costing method for product
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-					costs = cost.getCostAmt();
+					costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 					total = total.add(costs);
 					
 					//  CoGS            DR
@@ -269,7 +269,7 @@ public class Doc_InOut extends Doc
 				{	
 					if (cost.getCostAmt().signum() == 0)
 						continue;
-					costs = cost.getCostAmt();
+					costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 					total = total.add(costs);
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 										
@@ -358,7 +358,7 @@ public class Doc_InOut extends Doc
 						if (cost.getCostAmt().signum() == 0)
 						continue;
 						//get costing method for product
-						costs = cost.getCostAmt();
+						costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 						total = total.add(costs);
 						
 						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();						
@@ -451,7 +451,7 @@ public class Doc_InOut extends Doc
 				{	
 						if (cost.getCostAmt().signum() == 0)
 						continue;
-						costs = cost.getCostAmt();	//	current costs
+						costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);	//	current costs
 						total = total.add(costs);
 						String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 						

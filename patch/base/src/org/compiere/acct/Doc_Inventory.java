@@ -155,7 +155,7 @@ public class Doc_Inventory extends Doc
 					continue;
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-				costs = cost.getCostAmt();				
+				costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				total = total.add(costs);	
 				//  Inventory       DR      CR
 				dr = fact.createLine(line,

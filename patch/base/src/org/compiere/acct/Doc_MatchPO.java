@@ -202,7 +202,7 @@ public class Doc_MatchPO extends Doc
 			}
 	
 			//	Difference
-			BigDecimal difference = poCost.subtract(costs);
+			BigDecimal difference = poCost.subtract(costs.setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));
 			//	Nothing to post
 			if (difference.signum() == 0)
 			{
