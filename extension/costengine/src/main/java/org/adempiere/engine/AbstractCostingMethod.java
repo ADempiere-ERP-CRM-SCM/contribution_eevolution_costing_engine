@@ -150,40 +150,51 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	 */
 	public MCostDetail createReversalCostDetail()
 	{
-			MTransaction original_trx = MTransaction.getByDocumentLine(m_trx);
-			IDocumentLine model = m_trx.getDocumentLine();
-			String idColumnName = model.get_TableName()+"_ID";
+			List<MTransaction> trxs = MTransaction.getByDocumentLine(m_trx);
+			if(trxs == null)
+				throw new AdempiereException("Can not found the original transaction");
 			
-			MCostDetail original_cd = MCostDetail.getByTransaction(original_trx, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel); 
-			m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_trx.get_TrxName());
-			m_costdetail.copyValues(original_cd , m_costdetail);
-			m_costdetail.setQty(original_cd.getQty().negate());
-			m_costdetail.setAmt(original_cd.getAmt().negate());
-			m_costdetail.setCostAmt(original_cd.getCostAmt().negate());
-			m_costdetail.setCostAdjustment(original_cd.getCostAdjustment().negate());
-			m_costdetail.setCostAdjustmentDate(original_cd.getCostAdjustmentDate());
-			m_costdetail.setCumulatedQty(getNewCumulatedQty(original_cd));
-			m_costdetail.setCumulatedAmt(getNewCumulatedAmt(original_cd));	
-			m_costdetail.setCumulatedAmtLL(getNewCumulatedAmtLL(original_cd));	
-			m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
-			m_costdetail.setDateAcct(original_cd.getDateAcct());
-			if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
-				throw new AdempiereException("Cannot set "+idColumnName);
-			m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
-			m_costdetail.setDescription("Reversal" + original_cd.getM_Transaction_ID());
-			m_costdetail.setIsReversal(true);
-			m_costdetail.saveEx(m_trx.get_TrxName());
+			for(MTransaction original_trx: trxs)
+			{
+				IDocumentLine model = m_trx.getDocumentLine();
+				String idColumnName = model.get_TableName()+"_ID";				
+				
+				MCostDetail original_cd = MCostDetail.getByTransaction(original_trx,m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), true);
+				if(original_cd == null)
+					throw new AdempiereException("Can not found the original cost detail");
+				
+				m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_trx.get_TrxName());
+				m_costdetail.copyValues(original_cd , m_costdetail);
+				m_costdetail.setQty(original_cd.getQty().negate());
+				m_costdetail.setAmt(original_cd.getAmt().negate());
+				m_costdetail.setCostAmt(original_cd.getCostAmt().negate());
+				m_costdetail.setCostAdjustment(original_cd.getCostAdjustment().negate());
+				m_costdetail.setCostAdjustmentDate(original_cd.getCostAdjustmentDate());
+				m_costdetail.setCumulatedQty(getNewCumulatedQty(original_cd));
+				m_costdetail.setCumulatedAmt(getNewCumulatedAmt(original_cd));	
+				m_costdetail.setCumulatedAmtLL(getNewCumulatedAmtLL(original_cd));	
+				m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
+				m_costdetail.setDateAcct(original_cd.getDateAcct());
+				m_costdetail.setProcessing(false);
+				if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
+					throw new AdempiereException("Cannot set "+idColumnName);
+				m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
+				m_costdetail.setDescription("Reversal" + original_cd.getM_Transaction_ID());
+				m_costdetail.setIsReversal(true);
+				m_costdetail.saveEx(m_trx.get_TrxName());
+				
+				//Update the original cost detail
+				original_cd.setDescription("Reversal" + m_costdetail.getM_Transaction_ID());
+				original_cd.setIsReversal(true);
+				original_cd.saveEx(m_trx.get_TrxName());
+				
+				//Update the new cost detail
+				m_CumulatedQty = getNewCumulatedQty(m_costdetail);
+				m_CumulatedAmt = getNewCumulatedAmt(m_costdetail);
+				m_CumulatedAmtLL = getNewCumulatedAmtLL(m_costdetail);
+				m_CurrentCostPrice = getNewCurrentCostPrice(m_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			}
 			
-			//Update the original cost detail
-			original_cd.setDescription("Reversal" + m_costdetail.getM_Transaction_ID());
-			original_cd.setIsReversal(true);
-			original_cd.saveEx(m_trx.get_TrxName());
-			
-			//Update the new cost detail
-			m_CumulatedQty = getNewCumulatedQty(m_costdetail);
-			m_CumulatedAmt = getNewCumulatedAmt(m_costdetail);
-			m_CumulatedAmtLL = getNewCumulatedAmtLL(m_costdetail);
-			m_CurrentCostPrice = getNewCurrentCostPrice(m_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			return m_costdetail;
 	}
 	

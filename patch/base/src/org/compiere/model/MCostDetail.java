@@ -44,12 +44,13 @@ import org.compiere.util.Env;
  */
 public class MCostDetail extends X_M_CostDetail
 {
-
+		
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -2300885585182665663L;
-		
+	private static final long serialVersionUID = 4920936335090676482L;
+
+
 	/**
 	 * get the last entry for a Cost Detail based on the Material Transaction and Cost Dimension
 	 * @param mtrx Transaction Material
@@ -179,33 +180,33 @@ public class MCostDetail extends X_M_CostDetail
 	 * @param C_AcctSchema_ID Account Schema ID
 	 * @param M_CostType_ID CostType ID
 	 * @param M_CostElement_ID Cost Element ID
-	 * @param costingLevel Cost Level
+	 * @param includeReversal Cost Level
 	 * @return MCostDetail cost detail
 	 */
-	public static MCostDetail getByTransaction(MTransaction mtrx, int C_AcctSchema_ID, int M_CostType_ID,int M_CostElement_ID, String costingLevel)
-	{		
+	public static MCostDetail getByTransaction(MTransaction mtrx, int C_AcctSchema_ID, int M_CostType_ID,int M_CostElement_ID, boolean includeReversal)
+	{			
 		ArrayList<Object> params = new ArrayList();
 		final StringBuffer whereClause = new StringBuffer(MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ");
 		params.add(mtrx.getAD_Client_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND ");
-		params.add(mtrx.getAD_Org_ID());
-		
-		whereClause.append(MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_AD_Org_ID).append("=? AND ");
+		params.add(mtrx.getAD_Org_ID());		
+		whereClause.append(MCostDetail.COLUMNNAME_C_AcctSchema_ID).append( "=? AND ");
 		params.add(C_AcctSchema_ID);
-		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID).append( "=? AND ");
 		params.add(mtrx.getM_Product_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND ");
-		params.add(mtrx.getM_AttributeSetInstance_ID());
-
-		
-		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID).append( "=? AND ");
+		params.add(mtrx.getM_AttributeSetInstance_ID());		
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID).append("=? AND ");
 		params.add(M_CostElement_ID);
-		whereClause.append(MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostType_ID ).append( "=? AND ");
 		params.add(M_CostType_ID);
-		whereClause.append(MCostDetail.COLUMNNAME_M_Transaction_ID + "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_Transaction_ID ).append( "=? ");
 		params.add(mtrx.getM_Transaction_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + " = ? ");
-		params.add(false);
+		if(!includeReversal)
+		{	
+			whereClause.append(" AND ").append(MCostDetail.COLUMNNAME_IsReversal ).append( " = ? ");
+			params.add(false);
+		}
 				
 		return new Query (mtrx.getCtx(), I_M_CostDetail.Table_Name, whereClause.toString() , mtrx.get_TrxName())
 		.setParameters(params)

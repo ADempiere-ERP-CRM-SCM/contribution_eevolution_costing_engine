@@ -34,7 +34,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
 		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
-		m_costdetail = MCostDetail.getByTransaction(m_trx, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel);	
+		m_costdetail = MCostDetail.getByTransaction(m_trx, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), false);	
 	}
 	
 

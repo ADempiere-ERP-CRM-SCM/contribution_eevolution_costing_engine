@@ -293,7 +293,7 @@ public class CostEngine
 
 		MCost cost = validateCostForCostType(as, ct, ce, model.getM_Product_ID(), model.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
 		
-		//get the cost for + transaction
+		//get the cost for positive transaction
 		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && mtrx.getMovementType().contains("+")
 		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
 		{	
@@ -302,14 +302,17 @@ public class CostEngine
 			|| (model instanceof MInOutLine && MTransaction.MOVEMENTTYPE_CustomerReturns.equals(mtrx.getMovementType())))
 			{	
 				String costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
-				MCostDetail m_last_costdetail =  MCostDetail.getLastTransaction(mtrx, as.getC_AcctSchema_ID(), ct.getM_CostType_ID(), ce.getM_CostElement_ID(), model.getDateAcct(), costingLevel);
-				if(m_last_costdetail != null)
-				{	
-					costThisLevel = m_last_costdetail.getCumulatedAmt().add(m_last_costdetail.getCostAmt()).divide(m_last_costdetail.getCumulatedQty().add(m_last_costdetail.getQty()), as.getCostingPrecision(),BigDecimal.ROUND_HALF_UP);
-				}
-				if (model instanceof MInventoryLine && costThisLevel.signum() == 0)
+				costThisLevel = getCostThisLevel(mtrx, as, ct, ce, model, costingLevel);
+				
+				if (model instanceof MInventoryLine && costThisLevel.signum() == 0 )
 				{
 					costThisLevel = cost.getCurrentCostPrice();
+				}
+				//do not exist cost detail by some purchase then get the cost from other other warehouse
+				if(model instanceof MMovementLine && costThisLevel.signum() == 0)
+				{
+					MTransaction trx = MTransaction.getByDocumentLine(model, MTransaction.MOVEMENTTYPE_MovementTo);
+					costThisLevel = getCostThisLevel(trx, as, ct, ce, model, costingLevel);
 				}
 			}
 			else
@@ -981,4 +984,28 @@ public class CostEngine
 		}
 		return id ;
 	}	
+	
+	/**
+	 * get cost this level
+	 * @param mtrx MTransaction
+	 * @param as Account Schema
+	 * @param ct Cost Type
+	 * @param ce Cost Element
+	 * @param model Document Line
+	 * @param costingLevel Costing Level
+	 * @return Cost this Level
+	 */
+	public BigDecimal getCostThisLevel(MTransaction mtrx, MAcctSchema as, MCostType ct, MCostElement ce,IDocumentLine model , String costingLevel)
+	{
+		BigDecimal costThisLevel = Env.ZERO;
+		MCostDetail m_last_costdetail =  MCostDetail.getLastTransaction(mtrx, as.getC_AcctSchema_ID(), ct.getM_CostType_ID(), ce.getM_CostElement_ID(), model.getDateAcct(), costingLevel);
+		if(m_last_costdetail != null)
+		{	
+			BigDecimal qty = m_last_costdetail.getCumulatedQty().add(m_last_costdetail.getQty());
+			if(qty.signum() != 0)
+				costThisLevel = m_last_costdetail.getCumulatedAmt().add(m_last_costdetail.getCostAmt()).divide(qty, as.getCostingPrecision(),BigDecimal.ROUND_HALF_UP);
+		}
+		
+		return costThisLevel;
+	}
 }

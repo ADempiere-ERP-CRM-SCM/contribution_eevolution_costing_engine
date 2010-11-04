@@ -36,12 +36,28 @@ import org.compiere.util.Env;
 public class MTransaction extends X_M_Transaction
 {
 
-
-	
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = -2299319362086218519L;
+
+
+	/**
+	 * get the transaction based on Document Line and movement type
+	 * @param model IDocumentLine
+	 * @param type Movement Type
+	 * @return first MTransaction
+	 */
+	public static MTransaction getByDocumentLine(IDocumentLine model, String type)
+	{
+		final String column_id = model.get_TableName() + "_ID";
+		final String whereClause = column_id + "=? AND "
+			   					 + MTransaction.COLUMNNAME_MovementType + "=? ";
+		return new Query (model.getCtx(), I_M_Transaction.Table_Name, whereClause, model.get_TrxName())
+		.setClient_ID()
+		.setParameters(model.get_ID(), type)
+		.first();
+	}
 
 	/**
 	 * get the Material Transaction after Date Account
@@ -106,18 +122,37 @@ public class MTransaction extends X_M_Transaction
 	}
 	
 	
-	
-	static public MTransaction getByDocumentLine (MTransaction mtrx)
+	/**
+	 * 
+	 * get Material transaction for Reversal Document
+	 * @param trx MTransaction
+	 * @return
+	 */
+	static public List<MTransaction> getByDocumentLine (MTransaction trx)
 	{
-		IDocumentLine model = mtrx.getDocumentLine().getReversalDocumentLine();
-		String columnName =  model.get_TableName()+"_ID";			
-		final String whereClause = I_M_InOutLine.COLUMNNAME_M_Product_ID + "=? AND "
-								 + columnName + "=? AND "
-		 						 + I_M_InOutLine.COLUMNNAME_M_AttributeSetInstance_ID + "=?";
-			return new Query(model.getCtx(), Table_Name, whereClause, mtrx.get_TrxName())
-			.setClient_ID()
-			.setParameters(model.getM_Product_ID(), model.get_ID() , model.getM_AttributeSetInstance_ID())
-			.firstOnly();
+		IDocumentLine reversal = trx.getDocumentLine().getReversalDocumentLine();
+		List<Object> parameters = new ArrayList();
+		String columnName =  reversal.get_TableName()+"_ID";			
+		StringBuffer whereClause = new StringBuffer(I_M_Transaction.COLUMNNAME_M_Product_ID);
+		parameters.add(reversal.getM_Product_ID());
+		whereClause.append( "=? AND ");
+		whereClause.append( columnName ).append("=? AND ");
+		parameters.add(reversal.get_ID());
+		
+			whereClause.append(I_M_Transaction.COLUMNNAME_MovementType).append("=? AND ");
+			if(MTransaction.MOVEMENTTYPE_InventoryIn.equals(trx.getMovementType()))
+					parameters.add(MTransaction.MOVEMENTTYPE_InventoryOut);
+			else if(MTransaction.MOVEMENTTYPE_InventoryOut.equals(trx.getMovementType()))
+					parameters.add(MTransaction.MOVEMENTTYPE_InventoryIn);
+			else
+				parameters.add(trx.getMovementType());
+			
+		whereClause.append(I_M_Transaction.COLUMNNAME_M_Transaction_ID).append("<>?");
+		parameters.add(trx.getM_Transaction_ID());
+		return new Query(trx.getCtx(), Table_Name, whereClause.toString(), trx.get_TrxName())
+		.setClient_ID()
+		.setParameters(parameters)
+		.list();
 	}
 	
 	/**

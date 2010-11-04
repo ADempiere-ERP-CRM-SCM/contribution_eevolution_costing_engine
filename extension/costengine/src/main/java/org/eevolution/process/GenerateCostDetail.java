@@ -216,7 +216,7 @@ public class GenerateCostDetail extends SvrProcess
 		    			List<MTransaction> trxs = new Query(getCtx(), MTransaction.Table_Name, trxWhereClause.toString(), get_TrxName())
 		    			.setParameters(trxParameters)
 		    			.setClient_ID()
-		    			.setOrderBy("M_Product_ID , MovementDate , M_Transaction_ID")
+		    			.setOrderBy("M_Product_ID , M_Transaction_ID ")
 		    			.list();
 		    			
 				    	for (MTransaction trx : trxs)
