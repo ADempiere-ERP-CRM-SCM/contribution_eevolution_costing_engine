@@ -12,7 +12,7 @@ INSERT INTO AD_Column_Trl (AD_Language,AD_Column_ID, Name, IsTranslated,AD_Clien
 
 -- Jun 25, 2010 5:03:05 PM EEST
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-ALTER TABLE M_CostDetail MODIFY C_LandedCostAllocation_ID NUMBER(10) DEFAULT NULL 
+ALTER TABLE M_CostDetail ADD C_LandedCostAllocation_ID NUMBER(10) DEFAULT NULL 
 ;
 
 -- Jun 25, 2010 5:05:37 PM EEST

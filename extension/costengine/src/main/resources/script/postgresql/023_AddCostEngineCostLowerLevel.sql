@@ -1385,4 +1385,3 @@ INNER JOIN RV_Transaction t ON (t.M_Product_ID=p.M_Product_ID)
 LEFT OUTER JOIN M_CostDetail cd ON (cd.M_Transaction_ID=t.M_Transaction_ID AND cd.M_Product_ID=p.M_Product_ID) 
 LEFT OUTER JOIN M_CostType ct ON (ct.M_CostType_ID=cd.M_CostType_ID)
 LEFT OUTER JOIN M_CostElement ce ON (ce.M_CostElement_ID=cd.M_CostElement_ID);
-

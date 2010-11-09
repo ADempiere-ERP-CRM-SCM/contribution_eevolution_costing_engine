@@ -13,7 +13,7 @@ INSERT INTO AD_Column_Trl (AD_Language,AD_Column_ID, Name, IsTranslated,AD_Clien
 
 -- Sep 9, 2010 10:40:10 PM CDT
 -- Cost Engine
-ALTER TABLE M_CostDetail MODIFY Processing CHAR(1) DEFAULT NULL 
+ALTER TABLE M_CostDetail ADD Processing CHAR(1) DEFAULT NULL 
 ;
 
 -- Sep 9, 2010 10:50:07 PM CDT
