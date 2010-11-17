@@ -346,6 +346,7 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine
 	{
 		return Table_Name + "[" + get_ID() 
 			+ ", M_Product_ID=" + getM_Product_ID()
+			+ ", MovementQty=" + getMovementQty()
 			+ ", M_ASI_ID=" + getM_AttributeSetInstance_ID()
 			+ ", M_ASITo_ID=" + getM_AttributeSetInstanceTo_ID()
 			+ ", M_Locator_ID=" + getM_Locator_ID()

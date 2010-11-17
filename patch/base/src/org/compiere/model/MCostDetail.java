@@ -71,6 +71,14 @@ public class MCostDetail extends X_M_CostDetail
 		ArrayList<Object> params = new ArrayList();
 		final StringBuffer whereClause = new StringBuffer(MCostDetail.COLUMNNAME_M_Transaction_ID + " <> ? AND ");
 		params.add(mtrx.getM_Transaction_ID());
+		whereClause.append("((");
+		whereClause.append(MCostDetail.COLUMNNAME_DateAcct+"=? AND ");
+		params.add(dateAcct);
+		whereClause.append( MCostDetail.COLUMNNAME_M_Transaction_ID + "<? ) OR (");
+		params.add(mtrx.getM_Transaction_ID());
+		whereClause.append( MCostDetail.COLUMNNAME_DateAcct+"<? )) AND ");
+		params.add(dateAcct);
+		
 		whereClause.append(MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ");
 		params.add(mtrx.getAD_Client_ID());
 		
@@ -95,13 +103,19 @@ public class MCostDetail extends X_M_CostDetail
 		params.add(M_CostElement_ID);
 		whereClause.append(MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND ");
 		params.add(M_CostType_ID);
-		whereClause.append( MCostDetail.COLUMNNAME_DateAcct+"<=? AND ");
-		params.add(dateAcct);
-		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + " = ?");
+		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + " = ? AND ");
 		params.add(false);
+		whereClause.append(MCostDetail.COLUMNNAME_Processing + " = ?");
+		params.add(false);
+		
+		List<MCostDetail> costs =  new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
+		.setParameters(params)	
+		.setOrderBy("DateAcct DESC, Created DESC")
+		.list();
+		
 		return  new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
 		.setParameters(params)	
-		.setOrderBy("M_Product_ID, M_CostType_ID, M_CostElement_ID, DateAcct DESC, M_Transaction_ID DESC")
+		.setOrderBy("DateAcct DESC, Created DESC")
 		.first();
 	}
 	
@@ -1362,5 +1376,4 @@ public class MCostDetail extends X_M_CostDetail
 		// TODO: load automatically m_cost if is not set
 		return m_cost;
 	}
-	
 }	//	MCostDetail

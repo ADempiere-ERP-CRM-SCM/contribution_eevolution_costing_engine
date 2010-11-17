@@ -1003,7 +1003,17 @@ public class CostEngine
 		{	
 			BigDecimal qty = m_last_costdetail.getCumulatedQty().add(m_last_costdetail.getQty());
 			if(qty.signum() != 0)
-				costThisLevel = m_last_costdetail.getCumulatedAmt().add(m_last_costdetail.getCostAmt()).divide(qty, as.getCostingPrecision(),BigDecimal.ROUND_HALF_UP);
+			{
+				BigDecimal cost = Env.ZERO;
+				
+				if (m_last_costdetail.getQty().signum() > 0)
+					cost = m_last_costdetail.getCostAmt().add(m_last_costdetail.getCostAdjustment());
+				else 
+					cost = m_last_costdetail.getCostAmt().add(m_last_costdetail.getCostAdjustment()).negate();
+			
+				costThisLevel = m_last_costdetail.getCumulatedAmt().add(cost).divide(qty, as.getCostingPrecision(),BigDecimal.ROUND_HALF_UP);
+		
+			}
 		}
 		
 		return costThisLevel;

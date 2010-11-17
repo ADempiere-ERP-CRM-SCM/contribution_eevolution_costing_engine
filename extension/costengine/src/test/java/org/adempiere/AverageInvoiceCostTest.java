@@ -168,7 +168,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 					new BigDecimal("48.4191"),
 					new BigDecimal("29"),
 					new BigDecimal("1404.1541"),
-					new BigDecimal("-242.0955"),
+					new BigDecimal("242.0955"),
 					new BigDecimal("0"),
 					new BigDecimal("-5"),
 					new BigDecimal("48.4191"),
@@ -217,7 +217,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 					new BigDecimal("44.7219"),
 					new BigDecimal("29"),
 					new BigDecimal("1296.9351"),
-					new BigDecimal("-447.2190"),
+					new BigDecimal("447.2190"),
 					new BigDecimal("0"),
 					new BigDecimal("-10"),
 					new BigDecimal("44.7219"),
@@ -257,7 +257,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 					new BigDecimal("45.1593"),
 					new BigDecimal("29"),
 					new BigDecimal("1309.6201"),
-					new BigDecimal("-245.0365"),
+					new BigDecimal("245.0365"),
 					new BigDecimal("0"),
 					new BigDecimal("-5"),
 					new BigDecimal("49.0073"),
@@ -298,8 +298,8 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 					 new BigDecimal("46.8373"), //currentCostPrice
 					 new BigDecimal("19"), 		// cumulateQty
 					 new BigDecimal("889.9081"),//cumulateAmt
-					 new BigDecimal("-380"),//cdAmt
-					 new BigDecimal("-20"), //cdAdjutment
+					 new BigDecimal("380"),//cdAmt
+					 new BigDecimal("20"), //cdAdjutment
 					 new BigDecimal("-10"),//cdQty
 					 new BigDecimal("49.0073"), //cdCurrentCostPrice
 					 new BigDecimal("34"), //cdCumulateQty
@@ -367,7 +367,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 					 new BigDecimal("43.5917"), //currentCostPrice
 					 new BigDecimal("20"), 		// cumulateQty
 					 new BigDecimal("871.8348"),//cumulateAmt
-					 new BigDecimal("-392.3253"),//cdAmt
+					 new BigDecimal("392.3253"),//cdAmt
 					 new BigDecimal("0"), //cdAdjutment
 					 new BigDecimal("-9"),//cdQty
 					 new BigDecimal("43.5917"), //cdCurrentCostPrice
@@ -446,7 +446,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		return new Query(getCtx(), I_M_CostDetail.Table_Name, whereClause, trxName)
 		.setClient_ID()
 		.setParameters(parameters)
-		.setOrderBy(I_M_CostDetail.COLUMNNAME_DateAcct + ", " + I_M_CostDetail.COLUMNNAME_Created + " DESC")
+		.setOrderBy(I_M_CostDetail.COLUMNNAME_DateAcct + ", " + I_M_CostDetail.COLUMNNAME_M_CostDetail_ID + " DESC")
 		.first();	
 	}
 	

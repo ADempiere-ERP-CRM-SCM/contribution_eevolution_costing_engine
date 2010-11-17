@@ -18,7 +18,7 @@ import org.compiere.util.Env;
 import org.compiere.util.Util;
 
 /**
- * @author victor.perez@e-evolution.com
+ * @author victor.perez@e-evolution.com, www.e-evolution.com
  * 
  */
 public class AveragePOCostingMethod extends  AbstractCostingMethod implements ICostingMethod {
@@ -101,7 +101,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 					
 		if(m_costdetail == null)
 		{				
-			m_costdetail = new MCostDetail(m_trx, m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_CurrentCostPriceLL.multiply(m_trx.getMovementQty()), m_trx.getMovementQty(), m_trx.get_TrxName());
+			m_costdetail = new MCostDetail(m_trx, m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()).abs() , m_CurrentCostPriceLL.multiply(m_trx.getMovementQty()).abs(), m_trx.getMovementQty(), m_trx.get_TrxName());
 			m_costdetail.setDateAcct(m_model.getDateAcct());
 		}		
 		else
@@ -119,7 +119,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 				m_costdetail.setCumulatedAmt(getNewCumulatedAmt(m_last_costdetail));	
 				m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
 				m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
-				m_costdetail.setAmt(m_CurrentCostPrice.multiply(m_trx.getMovementQty()));
+				m_costdetail.setAmt(m_CurrentCostPrice.multiply(m_trx.getMovementQty()).abs());
 				if(m_trx.getMovementType().contains("-"))
 					m_costdetail.setCostAmt(m_costdetail.getAmt());
 			}
@@ -151,8 +151,8 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 		
 		if(m_trx.getMovementType().contains("+"))
 		{	
-			m_costdetail.setCostAmt(m_costThisLevel.multiply(m_trx.getMovementQty()));
-			m_costdetail.setCostAmtLL(m_costLowLevel.multiply(m_trx.getMovementQty()));
+			m_costdetail.setCostAmt(m_costThisLevel.multiply(m_trx.getMovementQty()).abs());
+			m_costdetail.setCostAmtLL(m_costLowLevel.multiply(m_trx.getMovementQty()).abs());
 		}	
 		if(m_trx.getMovementType().contains("-"))
 		{	
@@ -267,7 +267,14 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 	 * @return  New Cumulated Amt This Level
 	 */
 	public BigDecimal getNewCumulatedAmt(MCostDetail cd) {
-		return cd.getCumulatedAmt().add(cd.getCostAmt()).add(cd.getCostAdjustment());
+		
+		BigDecimal cumulatedAmt = Env.ZERO;
+		if(cd.getQty().signum() > 0)
+			cumulatedAmt = cd.getCumulatedAmt().add(cd.getCostAmt()).add(cd.getCostAdjustment());
+		else
+			cumulatedAmt = cd.getCumulatedAmt().add(cd.getCostAmt().negate()).add(cd.getCostAdjustment().negate());
+		
+		return  cumulatedAmt;
 	}
 
 
@@ -294,7 +301,12 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 	 * @return New Cumulated Am Low Level
 	 */
 	public BigDecimal getNewCumulatedAmtLL(MCostDetail cd) {
-		return cd.getCumulatedAmtLL().add(cd.getCostAmtLL()).add(cd.getCostAdjustmentLL());
+		BigDecimal cumulatedAmtLL = Env.ZERO;
+		if(cd.getQty().signum() > 0)
+			 cumulatedAmtLL = cd.getCumulatedAmtLL().add(cd.getCostAmtLL()).add(cd.getCostAdjustmentLL());
+		else
+			 cumulatedAmtLL = cd.getCumulatedAmtLL().add(cd.getCostAmtLL().negate()).add(cd.getCostAdjustmentLL().negate());
+		return cumulatedAmtLL;
 	}
 
 
