@@ -44,10 +44,9 @@ public class ValuationEffectiveDate extends SvrProcess
 	private Timestamp p_DateValue;
 	
 	private StringBuffer whereClause1 = new StringBuffer("WHERE 1=1 ");
-	private StringBuffer whereClause2 = new StringBuffer("AND cd.M_CostDetail_ID IN (SELECT MAX(M_CostDetail_ID) FROM M_CostDetail cd1")
-	.append(" INNER JOIN M_Transaction t ON (cd1.M_Transaction_ID=t.M_Transaction_ID)")
-	.append(" INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID) ")
-	.append(" WHERE cd.M_Product_ID=cd1.M_Product_ID ");
+	private StringBuffer whereClause2 = new StringBuffer("AND tc.M_CostDetail_ID IN (SELECT MAX(M_CostDetail_ID) FROM M_CostDetail cd1")
+	.append(" INNER JOIN M_Locator l ON (tc.M_Locator_ID=l.M_Locator_ID) ")
+	.append(" WHERE tc.M_Product_ID=cd1.M_Product_ID ");
 	private ArrayList<Object> params1 = new ArrayList();  
 	private ArrayList<Object> params2 = new ArrayList();  
 	private ArrayList<Object> params = new ArrayList(); 
@@ -145,15 +144,14 @@ public class ValuationEffectiveDate extends SvrProcess
     	.append("M_Product_ID,M_Product_Category_ID,M_AttributeSetInstance_ID,Classification,Group1,Group2,QtyOnHand,CostAmt,CostAmtLL) ")
     	.append("SELECT ")
     	.append(getAD_PInstance_ID()).append(",")
-    	.append("cd.DateAcct").append(",")
-    	.append("p.AD_Client_ID,p.AD_Org_ID,cd.M_CostElement_ID,cd.M_CostType_ID,l.M_Warehouse_ID,p.M_Product_ID,")
-    	.append("p.M_Product_Category_ID,t.M_AttributeSetInstance_ID,p.Classification,p.Group1,p.Group2,(cd.CumulatedQty + cd.Qty) AS QtyOnHand,")
-    	.append("(cd.CostAmt + cd.CumulatedAmt) AS CostAmt,")
-    	.append("(cd.CostAmtLL + cd.CumulatedAmtLL) AS CostAmtLL")
+    	.append("tc.DateAcct").append(",")
+    	.append("p.AD_Client_ID,p.AD_Org_ID,tc.M_CostElement_ID,tc.M_CostType_ID,l.M_Warehouse_ID,p.M_Product_ID,")
+    	.append("p.M_Product_Category_ID,tc.M_AttributeSetInstance_ID,p.Classification,p.Group1,p.Group2,EndingQtyBalance AS QtyOnHand,")
+    	.append("(tc.CostAmt + tc.CumulatedAmt) AS CostAmt,")
+    	.append("(tc.CostAmtLL + tc.CumulatedAmtLL) AS CostAmtLL")
     	.append(" FROM M_Product p ")
-    	.append(" INNER JOIN M_CostDetail cd ON (p.M_Product_ID=cd.M_Product_ID) ")
-    	.append(" INNER JOIN M_Transaction t ON (cd.M_Transaction_ID=t.M_Transaction_ID)")
-    	.append(" INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID) ");
+    	.append(" INNER JOIN RV_M_Transaction_Costing tc ON (p.M_Product_ID=tc.M_Product_ID) ")
+    	.append(" INNER JOIN M_Locator l ON (tc.M_Locator_ID=l.M_Locator_ID) ");
 
     	insert.append(whereClause1.append(whereClause2));
     	
