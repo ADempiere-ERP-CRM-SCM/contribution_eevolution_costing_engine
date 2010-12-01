@@ -44,7 +44,7 @@ public class ValuationEffectiveDate extends SvrProcess
 	private Timestamp p_DateValue;
 	
 	private StringBuffer whereClause1 = new StringBuffer("WHERE 1=1 ");
-	private StringBuffer whereClause2 = new StringBuffer("AND tc.M_CostDetail_ID IN (SELECT MAX(M_CostDetail_ID) FROM M_CostDetail cd1")
+	private StringBuffer whereClause2 = new StringBuffer("AND to_char(tc.DateAcct, 'yyyy/mm/dd') || tc.M_CostDetail_ID IN (SELECT MAX(to_char(DateAcct, 'yyyy/mm/dd') || M_CostDetail_ID) FROM M_CostDetail cd1")
 	.append(" INNER JOIN M_Locator l ON (tc.M_Locator_ID=l.M_Locator_ID) ")
 	.append(" WHERE tc.M_Product_ID=cd1.M_Product_ID ");
 	private ArrayList<Object> params1 = new ArrayList();  
@@ -162,7 +162,7 @@ public class ValuationEffectiveDate extends SvrProcess
     		params.add(o);
     	
     	DB.executeUpdateEx(insert.toString(), params.toArray(),get_TrxName());
-    	DB.executeUpdate("UPDATE T_InventoryValue SET cost = (CostAmt + CostAmtLL) / QtyOnHand , CumulatedAmt = CostAmt + CostAmtLL,  DateValue = "
+    	DB.executeUpdate("UPDATE T_InventoryValue SET cost = coalesce( QtyOnHand , (CostAmt + CostAmtLL) / QtyOnHand, 0) , CumulatedAmt = CostAmt + CostAmtLL,  DateValue = "
     	+DB.TO_DATE(p_DateValue)+" WHERE AD_PInstance_ID=?", getAD_PInstance_ID(),get_TrxName());
     	
     }
