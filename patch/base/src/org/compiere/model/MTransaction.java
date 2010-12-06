@@ -245,6 +245,14 @@ public class MTransaction extends X_M_Transaction
 	    return null;	
 	}
 	
+	/**
+	 * get Warehouse ID
+	 * @return Warehouse ID
+	 */
+	public int  getM_Warehouse_ID()
+	{
+		return getM_Locator().getM_Warehouse_ID();
+	}
 	
 	/**
 	 * 	String Representation

@@ -197,7 +197,8 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 		if(m_costdetail.isProcessing())
 			return;
 		
-		if(m_AdjustCost.signum() != 0 || MCostDetail.isEarlierTransaction(m_costdetail, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel))
+		boolean isEarlierTransaction = MCostDetail.isEarlierTransaction(m_costdetail, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel);
+		if(m_AdjustCost.signum() != 0 || isEarlierTransaction)
 		{	
 		
 			List<MCostDetail> cds = MCostDetail.getAfterDate(m_costdetail,costingLevel);
@@ -205,7 +206,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 			if(cds == null || cds.size() == 0)
 				return;
 				
-			if(m_as.isAdjustCOGS())	
+			if(isEarlierTransaction)	
 			{
 				for(MCostDetail cd : cds)
 				{

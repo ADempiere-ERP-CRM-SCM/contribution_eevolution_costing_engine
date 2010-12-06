@@ -165,6 +165,9 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				
 				m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_trx.get_TrxName());
 				m_costdetail.copyValues(original_cd , m_costdetail);
+				//Qty Transaction				
+				m_costdetail.setAD_Org_ID(original_cd.getAD_Org_ID());
+				m_costdetail.setCumulatedQty(getNewCumulatedQty(original_cd));
 				m_costdetail.setQty(original_cd.getQty().negate());
 				//Cost This Level
 				m_costdetail.setAmt(original_cd.getAmt());
@@ -179,9 +182,8 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				m_costdetail.setCostAdjustmentLL(original_cd.getCostAdjustmentLL());
 				m_costdetail.setCostAdjustmentDateLL(original_cd.getCostAdjustmentDateLL());
 				m_costdetail.setCumulatedAmtLL(getNewCumulatedAmtLL(original_cd));	
-				m_costdetail.setCurrentCostPriceLL(getNewCurrentCostPriceLL(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
-				//Qty Transaction
-				m_costdetail.setCumulatedQty(getNewCumulatedQty(original_cd));
+				m_costdetail.setCurrentCostPriceLL(getNewCurrentCostPriceLL(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
+				
 
 				m_costdetail.setDateAcct(original_cd.getDateAcct());
 				m_costdetail.setProcessing(false);
