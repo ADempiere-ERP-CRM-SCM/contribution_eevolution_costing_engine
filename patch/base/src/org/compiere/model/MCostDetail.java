@@ -106,7 +106,7 @@ public class MCostDetail extends X_M_CostDetail
 		
 		return  new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
 		.setParameters(params)	
-		.setOrderBy("DateAcct DESC, Created DESC")
+		.setOrderBy("(to_char(DateAcct, 'yyyymmdd') || M_Transaction_ID ) DESC")
 		.first();
 	}
 	
