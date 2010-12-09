@@ -66,7 +66,7 @@ public class MCostDetail extends X_M_CostDetail
 			int M_CostType_ID,
 			int M_CostElement_ID , 
 			Timestamp dateAcct, String costingLevel)
-	{	
+	{
 		ArrayList<Object> params = new ArrayList();
 		final StringBuffer whereClause = new StringBuffer(MCostDetail.COLUMNNAME_M_Transaction_ID + " <> ? AND ");
 		params.add(mtrx.getM_Transaction_ID());
@@ -96,14 +96,11 @@ public class MCostDetail extends X_M_CostDetail
 		params.add(M_CostElement_ID);
 		whereClause.append(MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND ");
 		params.add(M_CostType_ID);
-		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + " = ? AND ");
-		params.add(false);
 		whereClause.append(MCostDetail.COLUMNNAME_Processing + " = ? ");
 		params.add(false);
 		//warehouse
 		whereClause.append("AND EXISTS ( SELECT 1 FROM M_Transaction t INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID ) WHERE t.M_Transaction_ID=M_CostDetail.M_Transaction_ID AND l.M_Warehouse_ID=?) ");
 		params.add(mtrx.getM_Warehouse_ID());
-		
 		return  new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
 		.setParameters(params)	
 		.setOrderBy("(to_char(DateAcct, 'yyyymmdd') || M_Transaction_ID ) DESC")
@@ -143,18 +140,15 @@ public class MCostDetail extends X_M_CostDetail
 		params.add(M_CostElement_ID);
 		whereClause.append(MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND ");
 		params.add(M_CostType_ID);
-		whereClause.append(MCostDetail.COLUMNNAME_M_Transaction_ID + "<? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_Transaction_ID + "<? ");
 		params.add(mtrx.getM_Transaction_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + " = ? ");
-		params.add(false);
-		;
 		
 		whereClause.append("AND EXISTS ( SELECT 1 FROM M_Transaction t INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID ) WHERE t.M_Transaction_ID=M_CostDetail.M_Transaction_ID AND l.M_Warehouse_ID=?) ");
 		params.add(mtrx.getM_Warehouse_ID());
 		
 		return  new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
 		.setParameters(params)
-		.setOrderBy(MCostDetail.COLUMNNAME_Created+ " DESC")		
+		.setOrderBy("(to_char(DateAcct, 'yyyymmdd') || M_Transaction_ID) DESC")
 		.first();
 	}
 	
@@ -189,10 +183,9 @@ public class MCostDetail extends X_M_CostDetail
 	 * @param C_AcctSchema_ID Account Schema ID
 	 * @param M_CostType_ID CostType ID
 	 * @param M_CostElement_ID Cost Element ID
-	 * @param includeReversal Cost Level
 	 * @return MCostDetail cost detail
 	 */
-	public static MCostDetail getByTransaction(MTransaction mtrx, int C_AcctSchema_ID, int M_CostType_ID,int M_CostElement_ID, boolean includeReversal)
+	public static MCostDetail getByTransaction(MTransaction mtrx, int C_AcctSchema_ID, int M_CostType_ID,int M_CostElement_ID)
 	{			
 		ArrayList<Object> params = new ArrayList();
 		final StringBuffer whereClause = new StringBuffer(MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND ");
@@ -203,20 +196,17 @@ public class MCostDetail extends X_M_CostDetail
 		params.add(C_AcctSchema_ID);
 		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID).append( "=? AND ");
 		params.add(mtrx.getM_Product_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID).append( "=? AND ");
-		params.add(mtrx.getM_AttributeSetInstance_ID());		
+		if(mtrx.getM_AttributeSetInstance_ID() > 0)
+		{	
+			whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID).append( "=?  AND ");
+			params.add(mtrx.getM_AttributeSetInstance_ID());		
+		}
 		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID).append("=? AND ");
 		params.add(M_CostElement_ID);
 		whereClause.append(MCostDetail.COLUMNNAME_M_CostType_ID ).append( "=? AND ");
 		params.add(M_CostType_ID);
 		whereClause.append(MCostDetail.COLUMNNAME_M_Transaction_ID ).append( "=? ");
 		params.add(mtrx.getM_Transaction_ID());
-		if(!includeReversal)
-		{	
-			whereClause.append(" AND ").append(MCostDetail.COLUMNNAME_IsReversal ).append( " = ? ");
-			params.add(false);
-		}
-				
 		return new Query (mtrx.getCtx(), I_M_CostDetail.Table_Name, whereClause.toString() , mtrx.get_TrxName())
 		.setParameters(params)
 		.firstOnly();
@@ -277,13 +267,9 @@ public class MCostDetail extends X_M_CostDetail
 		params.add(cd.getM_CostType_ID());
 		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ");
 		params.add(cd.getM_CostElement_ID());
-		
-		whereClause.append("(to_char(DateAcct, 'yyyymmdd') || M_CostDetail_ID) > (SELECT (to_char(cd.DateAcct, 'yyyymmdd') || cd.M_CostDetail_ID) FROM M_CostDetail cd WHERE cd.M_CostDetail_ID = ? ) AND ");
+		whereClause.append("(to_char(DateAcct, 'yyyymmdd') || M_Transaction_ID) > (SELECT (to_char(cd.DateAcct, 'yyyymmdd') || cd.M_Transaction_ID) FROM M_CostDetail cd WHERE cd.M_CostDetail_ID = ? ) AND ");
 		params.add(cd.getM_CostDetail_ID());
-		
-		whereClause.append(MCostDetail.COLUMNNAME_Processing + "=? AND ");
-		params.add(false);
-		whereClause.append(MCostDetail.COLUMNNAME_IsReversal + "=? ");
+		whereClause.append(MCostDetail.COLUMNNAME_Processing + "=? ");
 		params.add(false);
 		
 		whereClause.append("AND EXISTS ( SELECT 1 FROM M_Transaction t INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID ) WHERE t.M_Transaction_ID=M_CostDetail.M_Transaction_ID AND l.M_Warehouse_ID=?) ");
@@ -292,7 +278,7 @@ public class MCostDetail extends X_M_CostDetail
 		return  new Query(cd.getCtx(), Table_Name, whereClause.toString(), cd.get_TrxName())
 		.setClient_ID()
 		.setParameters(params)
-		.setOrderBy("to_char(M_CostDetail.DateAcct, 'yyyymmdd') || M_CostDetail.M_CostDetail_ID")
+		.setOrderBy("(to_char(DateAcct, 'yyyymmdd') || M_Transaction_ID)")
 		.list();
 	}
 	
@@ -353,7 +339,7 @@ public class MCostDetail extends X_M_CostDetail
 				cd.get_ID(),
 				false,
 				false})
-		.setOrderBy(COLUMNNAME_M_CostDetail_ID+ " DESC")
+		.setOrderBy("(to_char(DateAcct, 'yyyymmdd') || M_Transaction_ID) DESC")
 		.list();
 	}
 	/**

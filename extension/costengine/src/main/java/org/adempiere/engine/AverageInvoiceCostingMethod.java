@@ -34,13 +34,13 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
 		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
-		m_costdetail = MCostDetail.getByTransaction(m_trx, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), false);	
+		m_costdetail = MCostDetail.getByTransaction(m_trx, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());	
 	}
 	
 
 	public void calculate()
 	{	
-		if(m_model.getReversalLine_ID() > 0)
+		if(m_model.getReversalLine_ID() > 0 && m_costdetail == null)
 			return;
 		//find the last cost detail transaction
 		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(),m_model.getDateAcct(), costingLevel);
@@ -94,7 +94,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	
 	private void createCostDetail()
 	{
-		if(m_model.getReversalLine_ID() > 0)
+		if(m_model.getReversalLine_ID() > 0 && m_costdetail == null)
 		{	
 			createReversalCostDetail();
 			return;
@@ -198,7 +198,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		if(m_costdetail.isProcessing())
 			return;
 		
-		if(m_AdjustCost.signum() != 0 || MCostDetail.isEarlierTransaction(m_costdetail, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel))
+		boolean isEarlierTransaction = MCostDetail.isEarlierTransaction(m_costdetail, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel);
+		if(m_AdjustCost.signum() != 0 || isEarlierTransaction)
 		{	
 		
 			List<MCostDetail> cds = MCostDetail.getAfterDate(m_costdetail,costingLevel);

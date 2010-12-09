@@ -149,7 +149,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	 * Create Reversal Transaction
 	 */
 	public MCostDetail createReversalCostDetail()
-	{
+	{			
 			List<MTransaction> trxs = MTransaction.getByDocumentLine(m_trx);
 			if(trxs == null)
 				throw new AdempiereException("Can not found the original transaction");
@@ -159,7 +159,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				IDocumentLine model = m_trx.getDocumentLine();
 				String idColumnName = model.get_TableName()+"_ID";				
 				
-				MCostDetail original_cd = MCostDetail.getByTransaction(original_trx,m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), true);
+				MCostDetail original_cd = MCostDetail.getByTransaction(original_trx,m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());
 				if(original_cd == null)
 					throw new AdempiereException("Can not found the original cost detail");
 				
@@ -190,12 +190,12 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				if (!m_costdetail.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 					throw new AdempiereException("Cannot set "+idColumnName);
 				m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
-				m_costdetail.setDescription("Reversal" + original_cd.getM_Transaction_ID());
+				m_costdetail.setDescription("Reversal " + original_cd.getM_Transaction_ID());
 				m_costdetail.setIsReversal(true);
 				m_costdetail.saveEx(m_trx.get_TrxName());
 				
 				//Update the original cost detail
-				original_cd.setDescription("Reversal" + m_costdetail.getM_Transaction_ID());
+				original_cd.setDescription("Reversal " + m_costdetail.getM_Transaction_ID());
 				original_cd.setIsReversal(true);
 				original_cd.saveEx(m_trx.get_TrxName());
 				

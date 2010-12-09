@@ -251,7 +251,11 @@ public class MTransaction extends X_M_Transaction
 	 */
 	public int  getM_Warehouse_ID()
 	{
-		return getM_Locator().getM_Warehouse_ID();
+		final String whereClause ="EXISTS (SELECT 1 FROM M_Locator WHERE M_Locator_ID=? AND M_Warehouse.M_Warehouse_ID=M_Locator.M_Warehouse_ID)";
+		return new Query(getCtx(), X_M_Warehouse.Table_Name, whereClause, get_TrxName())
+		.setClient_ID()
+		.setParameters(getM_Locator_ID())
+		.firstIdOnly();
 	}
 	
 	/**
