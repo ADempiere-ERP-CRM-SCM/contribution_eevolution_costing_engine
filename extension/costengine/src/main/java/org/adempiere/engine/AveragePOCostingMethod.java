@@ -69,10 +69,13 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 			m_CumulatedQty = getNewCumulatedQty(m_last_costdetail).add(m_trx.getMovementQty());
 			m_CumulatedAmt = getNewCumulatedAmt(m_last_costdetail).add(m_Amount);
 			m_CumulatedAmtLL = getNewCumulatedAmtLL(m_last_costdetail).add(m_AmountLL);
-			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-			m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-			m_AdjustCost = m_costThisLevel.multiply(m_trx.getMovementQty()).subtract(m_costdetail.getCostAmt());
-			m_AdjustCostLL = m_costLowLevel.multiply(m_trx.getMovementQty()).subtract(m_costdetail.getCostAmtLL());
+			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty.signum() != 0 ?  m_CumulatedQty : BigDecimal.ONE, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty.signum() != 0 ?  m_CumulatedQty : BigDecimal.ONE, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			if(!m_costdetail.isProcessing())
+			{
+				m_AdjustCost = m_costThisLevel.multiply(m_trx.getMovementQty()).subtract(m_costdetail.getCostAmt());
+				m_AdjustCostLL = m_costLowLevel.multiply(m_trx.getMovementQty()).subtract(m_costdetail.getCostAmtLL());
+			}
 			return;
 		}
 	    
@@ -82,11 +85,11 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 		m_CumulatedAmt = getNewCumulatedAmt(m_last_costdetail).add(m_Amount);
 		m_CumulatedAmtLL = getNewCumulatedAmtLL(m_last_costdetail).add(m_AmountLL);
 		if(m_CumulatedAmt.signum() != 0)
-			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty.signum() != 0 ?  m_CumulatedQty : BigDecimal.ONE, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 		else
 			m_CurrentCostPrice = Env.ZERO;
 		if(m_CumulatedAmtLL.signum() != 0)
-			m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty.signum() != 0 ?  m_CumulatedQty : BigDecimal.ONE, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 		else
 			m_CurrentCostPriceLL = Env.ZERO;
 	}

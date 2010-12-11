@@ -162,7 +162,7 @@ public class ValuationEffectiveDate extends SvrProcess
     		params.add(o);
     	
     	DB.executeUpdateEx(insert.toString(), params.toArray(),get_TrxName());
-    	DB.executeUpdate("UPDATE T_InventoryValue SET cost = coalesce( QtyOnHand , (CostAmt + CostAmtLL) / QtyOnHand, 0) , CumulatedAmt = CostAmt + CostAmtLL,  DateValue = "
+    	DB.executeUpdate("UPDATE T_InventoryValue SET cost = CASE WHEN QtyOnHand IS NOT NULL THEN (CostAmt + CostAmtLL) / QtyOnHand ELSE  0 END  , CumulatedAmt = CostAmt + CostAmtLL,  DateValue = "
     	+DB.TO_DATE(p_DateValue)+" WHERE AD_PInstance_ID=?", getAD_PInstance_ID(),get_TrxName());
     	
     }
