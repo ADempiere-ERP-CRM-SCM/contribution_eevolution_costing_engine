@@ -306,7 +306,8 @@ public class CostEngine
 				
 				if (model instanceof MInventoryLine && costThisLevel.signum() == 0 )
 				{
-					costThisLevel = cost.getCurrentCostPrice();
+					MInventoryLine inventoryLine = (MInventoryLine) model;
+					costThisLevel = inventoryLine.getCurrentCostPrice();
 				}
 				//do not exist cost detail by some purchase then get the cost from other other warehouse
 				if(model instanceof MMovementLine && costThisLevel.signum() == 0)

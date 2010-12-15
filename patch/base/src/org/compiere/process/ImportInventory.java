@@ -310,35 +310,28 @@ public class ImportInventory extends SvrProcess
 						if (mas.isSerNo() && imp.getSerNo() != null)
 							masi.setSerNo(imp.getSerNo());
 						masi.setDescription();
-						masi.save();
+						masi.saveEx();
 						M_AttributeSetInstance_ID = masi.getM_AttributeSetInstance_ID();
 					}
 				}
 				MInventoryLine line = new MInventoryLine (inventory, 
 					imp.getM_Locator_ID(), imp.getM_Product_ID(), M_AttributeSetInstance_ID,
 					imp.getQtyBook(), imp.getQtyCount());
-				if (line.save())
+				line.saveEx();
+
+				imp.setI_IsImported(true);
+				imp.setM_Inventory_ID(line.getM_Inventory_ID());
+				imp.setM_InventoryLine_ID(line.getM_InventoryLine_ID());
+				imp.setProcessed(true);
+				imp.saveEx();
+				
+				noInsertLine++;
+					//@Trifon update Product cost record if Update costing is enabled
+				if (p_UpdateCosting) 
 				{
-					imp.setI_IsImported(true);
-					imp.setM_Inventory_ID(line.getM_Inventory_ID());
-					imp.setM_InventoryLine_ID(line.getM_InventoryLine_ID());
-					imp.setProcessed(true);
-					if (imp.save()) {
-						noInsertLine++;
-						//@Trifon update Product cost record if Update costing is enabled
-						if (p_UpdateCosting) {
-							MCost cost = MCost.getOrCreate (MProduct.get(getCtx(), imp.getM_Product_ID()), /*M_AttributeSetInstance_ID*/ 0
-									, acctSchema, p_AD_OrgTrx_ID,p_M_CostType_ID, p_M_CostElement_ID , get_TrxName());
-							cost.setCurrentCostPrice( imp.getCurrentCostPrice() );
-							if (cost.save()) {
-								// nothing here.
-							} else {
-								log.log(Level.SEVERE, "Cost not saved!");
-								break;
-							}
-						}
-					}
-				}
+						line.setCurrentCostPrice(imp.getCurrentCostPrice());
+						line.saveEx();
+				}			
 			}
 			rs.close();
 			pstmt.close();
