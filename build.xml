@@ -11,6 +11,7 @@
   <property name="patchSrc" location="patch/base/src"/>
   <property name="liberoPatchSrc" location="patch/libero/src"/>
   <property name="build" location="build"/>
+  <property name="buildPatch" location="buildPatch"/>
   <property name="dist"  location="dist"/>
 
   <path id="patch.class.path">
@@ -22,7 +23,10 @@
     </fileset>
   </path>
   
-  <path id="lib.class.path">
+  <path id="lib.class.path"> 
+  	<fileset dir="${dist}/lib">
+  	           <include name="*.jar"/>
+  	</fileset>
     <fileset dir="${adempiere.home}/lib">
            <include name="Adempiere.jar"/>
    </fileset>
@@ -38,30 +42,28 @@
     <tstamp/>
     <!-- Create the build directory structure used by compile -->
     <mkdir dir="${build}"/>
+  	<mkdir dir="${buildPatch}"/>
   </target>
 
   <target name="compile"
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
-    <javac srcdir="${src}" destdir="${build}">
-      <src path="${patchSrc}:${liberoPatchSrc}"/>
+    <javac srcdir="${src}" destdir="${build}">    
       <include name="**/org/adempiere/engine/*.java"/>
       <include name="**/org/adempiere/exceptions/*.java"/>
-        <include name="**/org/eevolution/model/*.java"/>
-        <include name="**/org/eevolution/process/*.java"/>
+      <include name="**/org/eevolution/process/*.java"/>
       <classpath refid="lib.class.path"/>
     </javac>
 
   </target>
 
-  <target name="dist"  depends="init,patchDist, compile"
+  <target name="dist"  depends="init, patchDist, compile, clean"
         description="generate the distribution" >
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/lib"/>
 
     <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-    <jar jarfile="${dist}/lib/liberoCE.jar" basedir="${build}" 
-      excludes="**/org/compiere/**/*.class"/>
+    <jar jarfile="${dist}/lib/liberoCE.jar" basedir="${build}" />
 
     <!-- Create target Libero deployment -->
     <mkdir dir="${adempiere.home}/packages/liberoCE/lib"/>
@@ -78,7 +80,7 @@
       <mkdir dir="${dist}/lib"/>
 
       <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-      <jar jarfile="${dist}/lib/patches.jar" basedir="${build}"/>
+      <jar jarfile="${dist}/lib/patches.jar" basedir="${buildPatch}"/>
 
       <!-- Create target Libero deployment -->
       <mkdir dir="${adempiere.home}/lib"/>
@@ -92,16 +94,13 @@
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
 
-    <javac srcdir="${patchSrc}" destdir="${build}">
-      <src path="${src}"/>
+    <javac srcdir="${patchSrc}" destdir="${buildPatch}">
       <include name="**/org/compiere/acct/*.java"/>
       <include name="**/org/compiere/model/*.java"/>
       <include name="**/org/compiere/process/*.java"/>
       <classpath refid="patch.class.path"/>
     </javac>
-  	<javac srcdir="${liberoPatchSrc}" destdir="${build}">
-  	      <src path="${src}"/>
-  	      <include name="**/org/adempiere/engine/*.java"/>
+  	<javac srcdir="${liberoPatchSrc}" destdir="${buildPatch}">
   	      <include name="**/org/eevolution/model/*.java"/>
   	      <classpath refid="patch.class.path"/>
   	</javac>
@@ -112,6 +111,7 @@
         description="clean up" >
     <!-- Delete the ${build} and ${dist} directory trees -->
     <delete dir="${build}"/>
+  	<delete dir="${buildPatch}"/>
     <delete dir="${dist}"/>
   </target>
 </project>
