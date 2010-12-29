@@ -72,7 +72,6 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			m_CumulatedAmtLL = getNewCumulatedAmtLL(m_last_costdetail).add(m_AmountLL);
 			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty.signum() != 0 ?  m_CumulatedQty : BigDecimal.ONE, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty.signum() != 0 ?  m_CumulatedQty : BigDecimal.ONE, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-			
 			if(!m_costdetail.isProcessing())
 			{
 				m_AdjustCost = m_costThisLevel.multiply(m_trx.getMovementQty()).subtract(m_costdetail.getCostAmt());
@@ -125,8 +124,6 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 				m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
 				m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
 				m_costdetail.setAmt(m_CurrentCostPrice.multiply(m_trx.getMovementQty()).abs());
-				if(m_trx.getMovementType().contains("-"))
-					m_costdetail.setCostAmt(m_costdetail.getAmt());
 			}
 			if(m_AdjustCostLL.signum() != 0)
 			{
@@ -142,9 +139,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 				m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
 				m_costdetail.setCurrentCostPriceLL(getNewCurrentCostPriceLL(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
 				m_costdetail.setAmtLL(m_CurrentCostPriceLL.multiply(m_trx.getMovementQty()));
-				if(m_trx.getMovementType().contains("-"))
-					m_costdetail.setCostAmtLL(m_costdetail.getAmtLL());
-			}
+			}			
+			updateAmtCost();			
 			m_costdetail.saveEx();
 			return;
 		}
@@ -154,16 +150,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		else
 			m_costdetail.setIsSOTrx(m_model.isSOTrx());	
 		
-		if(m_trx.getMovementType().contains("+"))
-		{	
-			m_costdetail.setCostAmt(m_costThisLevel.multiply(m_trx.getMovementQty()).abs());
-			m_costdetail.setCostAmtLL(m_costLowLevel.multiply(m_trx.getMovementQty()).abs());
-		}	
-		if(m_trx.getMovementType().contains("-"))
-		{	
-			m_costdetail.setCostAmt(m_costdetail.getAmt());
-			m_costdetail.setCostAmtLL(m_costdetail.getAmtLL());
-		}	
+		updateAmtCost();
 
 		m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
 		m_costdetail.setCumulatedAmt(getNewCumulatedAmt(m_last_costdetail));
@@ -260,7 +247,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	public BigDecimal getNewCurrentCostPrice(MCostDetail cd, int scale,
 			int roundingMode) 
 	{		
-		if(getNewCumulatedQty(cd).signum() != 0)
+		if(getNewCumulatedQty(cd).signum() != 0 && getNewCumulatedAmt(cd).signum() != 0)
 			return getNewCumulatedAmt(cd).divide(getNewCumulatedQty(cd), scale , roundingMode);
 		else return BigDecimal.ZERO;
 	}
@@ -294,7 +281,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	 */
 	public BigDecimal getNewCurrentCostPriceLL(MCostDetail cd, int scale,
 			int roundingMode) {
-		if(getNewCumulatedQty(cd).signum() != 0)
+		if(getNewCumulatedQty(cd).signum() != 0 && getNewCumulatedAmtLL(cd).signum() != 0)
 			return getNewCumulatedAmtLL(cd).divide(getNewCumulatedQty(cd), scale , roundingMode);
 		else return BigDecimal.ZERO;
 	}
@@ -324,5 +311,22 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	 */
 	public BigDecimal getNewCumulatedQty(MCostDetail cd) {
 		return cd.getCumulatedQty().add(cd.getQty());
+	}
+	
+	/**
+	 * Update Cost Amt
+	 */
+	private void updateAmtCost()
+	{
+		if(m_trx.getMovementType().contains("+"))
+		{	
+			m_costdetail.setCostAmt(m_costThisLevel.multiply(m_trx.getMovementQty()).abs());
+			m_costdetail.setCostAmtLL(m_costLowLevel.multiply(m_trx.getMovementQty()).abs());
+		}	
+		if(m_trx.getMovementType().contains("-"))
+		{	
+			m_costdetail.setCostAmt(m_costdetail.getAmt());
+			m_costdetail.setCostAmtLL(m_costdetail.getAmtLL());
+		}	
 	}
 }
