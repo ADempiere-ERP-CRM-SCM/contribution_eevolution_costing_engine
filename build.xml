@@ -98,6 +98,8 @@
       <include name="**/org/compiere/acct/*.java"/>
       <include name="**/org/compiere/model/*.java"/>
       <include name="**/org/compiere/process/*.java"/>
+      <include name="**/org/eevolution/model/*.java"/>	
+      <include name="**/org/adempiere/engine/*.java"/>	
       <classpath refid="patch.class.path"/>
     </javac>
   	<javac srcdir="${liberoPatchSrc}" destdir="${buildPatch}">
