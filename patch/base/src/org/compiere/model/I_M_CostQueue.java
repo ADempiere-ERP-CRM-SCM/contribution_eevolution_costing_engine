@@ -18,12 +18,11 @@ package org.compiere.model;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-
 import org.compiere.util.KeyNamePair;
 
 /** Generated Interface for M_CostQueue
  *  @author Adempiere (generated) 
- *  @version Release 3.5.4a
+ *  @version Release 3.6.0LTS
  */
 public interface I_M_CostQueue 
 {
@@ -76,7 +75,7 @@ public interface I_M_CostQueue
 	  */
 	public int getC_AcctSchema_ID();
 
-	public I_C_AcctSchema getC_AcctSchema() throws RuntimeException;
+	public org.compiere.model.I_C_AcctSchema getC_AcctSchema() throws RuntimeException;
 
     /** Column name Created */
     public static final String COLUMNNAME_Created = "Created";
@@ -174,7 +173,7 @@ public interface I_M_CostQueue
 	  */
 	public int getM_CostElement_ID();
 
-	public I_M_CostElement getM_CostElement() throws RuntimeException;
+	public org.compiere.model.I_M_CostElement getM_CostElement() throws RuntimeException;
 
     /** Column name M_CostQueue_ID */
     public static final String COLUMNNAME_M_CostQueue_ID = "M_CostQueue_ID";
@@ -202,7 +201,7 @@ public interface I_M_CostQueue
 	  */
 	public int getM_CostType_ID();
 
-	public I_M_CostType getM_CostType() throws RuntimeException;
+	public org.compiere.model.I_M_CostType getM_CostType() throws RuntimeException;
 
     /** Column name M_Product_ID */
     public static final String COLUMNNAME_M_Product_ID = "M_Product_ID";
@@ -217,7 +216,7 @@ public interface I_M_CostQueue
 	  */
 	public int getM_Product_ID();
 
-	public I_M_Product getM_Product() throws RuntimeException;
+	public org.compiere.model.I_M_Product getM_Product() throws RuntimeException;
 
     /** Column name Updated */
     public static final String COLUMNNAME_Updated = "Updated";

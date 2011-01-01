@@ -19,7 +19,6 @@ package org.compiere.model;
 
 import java.sql.ResultSet;
 import java.util.Properties;
-
 import org.compiere.util.KeyNamePair;
 
 /** Generated Model for M_CostType
@@ -31,7 +30,7 @@ public class X_M_CostType extends PO implements I_M_CostType, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20100709L;
+	private static final long serialVersionUID = 20110101L;
 
     /** Standard Constructor */
     public X_M_CostType (Properties ctx, int M_CostType_ID, String trxName)
@@ -101,7 +100,7 @@ public class X_M_CostType extends PO implements I_M_CostType, I_Persistent
 	public void setCostingMethod (String CostingMethod)
 	{
 
-		set_Value (COLUMNNAME_CostingMethod, CostingMethod);
+		set_ValueNoCheck (COLUMNNAME_CostingMethod, CostingMethod);
 	}
 
 	/** Get Costing Method.

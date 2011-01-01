@@ -44,9 +44,9 @@ public class ValuationEffectiveDate extends SvrProcess
 	private Timestamp p_DateValue;
 	
 	private StringBuffer whereClause1 = new StringBuffer("WHERE 1=1 ");
-	private StringBuffer whereClause2 = new StringBuffer("AND to_char(tc.DateAcct, 'yyyy/mm/dd') || tc.M_CostDetail_ID IN (SELECT MAX(to_char(DateAcct, 'yyyy/mm/dd') || M_CostDetail_ID) FROM M_CostDetail cd1")
-	.append(" INNER JOIN M_Locator l ON (tc.M_Locator_ID=l.M_Locator_ID) ")
-	.append(" WHERE tc.M_Product_ID=cd1.M_Product_ID ");
+	private StringBuffer whereClause2 = new StringBuffer("AND to_char(tc.DateAcct, 'yyyymmdd') || tc.M_Transaction_ID  IN (SELECT MAX(to_char(tc1.DateAcct, 'yyyymmdd') || tc1.M_Transaction_ID) FROM RV_M_Transaction_Costing tc1")
+	.append(" INNER JOIN M_Locator l1 ON (tc1.M_Locator_ID=l1.M_Locator_ID) ")
+	.append(" WHERE tc.M_Product_ID=tc1.M_Product_ID ");
 	private ArrayList<Object> params1 = new ArrayList();  
 	private ArrayList<Object> params2 = new ArrayList();  
 	private ArrayList<Object> params = new ArrayList(); 
@@ -68,16 +68,14 @@ public class ValuationEffectiveDate extends SvrProcess
  				if(p_DateValue == null)
  		    		throw new FillMandatoryException("@DateValue@");
  				
- 				whereClause2.append("AND cd1.DateAcct<= ").append(DB.TO_DATE(p_DateValue));
+ 				whereClause2.append("AND tc1.DateAcct<= ").append(DB.TO_DATE(p_DateValue));
  			}
  			else if (name.equals(MWarehouse.COLUMNNAME_M_Warehouse_ID))
  			{	
  				p_M_Warehouse_ID = parameter.getParameterAsInt();
  		    	if(p_M_Warehouse_ID > 0)
  		    	{
- 		    		whereClause1.append(" AND l.M_Warehouse_ID=?");
- 		    		params1.add(p_M_Warehouse_ID);
- 		    		whereClause2.append(" AND l.M_Warehouse_ID=?");
+ 		    		whereClause2.append(" AND l1.M_Warehouse_ID=?");
  		    		params2.add(p_M_Warehouse_ID);
  		    	}
  			}
@@ -104,7 +102,7 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_M_CostType_ID =  parameter.getParameterAsInt();
  				if(p_M_CostType_ID > 0)
  		    	{
- 		    		whereClause2.append(" AND cd1.M_CostType_ID =? ");
+ 		    		whereClause2.append(" AND tc1.M_CostType_ID =? ");
  		    		params2.add(p_M_CostType_ID);
  		    	}
  			}
@@ -113,7 +111,7 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_M_CostElement_ID = parameter.getParameterAsInt();
  				if(p_M_CostElement_ID > 0)
  		    	{
- 		    		whereClause2.append(" AND cd1.M_CostElement_ID =? ");
+ 		    		whereClause2.append(" AND tc1.M_CostElement_ID =? ");
  		    		params2.add(p_M_CostElement_ID);
  		    	}
  			}
