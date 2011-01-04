@@ -54,7 +54,10 @@
       <include name="**/org/eevolution/process/*.java"/>
       <classpath refid="lib.class.path"/>
     </javac>
-
+  	<javac srcdir="${liberoPatchSrc}" destdir="${build}">
+  	      <include name="**/org/eevolution/model/MPPCostCollector.java"/>
+  	      <classpath refid="patch.class.path"/>
+  	</javac>
   </target>
 
   <target name="dist"  depends="init, patchDist, compile, clean"
