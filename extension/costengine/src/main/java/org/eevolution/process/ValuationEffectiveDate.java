@@ -67,7 +67,7 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_DateValue = (Timestamp) parameter.getParameter();
  				if(p_DateValue == null)
  		    		throw new FillMandatoryException("@DateValue@");
- 				
+ 				whereClause1.append("AND tc.DateAcct<= ").append(DB.TO_DATE(p_DateValue));
  				whereClause2.append("AND tc1.DateAcct<= ").append(DB.TO_DATE(p_DateValue));
  			}
  			else if (name.equals(MWarehouse.COLUMNNAME_M_Warehouse_ID))
@@ -75,8 +75,9 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_M_Warehouse_ID = parameter.getParameterAsInt();
  		    	if(p_M_Warehouse_ID > 0)
  		    	{
- 		    		whereClause2.append(" AND l1.M_Warehouse_ID=?");
- 		    		params2.add(p_M_Warehouse_ID);
+ 		    		whereClause1.append(" AND l.M_Warehouse_ID=?");
+ 		    		params1.add(p_M_Warehouse_ID);
+ 		    		whereClause2.append(" AND tc1.M_Locator_ID=tc.M_Locator_ID");		    		
  		    	}
  			}
  			else if (name.equals(MCostDetail.COLUMNNAME_M_Product_ID))
@@ -101,9 +102,11 @@ public class ValuationEffectiveDate extends SvrProcess
  			{
  				p_M_CostType_ID =  parameter.getParameterAsInt();
  				if(p_M_CostType_ID > 0)
- 		    	{
- 		    		whereClause2.append(" AND tc1.M_CostType_ID =? ");
- 		    		params2.add(p_M_CostType_ID);
+ 		    	{ 					
+ 					whereClause1.append(" AND tc.M_CostType_ID =?  ");
+ 					params1.add(p_M_CostType_ID);
+ 		    		whereClause2.append(" AND tc1.M_CostType_ID=tc.M_CostType_ID ");
+ 		    		
  		    	}
  			}
  			else if (name.equals(MCostDetail.COLUMNNAME_M_CostElement_ID))
@@ -111,8 +114,9 @@ public class ValuationEffectiveDate extends SvrProcess
  				p_M_CostElement_ID = parameter.getParameterAsInt();
  				if(p_M_CostElement_ID > 0)
  		    	{
- 		    		whereClause2.append(" AND tc1.M_CostElement_ID =? ");
- 		    		params2.add(p_M_CostElement_ID);
+ 		    		whereClause1.append(" AND tc.M_CostElement_ID=? ");
+ 		    		params1.add(p_M_CostElement_ID);
+ 		    		whereClause2.append(" AND tc1.M_CostElement_ID = tc.M_CostElement_ID");
  		    	}
  			}
  				
