@@ -169,7 +169,7 @@ public class MCostDetail extends X_M_CostDetail
 			return false;
 		
 		if(cd.getDateAcct().compareTo(last_cd.getDateAcct()) <= 0 
-		&& cd.getM_CostDetail_ID() != last_cd.getM_CostDetail_ID()) 
+		&& cd.getM_Transaction_ID() != last_cd.getM_Transaction_ID()) 
 		{
 			return true;
 		}
@@ -267,7 +267,7 @@ public class MCostDetail extends X_M_CostDetail
 		params.add(cd.getM_CostType_ID());
 		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ");
 		params.add(cd.getM_CostElement_ID());
-		whereClause.append("(to_char(DateAcct, 'yyyymmdd') || M_Transaction_ID) > (SELECT (to_char(cd.DateAcct, 'yyyymmdd') || cd.M_Transaction_ID) FROM M_CostDetail cd WHERE cd.M_CostDetail_ID = ? ) AND ");
+		whereClause.append("(to_char(DateAcct, 'yyyymmdd') || M_CostDetail_ID) > (SELECT (to_char(cd.DateAcct, 'yyyymmdd') || cd.M_CostDetail_ID) FROM M_CostDetail cd WHERE cd.M_CostDetail_ID = ? ) AND ");
 		params.add(cd.getM_CostDetail_ID());
 		whereClause.append(MCostDetail.COLUMNNAME_Processing + "=? ");
 		params.add(false);
@@ -278,7 +278,7 @@ public class MCostDetail extends X_M_CostDetail
 		return  new Query(cd.getCtx(), Table_Name, whereClause.toString(), cd.get_TrxName())
 		.setClient_ID()
 		.setParameters(params)
-		.setOrderBy("(to_char(DateAcct, 'yyyymmdd') || M_Transaction_ID)")
+		.setOrderBy("(to_char(DateAcct, 'yyyymmdd') || M_CostDetail_ID)")
 		.list();
 	}
 	
@@ -681,13 +681,14 @@ public class MCostDetail extends X_M_CostDetail
 	{
 		StringBuffer sb = new StringBuffer ("MCostDetail[");
 		sb.append (get_ID());
+		if (getM_Transaction_ID() != 0)
+			sb.append (",M_Transaction_ID=").append (getM_Transaction_ID());
 		sb.append(", Product="+ getM_Product().getName());
 		sb.append(", Cost Element="+ getM_CostElement().getName());
 		sb.append(", Costing Method="+ getCostingMethod());
 		sb.append(", Date Acct="+ getDateAcct());
 		sb.append(", Is Reversal="+ isReversal());
-		if(getM_Transaction_ID() != 0)
-			sb.append (",M_Transaction_ID=").append (getM_Transaction_ID());
+		
 		if (getC_OrderLine_ID() != 0)
 			sb.append (",C_OrderLine_ID=").append (getC_OrderLine_ID());
 		if (getM_InOutLine_ID() != 0)

@@ -161,8 +161,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				IDocumentLine model = m_trx.getDocumentLine();
 				String idColumnName = model.get_TableName()+"_ID";											
 				
-				//Qty Transaction				
-				
+				//Qty Transaction								
 				MCostDetail original_cd = MCostDetail.getByTransaction(original_trx,m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());
 				if(original_cd == null)
 					throw new AdempiereException("Can not found the original cost detail");
@@ -171,11 +170,14 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				{					
 					m_costdetail.setAD_Org_ID(original_cd.getAD_Org_ID());
 					m_costdetail.copyValues(original_cd , m_costdetail);
-					m_costdetail.setCumulatedQty(getNewCumulatedQty(original_cd));
-					m_costdetail.setCumulatedAmt(getNewCumulatedAmt(original_cd));
-					m_costdetail.setCumulatedAmtLL(getNewCumulatedAmtLL(original_cd));	
-					m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
-					m_costdetail.setCurrentCostPriceLL(getNewCurrentCostPriceLL(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));	
+					m_costdetail.setCumulatedAmt(getNewCumulatedAmt(m_last_costdetail));	
+					m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
+					m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
+					m_costdetail.setAmt(m_CurrentCostPrice.multiply(m_trx.getMovementQty()).abs());
+					m_costdetail.setCumulatedAmtLL(getNewCumulatedAmtLL(m_last_costdetail));	
+					m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
+					m_costdetail.setCurrentCostPriceLL(getNewCurrentCostPriceLL(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
+					m_costdetail.setAmtLL(m_CurrentCostPriceLL.multiply(m_trx.getMovementQty()));
 					
 					m_costdetail.setQty(Env.ZERO);
 					m_costdetail.setAmt(Env.ZERO);

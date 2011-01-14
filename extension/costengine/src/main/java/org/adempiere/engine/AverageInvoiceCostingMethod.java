@@ -40,10 +40,11 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 
 	public void calculate()
 	{	
+		//find the last cost detail transaction
+		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(),m_model.getDateAcct(), costingLevel);			
+		  
 		if(m_model.getReversalLine_ID() > 0 && m_costdetail == null)
 			return;
-		//find the last cost detail transaction
-		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(),m_model.getDateAcct(), costingLevel);
 		if(m_last_costdetail == null)
 		{	//created a new cost detail 
 			m_last_costdetail = new MCostDetail(m_trx , m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID() , Env.ZERO , Env.ZERO, Env.ZERO, m_trx.get_TrxName());
@@ -198,6 +199,9 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			if(cds == null || cds.size() == 0)
 				return;
 				
+			MCostType ct = (MCostType) m_costdetail.getM_CostType();
+			MCostElement ce =(MCostElement)  m_costdetail.getM_CostElement();					
+
 			if(m_as.isAdjustCOGS())	
 			{
 				for(MCostDetail cd : cds)
@@ -205,8 +209,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 					cd.setProcessing(true);
 					cd.saveEx();
 					MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
-					MCostType ct = (MCostType) cd.getM_CostType();
-					MCostElement ce =(MCostElement) cd.getM_CostElement();
+					ct = (MCostType) cd.getM_CostType();
+					ce =(MCostElement) cd.getM_CostElement();
 					CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(m_as,trx,trx.getDocumentLine(),ct,ce);
 					cd.setProcessing(false);
 					cd.saveEx();
