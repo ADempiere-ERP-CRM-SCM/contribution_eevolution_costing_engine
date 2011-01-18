@@ -328,8 +328,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 		}	
 		if(m_trx.getMovementType().contains("-"))
 		{	
-			m_costdetail.setCostAmt(m_costdetail.getAmt().subtract(m_AdjustCost));
-			m_costdetail.setCostAmtLL(m_costdetail.getAmtLL().subtract(m_AdjustCostLL));
+			m_costdetail.setCostAmt(m_costdetail.getAmt().add(m_AdjustCost));
+			m_costdetail.setCostAmtLL(m_costdetail.getAmtLL().add(m_AdjustCostLL));
 		}	
 	}
 }
