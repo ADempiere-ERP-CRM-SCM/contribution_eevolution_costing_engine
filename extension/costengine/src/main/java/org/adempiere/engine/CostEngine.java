@@ -314,7 +314,7 @@ public class CostEngine
 				//do not exist cost detail by some purchase then get the cost from other other warehouse
 				if(model instanceof MMovementLine && costThisLevel.signum() == 0)
 				{
-					MTransaction trx = MTransaction.getByDocumentLine(model, MTransaction.MOVEMENTTYPE_MovementTo);
+					MTransaction trx = MTransaction.getByDocumentLine(model, MTransaction.MOVEMENTTYPE_MovementFrom);
 					costThisLevel = getCostThisLevel(trx, as, ct, ce, model, costingLevel);
 				}
 			}

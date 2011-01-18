@@ -206,11 +206,10 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 			{
 				for(MCostDetail cd : cds)
 				{
+					MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
 					cd.setProcessing(true);
 					cd.saveEx();
-					MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
-					ct = (MCostType) cd.getM_CostType();
-					ce =(MCostElement) cd.getM_CostElement();
+					
 					CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(m_as,trx,trx.getDocumentLine(),ct,ce);
 					cd.setProcessing(false);
 					cd.saveEx();
@@ -324,13 +323,13 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod implement
 	{
 		if(m_trx.getMovementType().contains("+"))
 		{	
-			m_costdetail.setCostAmt(m_costThisLevel.multiply(m_trx.getMovementQty()).abs());
-			m_costdetail.setCostAmtLL(m_costLowLevel.multiply(m_trx.getMovementQty()).abs());
+			m_costdetail.setCostAmt(m_costThisLevel.multiply(m_trx.getMovementQty()).abs().subtract(m_AdjustCost.abs()));
+			m_costdetail.setCostAmtLL(m_costLowLevel.multiply(m_trx.getMovementQty()).abs().subtract(m_AdjustCostLL.abs()));
 		}	
 		if(m_trx.getMovementType().contains("-"))
 		{	
-			m_costdetail.setCostAmt(m_costdetail.getAmt());
-			m_costdetail.setCostAmtLL(m_costdetail.getAmtLL());
+			m_costdetail.setCostAmt(m_costdetail.getAmt().subtract(m_AdjustCost));
+			m_costdetail.setCostAmtLL(m_costdetail.getAmtLL().subtract(m_AdjustCostLL));
 		}	
 	}
 }

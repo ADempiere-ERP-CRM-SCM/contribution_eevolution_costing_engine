@@ -6,7 +6,7 @@
 	<classpathentry kind="src" path="extension/costengine/src/test/java"/>
 	<classpathentry kind="src" path="extension/costengine/src/main/resources"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/adempiereLibero"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/adempiereTrunk"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/adempiereTrunk"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
