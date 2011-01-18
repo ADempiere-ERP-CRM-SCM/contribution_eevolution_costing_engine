@@ -60,7 +60,7 @@
   	</javac>
   </target>
 
-  <target name="dist"  depends="init, patchDist, compile, clean"
+  <target name="dist"  depends="init,patchDist, compile, clean"
         description="generate the distribution" >
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/lib"/>
@@ -95,9 +95,10 @@
   
   <target name="patchCompile" depends="init"
         description="compile the source " >
-    <!-- Compile the java code from ${src} into ${build} -->
-
-    <javac srcdir="${patchSrc}" destdir="${buildPatch}">
+  	
+    <javac srcdir="${patchSrc}:${src}" destdir="${buildPatch}">
+      <include name="**/org/adempiere/engine/CostComponent.java"/>
+      <include name="**/org/adempiere/engine/CostEngineFactory.java"/>
       <include name="**/org/compiere/acct/*.java"/>
       <include name="**/org/compiere/model/*.java"/>
       <include name="**/org/compiere/process/*.java"/>
@@ -105,6 +106,7 @@
       <include name="**/org/adempiere/engine/*.java"/>	
       <classpath refid="patch.class.path"/>
     </javac>
+  	
   	<javac srcdir="${liberoPatchSrc}" destdir="${buildPatch}">
   	      <include name="**/org/eevolution/model/*.java"/>
   	      <classpath refid="patch.class.path"/>
