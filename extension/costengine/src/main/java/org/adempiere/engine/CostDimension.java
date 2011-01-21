@@ -4,6 +4,13 @@ import java.util.ArrayList;
 import java.util.Properties;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.I_AD_Client;
+import org.compiere.model.I_AD_Org;
+import org.compiere.model.I_C_AcctSchema;
+import org.compiere.model.I_M_AttributeInstance;
+import org.compiere.model.I_M_Cost;
+import org.compiere.model.I_M_CostElement;
+import org.compiere.model.I_M_Product;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCostType;
 import org.compiere.model.MLocator;
@@ -214,24 +221,24 @@ public class CostDimension
 		ArrayList<Object> finalParams = new ArrayList<Object>();
 		StringBuffer finalWhereClause = new StringBuffer();
 
-		finalWhereClause.append("AD_Client_ID=?");
+		finalWhereClause.append(I_AD_Client.COLUMNNAME_AD_Client_ID);
 		finalParams.add(this.AD_Client_ID);
-		finalWhereClause.append(" AND AD_Org_ID=?");
+		finalWhereClause.append(" AND "+I_AD_Org.COLUMNNAME_AD_Org_ID+"=?");
 		finalParams.add(this.AD_Org_ID);
-		finalWhereClause.append(" AND M_Product_ID=?");
+		finalWhereClause.append(" AND "+I_M_Product.COLUMNNAME_M_Product_ID+"=?");
 		finalParams.add(this.M_Product_ID);
-		finalWhereClause.append(" AND M_AttributeSetInstance_ID=?");
+		finalWhereClause.append(" AND "+I_M_AttributeInstance.COLUMNNAME_M_AttributeSetInstance_ID+"=?");
 		finalParams.add(this.M_AttributeSetInstance_ID);
-		finalWhereClause.append(" AND C_AcctSchema_ID=?");
+		finalWhereClause.append(" AND "+I_C_AcctSchema.COLUMNNAME_C_AcctSchema_ID+"=?");
 		finalParams.add(this.C_AcctSchema_ID);
 		if (this.M_CostElement_ID != ANY)
 		{
-			finalWhereClause.append(" AND M_CostElement_ID=?");
+			finalWhereClause.append(" AND "+I_M_CostElement.COLUMNNAME_M_CostElement_ID+"=?");
 			finalParams.add(this.M_CostElement_ID);
 		}
-		if (this.M_CostType_ID != ANY && table.getColumn("M_CostType_ID") != null)
+		if (this.M_CostType_ID != ANY && table.getColumn(I_M_Cost.COLUMNNAME_M_CostType_ID) != null)
 		{
-			finalWhereClause.append(" AND M_CostType_ID=?");
+			finalWhereClause.append(" AND "+I_M_Cost.COLUMNNAME_M_CostType_ID+"=?");
 			finalParams.add(this.M_CostType_ID);
 		}
 		if (!Util.isEmpty(whereClause, true))
