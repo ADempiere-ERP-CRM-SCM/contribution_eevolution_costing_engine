@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.I_C_InvoiceLine;
 import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_M_InOutLine;
 import org.compiere.model.MAcctSchema;
@@ -61,11 +62,11 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 		final String idColumnName;
 		if (model instanceof MMatchPO)
 		{
-			idColumnName = "C_OrderLine_ID";
+			idColumnName = I_C_OrderLine.COLUMNNAME_C_OrderLine_ID;
 		}
 		else if (model instanceof MMatchInv)
 		{
-			idColumnName = "C_InvoiceLine_ID";
+			idColumnName = I_C_InvoiceLine.COLUMNNAME_C_InvoiceLine_ID;
 		}
 		else
 		{
