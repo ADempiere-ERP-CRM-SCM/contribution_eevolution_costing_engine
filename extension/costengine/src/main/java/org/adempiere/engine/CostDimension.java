@@ -8,8 +8,8 @@ import org.compiere.model.I_AD_Client;
 import org.compiere.model.I_AD_Org;
 import org.compiere.model.I_C_AcctSchema;
 import org.compiere.model.I_M_AttributeInstance;
-import org.compiere.model.I_M_Cost;
 import org.compiere.model.I_M_CostElement;
+import org.compiere.model.I_M_CostType;
 import org.compiere.model.I_M_Product;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCostType;
@@ -236,9 +236,9 @@ public class CostDimension
 			finalWhereClause.append(" AND "+I_M_CostElement.COLUMNNAME_M_CostElement_ID+"=?");
 			finalParams.add(this.M_CostElement_ID);
 		}
-		if (this.M_CostType_ID != ANY && table.getColumn(I_M_Cost.COLUMNNAME_M_CostType_ID) != null)
+		if (this.M_CostType_ID != ANY && table.getColumn(I_M_CostType.COLUMNNAME_M_CostType_ID) != null)
 		{
-			finalWhereClause.append(" AND "+I_M_Cost.COLUMNNAME_M_CostType_ID+"=?");
+			finalWhereClause.append(" AND "+I_M_CostType.COLUMNNAME_M_CostType_ID+"=?");
 			finalParams.add(this.M_CostType_ID);
 		}
 		if (!Util.isEmpty(whereClause, true))
