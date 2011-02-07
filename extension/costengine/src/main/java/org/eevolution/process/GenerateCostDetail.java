@@ -28,6 +28,7 @@ import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
 import org.compiere.model.MInOutLine;
+import org.compiere.model.MInvoiceLine;
 import org.compiere.model.MLandedCost;
 import org.compiere.model.MLandedCostAllocation;
 import org.compiere.model.MMatchInv;
@@ -58,11 +59,13 @@ public class GenerateCostDetail extends SvrProcess
 	
 	/**  Variables **/
 	private ArrayList<Object> deleteParameters;
+	private ArrayList<Object> deleteCostParameters;
 	private ArrayList<Object> trxParameters;
 	private List<MAcctSchema> acctSchemas = new ArrayList();
 	private List<MCostType> costTypes= new ArrayList();
 	private List<MCostElement> costElements = new ArrayList();
-	private StringBuffer deleteWhereClause;
+	private StringBuffer deleteCostDetailWhereClause;
+	private StringBuffer deleteCostWhereClause;
 	private StringBuffer trxWhereClause;
 	
 	/**
@@ -123,9 +126,15 @@ public class GenerateCostDetail extends SvrProcess
      */
     private void deleteCostDetail()
     {
-    	StringBuffer sqlDelete = new StringBuffer("DELETE M_CostDetail cd WHERE ");
-    	sqlDelete.append(deleteWhereClause);
-    	int record = DB.executeUpdateEx(sqlDelete.toString(), deleteParameters.toArray() ,get_TrxName());
+    	StringBuffer sqlDelete;
+    	
+    	int record = 0;
+    	sqlDelete = new StringBuffer("DELETE M_CostDetail WHERE ");
+    	sqlDelete.append(deleteCostDetailWhereClause);
+    	record = DB.executeUpdateEx(sqlDelete.toString(), deleteParameters.toArray() ,get_TrxName());
+    	sqlDelete = new StringBuffer("DELETE M_Cost  WHERE ");
+    	sqlDelete.append(deleteCostWhereClause);
+    	record = DB.executeUpdateEx(sqlDelete.toString(), deleteCostParameters.toArray() ,get_TrxName());
     }
     
     /**
@@ -161,35 +170,45 @@ public class GenerateCostDetail extends SvrProcess
     private void applyCriterial(int C_AcctSchema_ID,int M_CostType_ID ,int M_CostElement_ID ,int M_Product_ID, Timestamp DateAcct)
     {
     	deleteParameters = new ArrayList();
+    	deleteCostParameters = new ArrayList();
     	trxParameters = new ArrayList();
-    	deleteWhereClause = new StringBuffer("1=1");
+    	deleteCostDetailWhereClause = new StringBuffer("1=1");
+    	deleteCostWhereClause = new StringBuffer("1=1");
     	trxWhereClause = new StringBuffer("1=1 ");
     	
     	if(C_AcctSchema_ID > 0)
     	{	
-        	deleteWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_C_AcctSchema_ID).append("=? ");
+        	deleteCostDetailWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_C_AcctSchema_ID).append("=? ");
         	deleteParameters.add(C_AcctSchema_ID);
+        	deleteCostWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_C_AcctSchema_ID).append("=? ");
+        	deleteCostParameters.add(C_AcctSchema_ID);
         }
     	if(M_CostType_ID > 0 )
     	{	
-    		deleteWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_CostType_ID).append("=? ");
+    		deleteCostDetailWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_CostType_ID).append("=? ");
     		deleteParameters.add(p_M_CostType_ID);
+    		deleteCostWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_CostType_ID).append("=? ");
+    		deleteCostParameters.add(p_M_CostType_ID);
     	}
 		if(M_CostElement_ID > 0)
 		{	
-			deleteWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_CostElement_ID).append("=? ");
+			deleteCostDetailWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_CostElement_ID).append("=? ");
 			deleteParameters.add(p_M_CostElement_ID);
+			deleteCostWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_CostElement_ID).append("=? ");
+			deleteCostParameters.add(p_M_CostElement_ID);
 		}			
     	if(M_Product_ID > 0)
     	{
-    		deleteWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_Product_ID).append("=? ");
+    		deleteCostDetailWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_Product_ID).append("=? ");
     		deleteParameters.add(M_Product_ID);
+    		deleteCostWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_Product_ID).append("=? ");
+    		deleteCostParameters.add(M_Product_ID);
     		trxWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_M_Product_ID).append("=? ");
 	    	trxParameters.add(M_Product_ID);
     	}
     	if(DateAcct != null)
     	{
-    		deleteWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_DateAcct).append(">=? ");
+    		deleteCostDetailWhereClause.append(" AND ").append(MCostDetail.COLUMNNAME_DateAcct).append(">=? ");
     		deleteParameters.add(DateAcct);
     		trxWhereClause.append("AND EXISTS (SELECT 1 FROM RV_Transaction rvt WHERE rvt.M_Transaction_ID=M_Transaction.M_Transaction_ID AND rvt.DateAcct >= ?)");
     		trxParameters.add(DateAcct);
@@ -242,13 +261,21 @@ public class GenerateCostDetail extends SvrProcess
 				    			
 				    			if(MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 				    			{	
-					    			List<MLandedCost> landedCosts = MLandedCost.getLandedCosts(line);
+					    			List<MLandedCost> landedCosts = MLandedCost.getLandedCosts(line.getParent());
 					    			for(MLandedCost landedCost : landedCosts)
 					    			{
 					    				MLandedCostAllocation[] allocations = MLandedCostAllocation
 					    				.getOfInvoiceLine(landedCost.getCtx(), landedCost.getC_InvoiceLine_ID(), landedCost.get_TrxName()); 
 					    				for (MLandedCostAllocation allocation : allocations)
 					    				{
+					    					if(allocation.getM_InOutLine_ID() == 0)
+					    					{
+					    						MInvoiceLine iLine = (MInvoiceLine) landedCost.getC_InvoiceLine();
+					    						iLine.setProcessed(false);
+					    						iLine.allocateLandedCosts();
+					    						iLine.setProcessed(true);
+					    					}
+					    					
 					    					CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(as, trx , allocation , ct , ce);
 					    				}
 					    			}

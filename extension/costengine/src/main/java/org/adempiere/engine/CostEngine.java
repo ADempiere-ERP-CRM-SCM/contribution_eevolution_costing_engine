@@ -282,19 +282,22 @@ public class CostEngine
 		if(model instanceof MMatchInv && MCostType.COSTINGMETHOD_AveragePO.equals(ct.getCostingMethod()))
 			return;
 		
-		if (model instanceof MLandedCostAllocation && !MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
-				return;
-		
-		else if (model instanceof MLandedCostAllocation && MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
-		{
+		if (MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
+		{	
+			if (model instanceof MLandedCostAllocation )
+			{
 			 MLandedCostAllocation allocation =  (MLandedCostAllocation) model;
 			 costThisLevel = allocation.getPriceActual();
+			}
+				
 		}
-
-		MCost cost = validateCostForCostType(as, ct, ce, model.getM_Product_ID(), model.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
+		
+		MCost cost = validateCostForCostType(as, ct, ce, mtrx.getM_Product_ID(), mtrx.getAD_Org_ID(), mtrx.getM_AttributeSetInstance_ID());
 		
 		//get the cost for positive transaction
-		if(MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) && mtrx.getMovementType().contains("+")
+		if((MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()) 
+		|| MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType())) 
+		&& mtrx.getMovementType().contains("+")
 		&& !MCostType.COSTINGMETHOD_StandardCosting.equals(ct.getCostingMethod()))
 		{	
 			if (model instanceof MMovementLine  
@@ -318,7 +321,7 @@ public class CostEngine
 					costThisLevel = getCostThisLevel(trx, as, ct, ce, model, costingLevel);
 				}
 			}
-			else
+			else if (MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()))
 			{	
 			costThisLevel = model.getPriceActual();
 			}

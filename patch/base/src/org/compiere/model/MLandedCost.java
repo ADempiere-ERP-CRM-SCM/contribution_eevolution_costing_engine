@@ -39,20 +39,18 @@ public class MLandedCost extends X_C_LandedCost
 	 * 
 	 */
 	private static final long serialVersionUID = 5362551883649043914L;
-
-
+	
 	/**
 	 * get Landed Costs from Material Receipt 
-	 * @param ioLine Material Receipt
+	 * @param MInOut Material Receipt
 	 * @return List with MLandedCost
 	 */
-	public static List<MLandedCost> getLandedCosts(MInOutLine ioLine)
+	public static List<MLandedCost> getLandedCosts(MInOut io)
 	{
-	    final String whereClause = I_C_LandedCost.COLUMNNAME_M_InOutLine_ID + "=?";
-	    return new Query(ioLine.getCtx(), I_C_LandedCost.Table_Name, whereClause , ioLine.get_TrxName())
-	    .setClient_ID().setParameters(ioLine.getM_InOutLine_ID())
-	    .list();
-	    
+	    final String whereClause = I_C_LandedCost.COLUMNNAME_M_InOut_ID + "=?";
+	    return new Query(io.getCtx(), I_C_LandedCost.Table_Name, whereClause , io.get_TrxName())
+	    .setClient_ID().setParameters(io.getM_InOut_ID())
+	    .list();	    
 	}
 	/**
 	 *	Get Costs of Invoice Line

@@ -740,12 +740,8 @@ public class MInvoice extends X_C_Invoice implements DocAction
 				fromLine.setRef_InvoiceLine_ID(line.getC_InvoiceLine_ID());
 				fromLine.save(get_TrxName());
 			}
-
-			// MZ Goodwill
-			// copy the landed cost
 			line.copyLandedCostFrom(fromLine);
 			line.allocateLandedCosts();
-			// end MZ
 		}
 		if (fromLines.length != count)
 			log.log(Level.SEVERE, "Line difference - From=" + fromLines.length + " <> Saved=" + count);
@@ -1748,17 +1744,11 @@ public class MInvoice extends X_C_Invoice implements DocAction
 					getCtx(), line.getC_InvoiceLine_ID(), get_TrxName());
 			for (int j = 0; j < lcas.length; j++)
 			{
-				MLandedCostAllocation lca = lcas[j];
-				MLandedCost[] lcos = MLandedCost.getLandedCosts(line);
-				for (int k = 0; k < lcos.length; k++)
+				MLandedCostAllocation allocation = lcas[j];
+				MInOutLine ioLine = (MInOutLine) allocation.getM_InOutLine();
+				for (MTransaction trx: MTransaction.getByInOutLine(ioLine))
 				{
-					int inout_lineid = lcos[k].getM_InOutLine_ID();
-					MInOutLine inout_line = MInOutLine.get(getCtx(), inout_lineid);
-
-					for (MTransaction trx: MTransaction.getByInOutLine(inout_line))
-					{
-						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx, lca);
-					}	
+						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx, ioLine);
 				}		
 			}
 		}

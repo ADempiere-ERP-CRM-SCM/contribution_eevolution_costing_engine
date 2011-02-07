@@ -222,7 +222,6 @@ public class MCostDetail extends X_M_CostDetail
 	public static List<MCostDetail> getByDocLine(DocLine docLine ,int C_AcctSchema_ID, int M_CostType_ID)
 	{
 		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND "
-		+ MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
@@ -230,7 +229,6 @@ public class MCostDetail extends X_M_CostDetail
 		return new Query (docLine.getCtx(), I_M_CostDetail.Table_Name, whereClause , docLine.getTrxName())
 		.setParameters(
 				docLine.getAD_Client_ID(),
-				docLine.getAD_Org_ID(), 
 				C_AcctSchema_ID,
 				docLine.getM_Product_ID(),
 				M_CostType_ID,

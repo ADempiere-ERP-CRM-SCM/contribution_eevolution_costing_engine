@@ -1039,10 +1039,8 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 					lca.setM_AttributeSetInstance_ID(iol.getM_AttributeSetInstance_ID());
 					BigDecimal base = iol.getBase(lc.getLandedCostDistribution());
 					lca.setBase(base);
-					// MZ Goodwill
-					// add set Qty from InOutLine
+					lca.setM_InOutLine_ID(iol.getM_InOutLine_ID());
 					lca.setQty(iol.getMovementQty());
-					// end MZ
 					if (base.signum() != 0)
 					{
 						double result = getLineNetAmt().multiply(base).doubleValue();
@@ -1069,10 +1067,8 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 				BigDecimal base = iol.getBase(lc.getLandedCostDistribution()); 
 				lca.setBase(base);
 				lca.setAmt(getLineNetAmt());
-				// MZ Goodwill
-				// add set Qty from InOutLine
+				lca.setM_InOutLine_ID(iol.getM_InOutLine_ID());
 				lca.setQty(iol.getMovementQty());
-				// end MZ
 				if (lca.save())
 					return "";
 				return "Cannot save single line Allocation = " + lc;
