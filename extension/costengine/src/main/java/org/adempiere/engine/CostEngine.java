@@ -28,6 +28,7 @@ import org.compiere.model.I_C_InvoiceLine;
 import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
+import org.compiere.model.I_M_ProductionPlan;
 import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MClient;
@@ -42,9 +43,12 @@ import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.MProduct;
+import org.compiere.model.MProductionLine;
 import org.compiere.model.MTransaction;
 import org.compiere.model.PO;
 import org.compiere.model.Query;
+import org.compiere.model.X_M_ProductionLine;
+import org.compiere.model.X_M_ProductionPlan;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -103,7 +107,37 @@ public class CostEngine
 				
 		return actualCost.negate();
 	}
-	
+
+	/**
+	 * Get Actual Cost of Parent Product Based on Cost Type
+	 * @param X_M_ProductionPlan order
+	 * @param M_CostType_ID Cost Type ID
+	 * @param trxName Transaction Name
+	 * @return Cost for Parent Transaction
+	 */
+	public static BigDecimal getParentActualCostByCostType(X_M_ProductionLine line,int M_CostType_ID, int M_CostElement_ID)
+	{
+		StringBuffer whereClause = new StringBuffer();
+		
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID + "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_M_ProductionLine_ID);
+		whereClause.append(" IN (SELECT M_ProductionLine_ID FROM M_ProductionLine pl WHERE pl.M_ProductionPlan_ID=? AND ");
+		whereClause.append(" pl.M_Product_ID <> ? )");
+		
+		BigDecimal actualCost = new Query(line.getCtx(), I_M_CostDetail.Table_Name, whereClause.toString(), line.get_TrxName())
+		.setClient_ID()
+		.setParameters(M_CostType_ID, M_CostElement_ID, line.getM_ProductionPlan_ID(), line.getM_Product_ID())
+		.sum("("+MCostDetail.COLUMNNAME_Amt + "+" + MCostDetail.COLUMNNAME_CostAmtLL+")");
+		
+		if (actualCost==null)
+			actualCost = Env.ZERO;
+		
+		if(line.getMovementQty().signum() > 0)
+			actualCost = actualCost.divide(line.getMovementQty());
+				
+		return actualCost;
+	}
 	@Deprecated
 	public String getCostingMethod()
 	{
@@ -364,7 +398,19 @@ public class CostEngine
 					costLowLevel = CostEngine.getParentActualCostByCostType(cc.getPP_Order(), ct.getM_CostType_ID(), ce.getM_CostElement_ID());
 				}
 			}
-		}	
+			if(model instanceof MProductionLine)
+			{
+				MProductionLine productionLine = (MProductionLine) model;
+				//Material Receipt for Production light 
+				if(productionLine.isParent())
+				{
+					//get Actual Cost for Cost Type and Cost Element
+					costLowLevel = CostEngine.getParentActualCostByCostType(productionLine, ct.getM_CostType_ID(), ce.getM_CostElement_ID());
+				}
+			}
+		}
+		
+		
 		
 		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, ct.getCostingMethod());
 		method.setCostingMethod(as, mtrx, cost, costThisLevel , costLowLevel, model.isSOTrx());

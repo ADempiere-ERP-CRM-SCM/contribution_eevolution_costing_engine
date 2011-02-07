@@ -31,6 +31,24 @@ public class MProductionLine extends X_M_ProductionLine implements
 		IDocumentLine {
 
 	/**
+	 * get true if Production Line is Parent Product
+	 * @return true
+	 */
+	public boolean isParent()
+	{
+	 final StringBuffer whereClause = new StringBuffer();
+		whereClause.append(X_M_ProductionLine.COLUMNNAME_M_ProductionLine_ID);
+		whereClause.append(" IN (SELECT M_ProductionLine_ID FROM M_ProductionLine pl INNER JOIN M_ProductionPlan pp ON (pp.M_ProductionPlan_ID=pl.M_ProductionPlan_ID)");
+		whereClause.append(" WHERE pl.M_ProductionPlan_ID=? AND ");
+		whereClause.append(" pp.M_Product_ID = pl.M_Product_ID )");
+
+	 return new Query(getCtx(), X_M_ProductionLine.Table_Name, whereClause.toString(),get_TrxName())
+		.setClient_ID()
+		.setParameters(getM_ProductionPlan_ID())
+		.match();
+	}
+
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -7317898222308270276L;
