@@ -437,10 +437,12 @@ public class MMovement extends X_M_Movement implements DocAction
 							return DocAction.STATUS_Invalid;
 						}
 						//
+						MLocator locatorTo = new MLocator (getCtx(), line.getM_LocatorTo_ID(), get_TrxName());
 						MTransaction trxTo = new MTransaction (getCtx(), line.getAD_Org_ID(), 
 								MTransaction.MOVEMENTTYPE_MovementTo,
 								line.getM_LocatorTo_ID(), line.getM_Product_ID(), M_AttributeSetInstanceTo_ID,
 								ma.getMovementQty(), getMovementDate(), get_TrxName());
+						trxTo.setAD_Org_ID(locatorTo.getAD_Org_ID());
 						trxTo.setM_MovementLine_ID(line.getM_MovementLine_ID());
 						if (!trxTo.save())
 						{
@@ -487,11 +489,13 @@ public class MMovement extends X_M_Movement implements DocAction
 						return DocAction.STATUS_Invalid;
 					}
 					//
+					MLocator locatorTo = new MLocator (getCtx(), line.getM_LocatorTo_ID(), get_TrxName());
 					MTransaction trxTo = new MTransaction (getCtx(), line.getAD_Org_ID(), 
 							MTransaction.MOVEMENTTYPE_MovementTo,
 							line.getM_LocatorTo_ID(), line.getM_Product_ID(), line.getM_AttributeSetInstanceTo_ID(),
 							line.getMovementQty(), getMovementDate(), get_TrxName());
 					trxTo.setM_MovementLine_ID(line.getM_MovementLine_ID());
+					trxTo.setAD_Org_ID(locatorTo.getAD_Org_ID());
 					if (!trxTo.save())
 					{
 						m_processMsg = "Transaction To not inserted";

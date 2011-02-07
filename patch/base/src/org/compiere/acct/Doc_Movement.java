@@ -145,7 +145,7 @@ public class Doc_Movement extends Doc
 				total = total.add(costs.abs());
 				
 				MTransaction trx =  new MTransaction(getCtx(), cost.getM_Transaction_ID() , getTrxName());
-				if(MTransaction.MOVEMENTTYPE_MovementTo.equals(trx.getMovementType()))
+				if(MTransaction.MOVEMENTTYPE_MovementFrom.equals(trx.getMovementType()))
 				{	
 					
 					//  ** Inventory       DR      CR
@@ -169,7 +169,7 @@ public class Doc_Movement extends Doc
 					}
 					continue;
 				}
-				if(MTransaction.MOVEMENTTYPE_MovementFrom.equals(trx.getMovementType()))
+				if(MTransaction.MOVEMENTTYPE_MovementTo.equals(trx.getMovementType()))
 				{	
 					//  ** InventoryTo     DR      CR
 					cr = fact.createLine(line,
