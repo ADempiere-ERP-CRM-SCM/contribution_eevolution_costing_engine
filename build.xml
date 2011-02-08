@@ -48,7 +48,7 @@
   <target name="compile"
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
-    <javac srcdir="${src}" destdir="${build}">    
+    <javac debug="true" srcdir="${src}" destdir="${build}">    
       <include name="**/org/adempiere/engine/*.java"/>
       <include name="**/org/adempiere/exceptions/*.java"/>
       <include name="**/org/eevolution/process/*.java"/>
@@ -96,7 +96,7 @@
   <target name="patchCompile" depends="init"
         description="compile the source " >
   	
-    <javac srcdir="${patchSrc}:${src}" destdir="${buildPatch}">
+    <javac debug="true" srcdir="${patchSrc}:${src}" destdir="${buildPatch}">
       <include name="**/org/adempiere/engine/CostComponent.java"/>
       <include name="**/org/adempiere/engine/CostEngineFactory.java"/>
       <include name="**/org/compiere/acct/*.java"/>
@@ -107,7 +107,7 @@
       <classpath refid="patch.class.path"/>
     </javac>
   	
-  	<javac srcdir="${liberoPatchSrc}" destdir="${buildPatch}">
+  	<javac debug="true" srcdir="${liberoPatchSrc}" destdir="${buildPatch}">
   	      <include name="**/org/eevolution/model/*.java"/>
   	      <classpath refid="patch.class.path"/>
   	</javac>
