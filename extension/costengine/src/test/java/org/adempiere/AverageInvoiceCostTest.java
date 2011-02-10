@@ -30,6 +30,8 @@ import org.compiere.model.I_M_CostElement;
 import org.compiere.model.I_M_Product;
 import org.compiere.model.I_M_Warehouse;
 import org.compiere.model.MAcctSchema;
+import org.compiere.model.MAsset;
+import org.compiere.model.MAssetGroup;
 import org.compiere.model.MBPartner;
 import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MCost;
@@ -51,8 +53,10 @@ import org.compiere.model.MPInstance;
 import org.compiere.model.MPInstancePara;
 import org.compiere.model.MProcess;
 import org.compiere.model.MProduct;
+import org.compiere.model.MProductCategory;
 import org.compiere.model.MUser;
 import org.compiere.model.MWarehouse;
+import org.compiere.model.PO;
 import org.compiere.model.Query;
 import org.compiere.print.ReportEngine;
 import org.compiere.process.DocAction;
@@ -78,6 +82,7 @@ import test.AdempiereTestCase;
 public class AverageInvoiceCostTest extends AdempiereTestCase
 {
 	
+	private static final int M_Product_Category_ID = 0;
 	MBPartner bp =null;
 	MBPartnerLocation[]  bpls =null;
 	MWarehouse w = null;
@@ -86,7 +91,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 	MAcctSchema as = null;
 	String trxName = getTrxName();
 	String Mail = "test@e-evolution.com"; 
-	String MailPassword = "test";
+	String MailPassword = "testing";
 	
 	Timestamp today; 
 	
@@ -781,7 +786,7 @@ public class AverageInvoiceCostTest extends AdempiereTestCase
 		MInvoiceLine invoiceLine = new MInvoiceLine(invoice);
 		invoiceLine.setM_Product_ID(product.getM_Product_ID());
 		invoiceLine.setM_InOutLine_ID(M_InOutLine_ID);
-		invoiceLine.setQtyEntered(qty);
+		invoiceLine.setQty(qty);
 		invoiceLine.setPriceActual(price);
 		invoiceLine.saveEx();
 		
