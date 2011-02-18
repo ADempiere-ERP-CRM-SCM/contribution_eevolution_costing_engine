@@ -321,7 +321,7 @@ public class MCostDetail extends X_M_CostDetail
 		+ MCostDetail.COLUMNNAME_M_CostType_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND "
 	    + MCostDetail.COLUMNNAME_DateAcct+ ">=? AND "
-		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ "<? AND"
+		+ MCostDetail.COLUMNNAME_M_CostDetail_ID+ "<? AND "
 		+ MCostDetail.COLUMNNAME_Processing + "=? AND "
 		+ MCostDetail.COLUMNNAME_IsReversal + "=?";
 		;
