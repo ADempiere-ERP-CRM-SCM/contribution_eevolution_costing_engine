@@ -224,13 +224,16 @@ public class MCostDetail extends X_M_CostDetail
 		final String whereClause = MCostDetail.COLUMNNAME_AD_Client_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND "
 		+ MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND "
+		//+ MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND "
 		+ MCostDetail.COLUMNNAME_M_CostType_ID + "=? AND "
+
 		+ docLine.getTableName() + "_ID=?";
 		return new Query (docLine.getCtx(), I_M_CostDetail.Table_Name, whereClause , docLine.getTrxName())
 		.setParameters(
 				docLine.getAD_Client_ID(),
 				C_AcctSchema_ID,
 				docLine.getM_Product_ID(),
+				//docLine.getM_AttributeSetInstance_ID(),
 				M_CostType_ID,
 				docLine.get_ID())
 		.list();
@@ -706,6 +709,8 @@ public class MCostDetail extends X_M_CostDetail
 		sb.append(",Amt=").append(getAmt())
 		.append(",Cost Amt=").append(getCostAmt())
 		.append(",Cost Adjutment=").append(getCostAdjustment())
+		.append(",Cost Amt LL=").append(getCostAmt())
+		.append(",Cost Adjutment LL=").append(getCostAdjustment())
 		.append(",Qty=").append(getQty());
 		sb.append(",CurrentPrice=").append(getCurrentCostPrice());
 		sb.append(",CumulateAmt=").append(getCumulatedAmt())

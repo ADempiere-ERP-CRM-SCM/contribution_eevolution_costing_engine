@@ -130,7 +130,6 @@ public class Doc_Movement extends Doc
 		FactLine dr = null;
 		FactLine cr = null;
 
-		BigDecimal total = Env.ZERO;
 		for (int i = 0; i < p_lines.length; i++)
 		{
 			DocLine line = p_lines[i];
@@ -142,7 +141,6 @@ public class Doc_Movement extends Doc
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 				costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-				total = total.add(costs.abs());
 				
 				MTransaction trx =  new MTransaction(getCtx(), cost.getM_Transaction_ID() , getTrxName());
 				if(MTransaction.MOVEMENTTYPE_MovementFrom.equals(trx.getMovementType()))
@@ -192,11 +190,6 @@ public class Doc_Movement extends Doc
 						costs = cr.getAcctBalance(); //get original cost
 					}		
 				}	
-			}
-			if (total == null || total.signum() == 0)
-			{
-				p_Error = "No Costs for " + line.getProduct().getName();
-				return null;
 			}
 		}
 
