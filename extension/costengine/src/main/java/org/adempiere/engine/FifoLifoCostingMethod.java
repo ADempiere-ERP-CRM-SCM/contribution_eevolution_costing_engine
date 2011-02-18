@@ -355,35 +355,76 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		.first();
 	}
 
-	@Override
+	/**
+	 * Average Invoice 
+	 * Get the New Current Cost Price This Level
+	 * @param cd Cost Detail
+	 * @param scale Scale
+	 * @param roundingMode Rounding Mode
+	 * @return New Current Cost Price This Level
+	 */
 	public BigDecimal getNewCurrentCostPrice(MCostDetail cd, int scale,
-			int roundingMode) {
-		// TODO Auto-generated method stub
-		return null;
+			int roundingMode) 
+	{		
+		if(getNewCumulatedQty(cd).signum() != 0 && getNewCumulatedAmt(cd).signum() != 0)
+			return getNewCumulatedAmt(cd).divide(getNewCumulatedQty(cd), scale , roundingMode);
+		else return BigDecimal.ZERO;
 	}
 
-	@Override
+
+	/**
+	 * Get the New Cumulated Amt This Level
+	 * @param cd Cost Detail
+	 * @return  New Cumulated Amt This Level
+	 */
 	public BigDecimal getNewCumulatedAmt(MCostDetail cd) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		BigDecimal cumulatedAmt = Env.ZERO;
+		if(cd.getQty().signum() > 0)
+			cumulatedAmt = cd.getCumulatedAmt().add(cd.getCostAmt()).add(cd.getCostAdjustment());
+		else
+			cumulatedAmt = cd.getCumulatedAmt().add(cd.getCostAmt().negate()).add(cd.getCostAdjustment().negate());
+		
+		return  cumulatedAmt;
 	}
 
-	@Override
+
+	/**
+	 * Get the New Current Cost Price low level
+	 * @param cd Cost Detail
+	 * @param scale Scale
+	 * @param roundingMode Rounding Mode
+	 * @return New Current Cost Price low level
+	 */
 	public BigDecimal getNewCurrentCostPriceLL(MCostDetail cd, int scale,
 			int roundingMode) {
-		// TODO Auto-generated method stub
-		return null;
+		if(getNewCumulatedQty(cd).signum() != 0 && getNewCumulatedAmtLL(cd).signum() != 0)
+			return getNewCumulatedAmtLL(cd).divide(getNewCumulatedQty(cd), scale , roundingMode);
+		else return BigDecimal.ZERO;
 	}
 
-	@Override
+
+	/**
+	 * Get the new Cumulated Amt Low Level
+	 * @param cd MCostDetail
+	 * @return New Cumulated Am Low Level
+	 */
 	public BigDecimal getNewCumulatedAmtLL(MCostDetail cd) {
-		// TODO Auto-generated method stub
-		return null;
+		BigDecimal cumulatedAmtLL = Env.ZERO;
+		if(cd.getQty().signum() > 0)
+			 cumulatedAmtLL = cd.getCumulatedAmtLL().add(cd.getCostAmtLL()).add(cd.getCostAdjustmentLL());
+		else
+			 cumulatedAmtLL = cd.getCumulatedAmtLL().add(cd.getCostAmtLL().negate()).add(cd.getCostAdjustmentLL().negate());
+		return cumulatedAmtLL;
 	}
 
-	@Override
+	/**
+	 * Get the new Cumulated Qty
+	 * @param cd Cost Detail
+	 * @return New Cumulated Qty
+	 */
 	public BigDecimal getNewCumulatedQty(MCostDetail cd) {
-		// TODO Auto-generated method stub
-		return null;
+		return cd.getCumulatedQty().add(cd.getQty());
 	}
+	
 }
