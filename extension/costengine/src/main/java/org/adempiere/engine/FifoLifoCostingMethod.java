@@ -144,11 +144,20 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 		}
 		else 
 		{
-			m_Amount = m_model.getMovementQty().multiply(m_cost);	
-			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
-			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
+			m_Amount = m_trx.getMovementQty().multiply(m_cost);	
+			m_AmountLL = m_trx.getMovementQty().multiply(m_costLowLevel);	
 			m_CumulatedQty = m_dimension.getCumulatedQty();
-			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision());
+			m_AdjustCost = m_Amount.subtract(m_costdetail.getAmt());
+			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);			
+			m_CumulatedAmtLL = getNewCumulatedAmtLL(m_last_costdetail).add(m_AmountLL);		
+			if(m_CumulatedAmt.signum() != 0)
+				m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty.signum() != 0 ?  m_CumulatedQty : BigDecimal.ONE, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			else
+				m_CurrentCostPrice = Env.ZERO;
+			if(m_CumulatedAmtLL.signum() != 0)
+				m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty.signum() != 0 ?  m_CumulatedQty : BigDecimal.ONE, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			else
+				m_CurrentCostPriceLL = Env.ZERO;			
 
 			if (m_AdjustCost.compareTo(Env.ZERO) != 0 )
 			{
