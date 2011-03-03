@@ -187,7 +187,7 @@ public class Doc_InOut extends Doc
 					dr.setLocationFromLocator(line.getM_Locator_ID(), true);    //  from Loc
 					dr.setLocationFromBPartner(getC_BPartner_Location_ID(), false);  //  to Loc
 					dr.setAD_Org_ID(line.getOrder_Org_ID());		//	Revenue X-Org
-					dr.setQty(line.getQty().negate());
+					dr.setQty(cost.getQty().negate());
 					dr.addDescription(description);
 					if (m_DocStatus.equals(MInOut.DOCSTATUS_Reversed) 
 							&& m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
@@ -239,7 +239,7 @@ public class Doc_InOut extends Doc
 					else	//	ignore service
 						continue;
 				}
-			}	//	for all lines
+			}	//	for all linesQty
 
 
 			/** Commitment release										****/
@@ -313,7 +313,7 @@ public class Doc_InOut extends Doc
 					cr.setLocationFromLocator(line.getM_Locator_ID(), true);    //  from Loc
 					cr.setLocationFromBPartner(getC_BPartner_Location_ID(), false);  //  to Loc
 					cr.setAD_Org_ID(line.getOrder_Org_ID());		//	Revenue X-Org
-					cr.setQty(line.getQty().negate());
+					cr.setQty(cost.getQty().negate());
 					cr.addDescription(description);
 					if (m_DocStatus.equals(MInOut.DOCSTATUS_Reversed) 
 							&& m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
@@ -411,7 +411,7 @@ public class Doc_InOut extends Doc
 						cr.setM_Locator_ID(line.getM_Locator_ID());
 						cr.setLocationFromBPartner(getC_BPartner_Location_ID(), true);   //  from Loc
 						cr.setLocationFromLocator(line.getM_Locator_ID(), false);   //  to Loc
-						cr.setQty(line.getQty().negate());
+						cr.setQty(cost.getQty().negate());
 						if (m_DocStatus.equals(MInOut.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
 						{
 							//	Set AmtAcctCr from Original Shipment/Receipt
@@ -469,7 +469,7 @@ public class Doc_InOut extends Doc
 						dr.setM_Locator_ID(line.getM_Locator_ID());
 						dr.setLocationFromBPartner(getC_BPartner_Location_ID(), true);   //  from Loc
 						dr.setLocationFromLocator(line.getM_Locator_ID(), false);   //  to Loc
-						dr.setQty(line.getQty().negate());
+						dr.setQty(cost.getQty().negate());
 						if (m_DocStatus.equals(MInOut.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
 						{
 							//	Set AmtAcctDr from Original Shipment/Receipt

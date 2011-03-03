@@ -172,6 +172,7 @@ public class Doc_Inventory extends Doc
 						continue;
 					dr.setM_Locator_ID(line.getM_Locator_ID());
 					dr.addDescription(description);
+					dr.setQty(cost.getQty());
 					if (m_DocStatus.equals(MInventory.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
 					{
 						//	Set AmtAcctDr from Original Phys.Inventory
@@ -202,7 +203,7 @@ public class Doc_Inventory extends Doc
 					if (cr == null)
 						continue;
 					cr.setM_Locator_ID(line.getM_Locator_ID());
-					cr.setQty(line.getQty().negate());
+					cr.setQty(cost.getQty().negate());
 					if (line.getC_Charge_ID() != 0)	//	explicit overwrite for charge
 						cr.setAD_Org_ID(line.getAD_Org_ID());
 		

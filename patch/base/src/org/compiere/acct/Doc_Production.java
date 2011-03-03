@@ -213,7 +213,7 @@ public class Doc_Production extends Doc
 					    if (line.getQty() != mpp.getProductionQty()) {
 					    	// if the line doesn't correspond with the whole qty produced then apply prorate
 					    	// costs = costs * line_qty / production_qty
-					    	costs = costs.multiply(line.getQty());
+					    	costs = costs.multiply(cost.getQty());
 					    	costs = costs.divide(mpp.getProductionQty(), as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 					    }
 					}
@@ -231,7 +231,7 @@ public class Doc_Production extends Doc
 					return null;
 				}
 				fl.setM_Locator_ID(line.getM_Locator_ID());
-				fl.setQty(line.getQty());
+				fl.setQty(cost.getQty());
 				
 				//	Cost Detail
 				//String description = line.getDescription();

@@ -154,7 +154,7 @@ public class Doc_Movement extends Doc
 						continue;
 					dr.setM_Locator_ID(line.getM_Locator_ID());
 					dr.addDescription(description);
-					dr.setQty(line.getQty().negate());	//	outgoing
+					dr.setQty(cost.getQty().negate());	//	outgoing
 					if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
 					{
 						//	Set AmtAcctDr from Original Movement
@@ -177,7 +177,7 @@ public class Doc_Movement extends Doc
 						continue;
 					cr.setM_Locator_ID(line.getM_LocatorTo_ID());
 					cr.addDescription(description);
-					cr.setQty(line.getQty());
+					cr.setQty(cost.getQty());
 					if (m_DocStatus.equals(MMovement.DOCSTATUS_Reversed) && m_Reversal_ID !=0 && line.getReversalLine_ID() != 0)
 					{
 						//	Set AmtAcctCr from Original Movement
