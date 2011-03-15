@@ -253,7 +253,7 @@ public class MCostDetail extends X_M_CostDetail
 		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ");		
 		params.add(cd.getM_Product_ID());
 		
-		if(MAcctSchema.COSTINGLEVEL_Organization.equals(costingLevel))
+		/*if(MAcctSchema.COSTINGLEVEL_Organization.equals(costingLevel))
 		{	
 		whereClause.append(MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND ");
 		params.add(cd.getAD_Org_ID());
@@ -262,7 +262,7 @@ public class MCostDetail extends X_M_CostDetail
 		{
 			whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND ");
 			params.add(cd.getM_AttributeSetInstance_ID());
-		}
+		}*/
 		
 		whereClause.append( MCostDetail.COLUMNNAME_M_CostType_ID+"=? AND ");
 		params.add(cd.getM_CostType_ID());
@@ -273,8 +273,8 @@ public class MCostDetail extends X_M_CostDetail
 		whereClause.append(MCostDetail.COLUMNNAME_Processing + "=? ");
 		params.add(false);
 		
-		whereClause.append("AND EXISTS ( SELECT 1 FROM M_Transaction t INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID ) WHERE t.M_Transaction_ID=M_CostDetail.M_Transaction_ID AND l.M_Warehouse_ID=?) ");
-		params.add(cd.getM_Warehouse_ID());
+		//whereClause.append("AND EXISTS ( SELECT 1 FROM M_Transaction t INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID ) WHERE t.M_Transaction_ID=M_CostDetail.M_Transaction_ID AND l.M_Warehouse_ID=?) ");
+		//params.add(cd.getM_Warehouse_ID());
 		
 		return  new Query(cd.getCtx(), Table_Name, whereClause.toString(), cd.get_TrxName())
 		.setClient_ID()

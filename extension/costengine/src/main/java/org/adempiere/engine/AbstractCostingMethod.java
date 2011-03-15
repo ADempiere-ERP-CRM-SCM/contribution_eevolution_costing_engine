@@ -14,11 +14,15 @@ import org.compiere.model.I_M_InOutLine;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
+import org.compiere.model.MCostElement;
+import org.compiere.model.MCostType;
 import org.compiere.model.MInventoryLine;
 import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
 import org.compiere.model.MMovementLine;
 import org.compiere.model.MTransaction;
+import org.compiere.model.Query;
+import org.compiere.model.X_M_Transaction;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
@@ -276,4 +280,17 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	 * @return New Cumulated Qty
 	 */
 	abstract public BigDecimal getNewCumulatedQty(MCostDetail cd);
+	
+	/**
+	 * Recalculate Cost Detail
+	 * @param cd Cost Detail
+	 * @param ct Cost Type
+	 * @param ce Cost Element
+	 */
+	public void adjustCostDetail(MCostDetail cd , MCostType ct, MCostElement ce)
+	{
+		MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
+		IDocumentLine docLine = trx.getDocumentLine();
+		CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(m_as,trx,docLine,ct,ce);
+	}
 }
