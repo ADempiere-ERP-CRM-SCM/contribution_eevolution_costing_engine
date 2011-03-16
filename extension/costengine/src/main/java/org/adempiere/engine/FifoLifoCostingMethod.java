@@ -103,6 +103,14 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 
 	public void processCostDetail()
 	{		
+		//check if document is entered with delay
+		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel);
+		if(m_last_costdetail == null)
+		{
+			m_last_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), Env.ZERO , Env.ZERO, Env.ZERO, m_trx.get_TrxName());
+			m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));
+		}
+		
 		if(m_model.getReversalLine_ID() > 0)
 		{	
 			createReversalCostDetail();
@@ -129,13 +137,7 @@ public class FifoLifoCostingMethod extends AbstractCostingMethod
 					continue;
 				}
 				processCostDetail(cd);	
-				//check if document is entered with delay
-				m_last_costdetail =  MCostDetail.getLastTransaction(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), costingLevel);
-				if(m_last_costdetail == null)
-				{
-					m_last_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), Env.ZERO , Env.ZERO, Env.ZERO, m_trx.get_TrxName());
-					m_last_costdetail.setDateAcct(new Timestamp(System.currentTimeMillis()));
-				}
+				
 				if (m_costdetail.getDateAcct().compareTo(m_last_costdetail.getDateAcct()) < 0)
 				{
 					adjustementQueue(cd);

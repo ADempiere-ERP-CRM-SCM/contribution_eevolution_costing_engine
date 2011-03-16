@@ -84,7 +84,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 			List<CostComponent> ccs = getCalculatedCosts();
 			for (CostComponent cc : ccs)
 			{
-				MCostDetail cd = new MCostDetail(m_trx, m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), cc.getAmount(), null, cc.getQty(), m_model.get_TrxName());
+				MCostDetail cd = new MCostDetail(m_trx, m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), cc.getAmount(), Env.ZERO, cc.getQty(), m_model.get_TrxName());
 				if (!cd.set_ValueOfColumnReturningBoolean(idColumnName, model.get_ID()))
 					throw new AdempiereException("Cannot set "+idColumnName);
 
@@ -107,7 +107,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 		}
 		else //qty and amt is take from documentline
 		{
-			MCostDetail cd = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID() , m_costThisLevel.multiply(model.getMovementQty()),  null, model.getMovementQty(), m_model.get_TrxName());
+			MCostDetail cd = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID() , m_costThisLevel.multiply(model.getMovementQty()),  Env.ZERO, model.getMovementQty(), m_model.get_TrxName());
 			int id;
 			if (model instanceof MMatchPO)
 			{
