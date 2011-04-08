@@ -46,7 +46,7 @@ public class ValuationEffectiveDate extends SvrProcess
 	private StringBuffer whereClause1 = new StringBuffer("WHERE 1=1 ");
 	private StringBuffer whereClause2 = new StringBuffer("AND to_char(tc.DateAcct, 'yyyymmdd') || tc.M_Transaction_ID  IN (SELECT MAX(to_char(tc1.DateAcct, 'yyyymmdd') || tc1.M_Transaction_ID) FROM RV_M_Transaction_Costing tc1")
 	.append(" INNER JOIN M_Locator l1 ON (tc1.M_Locator_ID=l1.M_Locator_ID) ")
-	.append(" WHERE tc.M_Product_ID=tc1.M_Product_ID ");
+	.append(" WHERE tc.M_Product_ID=tc1.M_Product_ID AND tc.M_AttributeSetInstance_ID=tc1.M_AttributeSetInstance_ID ");
 	private ArrayList<Object> params1 = new ArrayList();  
 	private ArrayList<Object> params2 = new ArrayList();  
 	private ArrayList<Object> params = new ArrayList(); 
