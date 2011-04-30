@@ -730,11 +730,13 @@ implements IDocumentLine
 			// FIXME: ancabradau: we need to implement a real solution that will cover all cases
 			BigDecimal price = null;
 			if (getC_OrderLine_ID() > 0)
-			{
+			{	
 				price = DB.getSQLValueBDEx(get_TrxName(),
-						"SELECT "+MOrderLine.COLUMNNAME_PriceActual+" FROM "+MOrderLine.Table_Name
-						+" WHERE "+MOrderLine.COLUMNNAME_C_OrderLine_ID+"=?",
+						"SELECT currencyBase(ol.PriceActual,o.C_Currency_ID,o.DateAcct,o.AD_Client_ID,o.AD_Org_ID) AS price " +
+						" FROM C_OrderLine ol INNER JOIN C_Order o ON (o.C_Order_ID=ol.C_Order_ID) " +
+						" WHERE "+MOrderLine.COLUMNNAME_C_OrderLine_ID+"=?",
 						getC_OrderLine_ID());
+				
 			}
 			if (getM_RMALine_ID() > 0)
 			{
