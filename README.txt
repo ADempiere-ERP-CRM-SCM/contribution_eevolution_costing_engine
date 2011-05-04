@@ -8,7 +8,7 @@ Change the ADempiere Home directory
 Copy the liberoCE.jar file to packages directory
     #cp liberoCE.jar $ADEMPIERE_HOME/packages/liberoCE/lib
 Copy the patchs.jar file to Lib directory
-    #cp patches.jar $ADEMPIERE_HOME/lib
+    #cp patches.jar $ADEMPIERE_HOME/lib/customization.jar
 Run ADempiere setup
     #RUN_silentsetup.sh
 Login using SuperUser , and execute the System Admin -> General Rules -> Security -> Role Access Update,after you need Login again, now you would see the new option in menu
