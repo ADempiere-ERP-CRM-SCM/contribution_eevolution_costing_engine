@@ -221,7 +221,7 @@ public class CostDimension
 		ArrayList<Object> finalParams = new ArrayList<Object>();
 		StringBuffer finalWhereClause = new StringBuffer();
 
-		finalWhereClause.append(I_AD_Client.COLUMNNAME_AD_Client_ID);
+		finalWhereClause.append(I_AD_Client.COLUMNNAME_AD_Client_ID+ "=? ");
 		finalParams.add(this.AD_Client_ID);
 		finalWhereClause.append(" AND "+I_AD_Org.COLUMNNAME_AD_Org_ID+"=?");
 		finalParams.add(this.AD_Org_ID);

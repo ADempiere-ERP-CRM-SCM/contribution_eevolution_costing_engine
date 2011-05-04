@@ -849,6 +849,8 @@ public class CostEngine
 							"", // Description,
 							cc.get_TrxName(), M_CostType_ID);
 					cd.setPP_Cost_Collector_ID(cc.getPP_Cost_Collector_ID());
+					//setCostingMethod(ct.getCostingMethod()); 
+					cd.setDateAcct(cc.getDateAcct());
 					cd.saveEx();
 					processCostDetail(cd);
 				}
