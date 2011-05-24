@@ -102,8 +102,8 @@ public class CostEngine
 		if (actualCost==null)
 			actualCost = Env.ZERO;
 		
-		if(qtyDelivered.signum() > 0)
-			actualCost = actualCost.divide(order.getQtyDelivered());
+		if(qtyDelivered.signum() != 0)
+			actualCost = actualCost.divide(qtyDelivered);
 				
 		return actualCost.negate();
 	}
