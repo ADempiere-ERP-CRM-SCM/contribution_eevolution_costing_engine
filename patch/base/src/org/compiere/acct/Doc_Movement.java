@@ -136,11 +136,11 @@ public class Doc_Movement extends Doc
 			BigDecimal costs = Env.ZERO;			
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
-				if(cost.getAmt().signum() == 0)
+				if(cost.getCostAmt().add(cost.getCostAmtLL()).signum() == 0)
 					continue;
 				//get costing method for product
 				String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
-				costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+				costs = cost.getCostAmt().add(cost.getCostAmtLL()).setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				
 				MTransaction trx =  new MTransaction(getCtx(), cost.getM_Transaction_ID() , getTrxName());
 				if(MTransaction.MOVEMENTTYPE_MovementFrom.equals(trx.getMovementType()))

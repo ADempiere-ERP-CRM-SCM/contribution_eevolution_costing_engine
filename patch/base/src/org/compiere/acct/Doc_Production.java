@@ -178,7 +178,7 @@ public class Doc_Production extends Doc
 			BigDecimal costs = Env.ZERO;			
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
-				costs = cost.getAmt().add(cost.getAmtLL()).setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+				costs = cost.getCostAmt().add(cost.getCostAmtLL()).setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				if(costs.signum() == 0)
 					continue;	 
 				//get costing method for product
@@ -204,7 +204,7 @@ public class Doc_Production extends Doc
 								continue;
 							if (!line0.isProductionBOM())
 							{	
-									bomCost = bomCost.add(cost.getAmt());
+									bomCost = bomCost.add(cost.getCostAmt().add(cost.getCostAmtLL()));
 							}	
 						}
 						costs = bomCost.negate();

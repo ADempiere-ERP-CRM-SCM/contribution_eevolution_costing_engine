@@ -140,9 +140,9 @@ public class Doc_ProjectIssue extends Doc
 		{	
 			for(MCostDetail cost : m_line.getCostDetail(as))
 			{	
-				if(cost.getAmt().signum() == 0)
+				if(cost.getCostAmt().add(cost.getCostAmtLL()).signum() == 0)
 					continue;
-				costs = costs.add(cost.getAmt()).setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+				costs = costs.add(cost.getCostAmt().add(cost.getCostAmtLL())).setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 				total = total.add(costs);
 			}	
 		}	

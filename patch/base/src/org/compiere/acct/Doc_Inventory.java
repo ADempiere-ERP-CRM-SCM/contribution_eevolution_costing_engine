@@ -152,14 +152,14 @@ public class Doc_Inventory extends Doc
 			BigDecimal costs=Env.ZERO;			
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
-					if(cost.getCostAmt().signum() == 0)
+					if(cost.getCostAmt().add(cost.getCostAmtLL()).signum() == 0)
 						continue;
 					//get costing method for product
 					String description = cost.getM_CostElement().getName() +" "+ cost.getM_CostType().getName();
 					if(line.getQty().signum() < 0 )
-						costs = cost.getCostAmt().negate().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+						costs = cost.getCostAmt().add(cost.getCostAmtLL()).negate().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 					else 
-						costs = cost.getCostAmt().setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+						costs = cost.getCostAmt().add(cost.getCostAmtLL()).setScale(as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 					
 					total = total.add(costs);	
 					
