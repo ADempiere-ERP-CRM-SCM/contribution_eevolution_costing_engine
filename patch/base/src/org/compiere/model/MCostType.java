@@ -54,7 +54,7 @@ public class MCostType extends X_M_CostType
 		{
 			MProductCategoryAcct pca = MProductCategoryAcct.get(as.getCtx(), product.getM_Product_Category_ID(), as.getC_AcctSchema_ID(), AD_Org_ID, as.get_TrxName());
 			
-			if(pca.getCostingMethod() != null && pca.getCostingMethod().length() > 0)
+			if(pca != null && pca.getCostingMethod() != null && pca.getCostingMethod().length() > 0)
 			{				
 				ct = MCostType.getByMethodCosting(as.getCtx(), pca.getCostingMethod(), as.get_TrxName());
 			}
@@ -64,7 +64,7 @@ public class MCostType extends X_M_CostType
 			}
 		}		
 		if(ct == null)
-			throw new IllegalStateException("Do not exist Cost Type with this Costing method");
+			throw new IllegalStateException("A Cost Type does not exist with this Costing method: " + as.getCostingMethod());
 		
 		return ct;
 	}
