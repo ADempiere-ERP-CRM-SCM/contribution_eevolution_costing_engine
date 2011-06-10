@@ -898,11 +898,17 @@ public class MProduct extends X_M_Product
 	public String getCostingLevel(MAcctSchema as)
 	{
 		MProductCategoryAcct pca = MProductCategoryAcct.get(getCtx(), getM_Product_Category_ID(), as.get_ID(), get_TrxName());
-		String costingLevel = pca.getCostingLevel();
-		if (costingLevel == null)
+		String costingLevel = null;
+		
+		if (pca != null)
 		{
-			costingLevel = as.getCostingLevel();
+			costingLevel = pca.getCostingLevel();
+			if (costingLevel == null)
+			{
+				costingLevel = as.getCostingLevel();
+			}	
 		}
+		
 		return costingLevel;
 	}
 	
