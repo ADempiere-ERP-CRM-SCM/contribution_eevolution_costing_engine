@@ -70,8 +70,11 @@ import org.eevolution.exceptions.RoutingExpiredException;
  */
 public class MPPOrder extends X_PP_Order implements DocAction
 {
-	private static final long serialVersionUID = 1L;
-	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7341647141173120822L;
+
 	/**
 	 * get Manufacturing Order based in Sales Order ID
 	 * @param ctx Context
@@ -662,7 +665,7 @@ public class MPPOrder extends X_PP_Order implements DocAction
 	{
 		log.info("approveIt - " + toString());
 		MDocType doc = MDocType.get(getCtx(), getC_DocType_ID());
-		if (doc.getDocBaseType().equals(MDocType.DOCBASETYPE_QualityOrder))
+		if (MDocType.DOCBASETYPE_QualityOrder.equals(doc.getDocBaseType()))
 		{
 			String whereClause = COLUMNNAME_PP_Product_BOM_ID+"=? AND "+COLUMNNAME_AD_Workflow_ID+"=?";
 			MQMSpecification qms = new Query(getCtx(), MQMSpecification.Table_Name, whereClause, get_TrxName())
@@ -688,11 +691,11 @@ public class MPPOrder extends X_PP_Order implements DocAction
 	public String completeIt()
 	{
 		//	Just prepare
-		/*if (DOCACTION_Prepare.equals(getDocAction()))
+		if (DOCACTION_Prepare.equals(getDocAction()))
 		{
 			setProcessed(false);
 			return DocAction.STATUS_InProgress;
-		}*/
+		}
 
 		//	Re-Check
 		if (!m_justPrepared)
@@ -711,7 +714,33 @@ public class MPPOrder extends X_PP_Order implements DocAction
 		//	Implicit Approval
 		if (!isApproved())
 		{
-			approveIt();
+			setIsApproved(approveIt());
+			MDocType doc = MDocType.get(getCtx(), getC_DocType_ID());
+			if(isApproved() && MDocType.DOCBASETYPE_QualityOrder.equals(doc.getDocBaseType()))
+			{				setProcessed(true);
+				setDocAction(DOCACTION_Complete);
+				String valid = ModelValidationEngine.get().fireDocValidate(this, ModelValidator.TIMING_AFTER_COMPLETE);
+				if (valid != null)
+				{
+					m_processMsg = valid;
+					return DocAction.STATUS_Invalid;
+				}
+				return DocAction.STATUS_Completed;
+				
+			}
+			else if(MDocType.DOCBASETYPE_QualityOrder.equals(doc.getDocBaseType()))
+			{
+				setProcessed(true);
+				setDocAction(DOCACTION_Complete);
+
+				String valid = ModelValidationEngine.get().fireDocValidate(this, ModelValidator.TIMING_AFTER_COMPLETE);
+				if (valid != null)
+				{
+					m_processMsg = valid;
+					return DocAction.STATUS_Invalid;
+				}
+				return DocAction.STATUS_Completed;
+			}
 		}
 		
 		createStandardCosts();
@@ -737,7 +766,7 @@ public class MPPOrder extends X_PP_Order implements DocAction
 	 */
 	public boolean isAvailable()
 	{
-		String whereClause = "QtyOnHand >= QtyRequiered AND PP_Order_ID=?";
+		String whereClause = "QtyOnHand >= QtyRequired AND PP_Order_ID=?";
 		boolean available = new Query(getCtx(), "RV_PP_Order_Storage", whereClause, get_TrxName())
 										.setParameters(new Object[]{get_ID()})
 										.match();
@@ -759,11 +788,11 @@ public class MPPOrder extends X_PP_Order implements DocAction
 		
 		for(MPPOrderBOMLine line : getLines())
 		{
-			BigDecimal old = line.getQtyRequiered();
+			BigDecimal old = line.getQtyRequired();
 			if (old.signum() != 0)
 			{
-				line.addDescription(Msg.parseTranslation(getCtx(), "@Voided@ @QtyRequiered@ : (" + old + ")"));
-				line.setQtyRequiered(Env.ZERO);
+				line.addDescription(Msg.parseTranslation(getCtx(), "@Voided@ @QtyRequired@ : (" + old + ")"));
+				line.setQtyRequired(Env.ZERO);
 				line.saveEx();
 			}
 		}
@@ -818,11 +847,11 @@ public class MPPOrder extends X_PP_Order implements DocAction
 		
 		for(MPPOrderBOMLine line : getLines())
 		{
-			BigDecimal old = line.getQtyRequiered();
+			BigDecimal old = line.getQtyRequired();
 			if (old.compareTo(line.getQtyDelivered()) != 0)
 			{	
-				line.setQtyRequiered(line.getQtyDelivered());
-				line.addDescription(Msg.parseTranslation(getCtx(), "@closed@ @QtyRequiered@ (" + old + ")"));
+				line.setQtyRequired(line.getQtyDelivered());
+				line.addDescription(Msg.parseTranslation(getCtx(), "@closed@ @QtyRequired@ (" + old + ")"));
 				line.saveEx();
 			}	
 		}
@@ -1231,13 +1260,8 @@ public class MPPOrder extends X_PP_Order implements DocAction
 			if (qtyIssue.signum() != 0 || qtyScrap.signum() != 0 || qtyReject.signum() != 0)
 			{
 				String CostCollectorType = MPPCostCollector.COSTCOLLECTORTYPE_ComponentIssue;
-				// Method Variance
-				if (PP_orderbomLine.getQtyBatch().signum() == 0
-						&& PP_orderbomLine.getQtyBOM().signum() == 0)
-				{
-					CostCollectorType = MPPCostCollector.COSTCOLLECTORTYPE_MethodChangeVariance;
-				}
-				else if (PP_orderbomLine.isComponentType(MPPOrderBOMLine.COMPONENTTYPE_Co_Product))
+				
+				if (PP_orderbomLine.isComponentType(MPPOrderBOMLine.COMPONENTTYPE_Co_Product))
 				{
 					CostCollectorType = MPPCostCollector.COSTCOLLECTORTYPE_MixVariance;
 				}
@@ -1256,6 +1280,13 @@ public class MPPOrder extends X_PP_Order implements DocAction
 						qtyIssue, qtyScrap, qtyReject,									//qty,scrap,reject
 						0,Env.ZERO															//durationSetup,duration
 				);
+				PP_orderbomLine.load(order.get_TrxName());
+				// Method Variance
+				if (PP_orderbomLine.getQtyBatch().signum() == 0
+						&& PP_orderbomLine.getQtyBOM().signum() == 0)
+				{
+					order.createMethodChangeVariance(PP_orderbomLine);
+				}
 
 			}			
 			toIssue = toIssue.subtract(qtyIssue);
@@ -1297,7 +1328,7 @@ public class MPPOrder extends X_PP_Order implements DocAction
 			return true;
 		}
 		
-		BigDecimal qtyToDeliver = line.getQtyRequiered();
+		BigDecimal qtyToDeliver = line.getQtyRequired();
 		BigDecimal qtyScrap = line.getQtyScrap();
 		BigDecimal qtyRequired = qtyToDeliver.add(qtyScrap);
 		BigDecimal qtyAvailable = MStorage.getQtyAvailable(order.getM_Warehouse_ID(), 0,
@@ -1473,8 +1504,8 @@ public class MPPOrder extends X_PP_Order implements DocAction
 			Collection<MCost> costs = d.toQuery(MCost.class, get_TrxName()).list();
 			for (MCost cost : costs)
 			{
-				MPPOrderCost PP_Order_Cost = new MPPOrderCost(cost, get_ID(), get_TrxName());
-				PP_Order_Cost.saveEx();
+				//Create or Update the Order Cost dimension
+				MPPOrderCost.createOrderCostDimensionint(get_ID(), cost);	
 			}
 		}
 		//
@@ -1496,8 +1527,8 @@ public class MPPOrder extends X_PP_Order implements DocAction
 			Collection<MCost> costs = d.toQuery(MCost.class, get_TrxName()).list();
 			for (MCost cost : costs)
 			{
-				MPPOrderCost PP_Order_Cost = new MPPOrderCost(cost, get_ID(), get_TrxName());
-				PP_Order_Cost.saveEx();
+				//Create or Update the Order Cost dimension
+				MPPOrderCost.createOrderCostDimensionint(get_ID(), cost);		
 			}
 		}
 		//
@@ -1524,8 +1555,8 @@ public class MPPOrder extends X_PP_Order implements DocAction
 			Collection<MCost> costs = d.toQuery(MCost.class, get_TrxName()).list();
 			for (MCost cost : costs)
 			{
-				MPPOrderCost orderCost = new MPPOrderCost(cost, getPP_Order_ID(), get_TrxName());
-				orderCost.saveEx();
+				//Create or Update the Order Cost dimension
+				MPPOrderCost.createOrderCostDimensionint(get_ID(), cost);	
 			}
 		}
 	}
@@ -1555,7 +1586,7 @@ public class MPPOrder extends X_PP_Order implements DocAction
 		Timestamp movementDate = order.getUpdated();
 		MPPOrderBOMLine line = (MPPOrderBOMLine)bomLine;
 
-		// If QtyBatch and QtyBOM is zero, than this is a method variance
+		// If QtyBatch and QtyBOM is zero, than this is a use variance
 		// (a product that "was not" in BOM was used)
 		if (line.getQtyBatch().signum() == 0 && line.getQtyBOM().signum() == 0)
 		{
@@ -1601,6 +1632,55 @@ public class MPPOrder extends X_PP_Order implements DocAction
 		);
 	}
 	
+	private void createMethodChangeVariance(MPPOrderBOMLine line)
+	{
+		MPPOrder order = this;
+		Timestamp movementDate = order.getUpdated();
+		// If QtyBatch and QtyBOM is zero, than this is a method variance
+		// (a product that "was not" in BOM was used)
+		if (line.getQtyBatch().signum() != 0 && line.getQtyBOM().signum() != 0)
+		{
+			return;
+		}
+		
+		final BigDecimal qtyMethodChangeVariancePrev = line.getQtyMethodChangeVariance();	// Previous booked method Change  variance
+		final BigDecimal qtyOpen = line.getQtyOpen();
+		// Current usage variance = QtyOpen - Previous Method Change Variance 
+		final BigDecimal qtyMethodChangeVariance = qtyOpen.subtract(qtyMethodChangeVariancePrev);
+		//
+		if (qtyMethodChangeVariance.signum() == 0)
+		{
+			return;
+		}
+		// Get Locator
+		int M_Locator_ID = line.getM_Locator_ID();
+		if (M_Locator_ID <= 0)
+		{
+			MLocator locator = MLocator.getDefault(MWarehouse.get(order.getCtx(), order.getM_Warehouse_ID()));
+			if (locator != null)
+			{
+				M_Locator_ID = locator.getM_Locator_ID();
+			}
+		}
+		//
+		MPPCostCollector cc = MPPCostCollector.createCollector(
+				order,
+				line.getM_Product_ID(),
+				M_Locator_ID,
+				line.getM_AttributeSetInstance_ID(),
+				order.getS_Resource_ID(),
+				line.getPP_Order_BOMLine_ID(),
+				0, //PP_Order_Node_ID,
+				MDocType.getDocType(MDocType.DOCBASETYPE_ManufacturingCostCollector), // C_DocType_ID,
+				MPPCostCollector.COSTCOLLECTORTYPE_MethodChangeVariance,
+				movementDate,
+				qtyMethodChangeVariance, // Qty
+				Env.ZERO, // scrap,
+				Env.ZERO, // reject,
+				0, //durationSetup,
+				Env.ZERO // duration
+		);
+	}
 	private void createUsageVariance(I_PP_Order_Node orderNode)
 	{
 		MPPOrder order = this;
@@ -1617,8 +1697,8 @@ public class MPPOrder extends X_PP_Order implements DocAction
 		//
 		final BigDecimal setupTimeVariancePrev = node.getSetupTimeUsageVariance();
 		final BigDecimal durationVariancePrev = node.getDurationUsageVariance();
-		final BigDecimal setupTimeRequired = BigDecimal.valueOf(node.getSetupTimeRequiered());
-		final BigDecimal durationRequired = BigDecimal.valueOf(node.getDurationRequiered());
+		final BigDecimal setupTimeRequired = BigDecimal.valueOf(node.getSetupTimeRequired());
+		final BigDecimal durationRequired = BigDecimal.valueOf(node.getDurationRequired());
 		final BigDecimal qtyOpen = node.getQtyToDeliver();
 		//
 		final BigDecimal setupTimeVariance = setupTimeRequired.subtract(setupTimeReal).subtract(setupTimeVariancePrev);
