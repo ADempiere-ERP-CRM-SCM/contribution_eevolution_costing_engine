@@ -187,7 +187,7 @@ public class Doc_MatchPO extends Doc
 		    MCostDetail cd = MCostDetail.getByTransaction(trx, as.getC_AcctSchema_ID(), ct.getM_CostType_ID(), element.getM_CostElement_ID());
 		    if(cd != null)
 		    {
-			costs =costs.add(cd.getCostAmt().add(cd.getCostAmtLL()));
+			costs =costs.add(cd.getCostAmt().add(cd.getCostAmtLL()).add(cd.getCostAmtLL().add(cd.getCostAdjustment().add(cd.getCostAdjustmentLL()))));
 		    }
 		}
 		
