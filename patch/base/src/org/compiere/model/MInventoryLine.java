@@ -273,11 +273,14 @@ public class MInventoryLine extends X_M_InventoryLine implements IDocumentLine
 		}
 
 		// Enforce QtyCount >= 0  - teo_sarca BF [ 1722982 ]
-		if (getQtyCount().signum() < 0)
+		// GlobalQSS -> reverting this change because of Bug 2904321 - Create Inventory Count List not taking negative qty products
+		/*
+		if ( (!newRecord) && is_ValueChanged("QtyCount") && getQtyCount().signum() < 0)
 		{
 			log.saveError("Warning", Msg.getElement(getCtx(), COLUMNNAME_QtyCount)+" < 0");
 			return false;
 		}
+		*/
 		//	Enforce Qty UOM
 		if (newRecord || is_ValueChanged("QtyCount"))
 			setQtyCount(getQtyCount());

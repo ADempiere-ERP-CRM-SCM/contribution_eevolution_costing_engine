@@ -35,12 +35,10 @@ import org.compiere.util.Env;
  */
 public class MTransaction extends X_M_Transaction
 {
-
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -2299319362086218519L;
-
+	private static final long serialVersionUID = 3411351000865493212L;
 
 	/**
 	 * get the transaction based on Document Line and movement type
@@ -115,10 +113,11 @@ public class MTransaction extends X_M_Transaction
 		final String whereClause = I_M_InOutLine.COLUMNNAME_M_Product_ID + "=? AND "
 								 + I_M_InOutLine.COLUMNNAME_M_InOutLine_ID + "=? AND "
 		 						 + I_M_InOutLine.COLUMNNAME_M_AttributeSetInstance_ID + "=?";
-			return new Query(line.getCtx(), Table_Name, whereClause, line.get_TrxName())
-			.setClient_ID()
-			.setParameters(line.getM_Product_ID(),line.getM_InOutLine_ID(), M_ASI_ID)
-			.firstOnly();
+		
+		return new Query(line.getCtx(), Table_Name, whereClause, line.get_TrxName())
+		.setClient_ID()
+		.setParameters(line.getM_Product_ID(),line.getM_InOutLine_ID(), M_ASI_ID)
+		.firstOnly();
 	}
 	
 	
@@ -225,7 +224,11 @@ public class MTransaction extends X_M_Transaction
 	protected boolean afterSave (boolean newRecord, boolean success)
 	{
 		if (newRecord)
-			CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(this);
+		{	
+			MClient client = MClient.get(getCtx());
+			if (client.isCostImmediate())
+				CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(this);
+		}	
 		return true;
 	}	//	afterSave
 	
@@ -240,7 +243,7 @@ public class MTransaction extends X_M_Transaction
 	    if(getM_ProductionLine_ID() > 0)
 		return (IDocumentLine) getM_ProductionLine();
 	    if(getPP_Cost_Collector_ID() > 0)
-			return (IDocumentLine) getPP_Cost_Collector();
+		return (IDocumentLine) getPP_Cost_Collector();
 	    
 	    return null;	
 	}

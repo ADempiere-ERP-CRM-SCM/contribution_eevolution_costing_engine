@@ -48,8 +48,7 @@ public class MInventory extends X_M_Inventory implements DocAction
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 910998472569265447L;
-
+	private static final long serialVersionUID = -7137974064086172763L;
 
 	/**
 	 * 	Get Inventory from Cache
@@ -108,15 +107,26 @@ public class MInventory extends X_M_Inventory implements DocAction
 	}	//	MInventory
 
 	/**
-	 * 	Warehouse Constructor
-	 *	@param wh warehouse
+	 * Warehouse Constructor
+	 * @param wh warehouse
+	 * @deprecated since 3.5.3a . Please use {@link #MInventory(MWarehouse, String)}.
 	 */
 	public MInventory (MWarehouse wh)
 	{
-		this (wh.getCtx(), 0, wh.get_TrxName());
+		this(wh, wh.get_TrxName());
+	}	//	MInventory
+	
+	/**
+	 * Warehouse Constructor
+	 * @param wh
+	 * @param trxName
+	 */
+	public MInventory (MWarehouse wh, String trxName)
+	{
+		this (wh.getCtx(), 0, trxName);
 		setClientOrg(wh);
 		setM_Warehouse_ID(wh.getM_Warehouse_ID());
-	}	//	MInventory
+	}
 	
 	
 	/**	Lines						*/
@@ -134,8 +144,8 @@ public class MInventory extends X_M_Inventory implements DocAction
 			return m_lines;
 		}
 		//
-		List<MInventoryLine> list = new Query(getCtx(), MInventoryLine.Table_Name, "M_Inventory_ID=?", get_TrxName())
-										.setParameters(new Object[]{get_ID()})
+		List<MInventoryLine> list = new Query(getCtx(), I_M_InventoryLine.Table_Name, "M_Inventory_ID=?", get_TrxName())
+										.setParameters(get_ID())
 										.setOrderBy(MInventoryLine.COLUMNNAME_Line)
 										.list();
 		m_lines = list.toArray(new MInventoryLine[list.size()]);
@@ -245,7 +255,7 @@ public class MInventory extends X_M_Inventory implements DocAction
 	
 	/**
 	 * 	Set Processed.
-	 * 	Propergate to Lines/Taxes
+	 * 	Propagate to Lines/Taxes
 	 *	@param processed processed
 	 */
 	public void setProcessed (boolean processed)
@@ -386,11 +396,16 @@ public class MInventory extends X_M_Inventory implements DocAction
 
 			MProduct product = line.getProduct();	
 
-			//Get Quantity to Inventory Inernal Use
+			//Get Quantity Internal Use
 			BigDecimal qtyDiff = line.getQtyInternalUse().negate();
-			//If Quantity to Inventory Internal Use = Zero Then is Physical Inventory  Else is  Inventory Internal Use 
+			//If Quantity Internal Use = Zero Then Physical Inventory  Else Internal Use Inventory
 			if (qtyDiff.signum() == 0)
+			{
 				qtyDiff = line.getQtyCount().subtract(line.getQtyBook());
+				//If Quantity Count minus Quantity Book = Zero, then no change in Inventory
+				if (qtyDiff.signum() == 0)
+					continue;
+			}
 
 			//Ignore the Material Policy when is Reverse Correction
 			if(!isReversal())
@@ -449,14 +464,23 @@ public class MInventory extends X_M_Inventory implements DocAction
 						mtrx = new MTransaction (getCtx(), line.getAD_Org_ID(), m_MovementType,
 								line.getM_Locator_ID(), line.getM_Product_ID(), ma.getM_AttributeSetInstance_ID(),
 								QtyMA.negate(), getMovementDate(), get_TrxName());
-
-						mtrx.setM_InventoryLine_ID(line.getM_InventoryLine_ID());
-						if (!mtrx.save())
-						{
-							m_processMsg = "Transaction not inserted(2)";
-							return DocAction.STATUS_Invalid;
-						}
-						qtyDiff = QtyNew;						
+						
+							mtrx.setM_InventoryLine_ID(line.getM_InventoryLine_ID());
+							if (!mtrx.save())
+							{
+								m_processMsg = "Transaction not inserted(2)";
+								return DocAction.STATUS_Invalid;
+							}
+							/*if(QtyMA.signum() != 0)
+							{	
+								String err = createCostDetail(line, ma.getM_AttributeSetInstance_ID() , QtyMA.negate());
+								if (err != null && err.length() > 0) {
+									m_processMsg = err;
+									return DocAction.STATUS_Invalid;
+								}
+							}*/
+							
+							qtyDiff = QtyNew;						
 
 					}	
 				}
@@ -505,8 +529,15 @@ public class MInventory extends X_M_Inventory implements DocAction
 						m_processMsg = "Transaction not inserted(2)";
 						return DocAction.STATUS_Invalid;
 					}
-
-					//CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(mtrx);
+					
+					/*if(qtyDiff.signum() != 0)
+					{	
+						String err = createCostDetail(line, line.getM_AttributeSetInstance_ID(), qtyDiff);
+						if (err != null && err.length() > 0) {
+							m_processMsg = err;
+							return DocAction.STATUS_Invalid;
+						}
+					}*/
 				}	//	Fallback
 			}	//	stock movement
 
@@ -549,7 +580,9 @@ public class MInventory extends X_M_Inventory implements DocAction
 	 */
 	private void checkMaterialPolicy(MInventoryLine line, BigDecimal qtyDiff)
 	{
-		MInventoryLineMA.deleteInventoryLineMA(line.getM_InventoryLine_ID(), get_TrxName());
+		int no = MInventoryLineMA.deleteInventoryLineMA(line.getM_InventoryLine_ID(), get_TrxName());
+		if (no > 0)
+			log.config("Delete old #" + no);
 
 		//	Check Line
 		boolean needSave = false;
@@ -700,12 +733,12 @@ public class MInventory extends X_M_Inventory implements DocAction
 		m_processMsg = ModelValidationEngine.get().fireDocValidate(this,ModelValidator.TIMING_BEFORE_CLOSE);
 		if (m_processMsg != null)
 			return false;
+
+		setDocAction(DOCACTION_None);
 		// After Close
 		m_processMsg = ModelValidationEngine.get().fireDocValidate(this,ModelValidator.TIMING_AFTER_CLOSE);
 		if (m_processMsg != null)
-			return false;		
-
-		setDocAction(DOCACTION_None);
+			return false;
 		return true;
 	}	//	closeIt
 	
@@ -905,53 +938,62 @@ public class MInventory extends X_M_Inventory implements DocAction
 	{
 		return m_reversal;
 	}	//	isReversal
-
+	
 	/**
-	 * Create Cost Detail 
+	 * Create Cost Detail
 	 * @param line
-	 * @param M_AttributeSetInstance_ID
-	 * @param qty
+	 * @param Qty
+	 * @return an EMPTY String on success otherwise an ERROR message
 	 */
-	/*private void createCostDetail(MTransaction trx)
+	/*
+	private String createCostDetail(MInventoryLine line, int M_AttributeSetInstance_ID, BigDecimal qty)
 	{
-		if (trx.getMovementQty().signum() == 0)
-			return;
-		
-		for(MAcctSchema as : MAcctSchema.getClientAcctSchema(trx.getCtx(), trx.getAD_Client_ID()))
+		// Get Account Schemas to create MCostDetail
+		MAcctSchema[] acctschemas = MAcctSchema.getClientAcctSchema(getCtx(), getAD_Client_ID());
+		for(int asn = 0; asn < acctschemas.length; asn++)
 		{
-			if (as.isSkipOrg(trx.getAD_Org_ID()))
+			MAcctSchema as = acctschemas[asn];
+			
+			if (as.isSkipOrg(getAD_Org_ID()) || as.isSkipOrg(line.getAD_Org_ID()))
 			{
 				continue;
 			}
 			
-				ProductCost pc = new ProductCost (trx.getCtx(), 
-						trx.getM_Product_ID(), trx.getM_AttributeSetInstance_ID(),
-						trx.get_TrxName());
-				pc.setQty(trx.getMovementQty());
-				//BigDecimal costs = pc.getProductCosts(as, trx.getAD_Org_ID(), null, 
-				//		0, false);	
-				List<CostComponent> costs = pc.getProductCostsLayers(as, trx.getAD_Org_ID(),
-						null, // CostingMethod
-						trx.get_ID(),
-						false); // zeroCostsOK
-				for (CostComponent cc : costs)
-				{
-				if (costs == null)
-				{
-					MProduct product = MProduct.get(trx.getCtx(), trx.getM_Product_ID());
-					throw new AdempiereException("No Costs for " + product.getName());
-				}
-				// Set Total Amount and Total Quantity from Inventory
-				MCostDetail.createInventory(as, trx.getAD_Org_ID(), 
-						trx.getM_Product_ID(), trx.getM_AttributeSetInstance_ID(),
-						trx.getM_InventoryLine_ID(), 0,	//	no cost element
-						cc.getAmount(), cc.qty,
-						"",
-						trx.get_TrxName(),trx.get_ID());
-				}
+			BigDecimal costs = Env.ZERO;
+			if (isReversal())
+			{				
+				String sql = "SELECT amt * -1 FROM M_CostDetail WHERE M_InventoryLine_ID=?"; // negate costs				
+				MProduct product = new MProduct(getCtx(), line.getM_Product_ID(), line.get_TrxName());
+				String CostingLevel = product.getCostingLevel(as);
+				if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+					sql = sql + " AND AD_Org_ID=" + getAD_Org_ID(); 
+				else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel) && M_AttributeSetInstance_ID != 0)
+					sql = sql + " AND M_AttributeSetInstance_ID=" + M_AttributeSetInstance_ID;
+				costs = DB.getSQLValueBD(line.get_TrxName(), sql, line.getReversalLine_ID());
+			}
+			else 
+			{
+				ProductCost pc = new ProductCost (getCtx(), 
+						line.getM_Product_ID(), M_AttributeSetInstance_ID, line.get_TrxName());
+				pc.setQty(qty);
+				costs = pc.getProductCosts(as, line.getAD_Org_ID(), as.getCostingMethod(), 0,true);							
+			}
+			if (costs == null)
+			{
+				return "No Costs for " + line.getProduct().getName();
+			}
 			
+			// Set Total Amount and Total Quantity from Inventory
+			MCostDetail.createInventory(as, line.getAD_Org_ID(), 
+					line.getM_Product_ID(), M_AttributeSetInstance_ID,
+					line.getM_InventoryLine_ID(), 0,	//	no cost element
+					costs, qty,			
+					line.getDescription(), line.get_TrxName());
 		}
+		
+		return "";
 	}*/
+
 	//if isReversal CostDetail is created from CostDetail of original document 
 	// is made a new CostDetail where Amt and Qty are negate
 	private void createCostDetail(MTransaction trx, int reversalLine_ID) {

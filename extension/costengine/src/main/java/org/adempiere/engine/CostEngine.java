@@ -28,7 +28,6 @@ import org.compiere.model.I_C_InvoiceLine;
 import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_M_CostDetail;
 import org.compiere.model.I_M_CostElement;
-import org.compiere.model.I_M_ProductionPlan;
 import org.compiere.model.I_M_Transaction;
 import org.compiere.model.MAcctSchema;
 import org.compiere.model.MClient;
@@ -48,7 +47,6 @@ import org.compiere.model.MTransaction;
 import org.compiere.model.PO;
 import org.compiere.model.Query;
 import org.compiere.model.X_M_ProductionLine;
-import org.compiere.model.X_M_ProductionPlan;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -77,7 +75,7 @@ public class CostEngine
 	 * @param trxName
 	 * @return
 	 */
-	public static BigDecimal getParentActualCostByCostType(MPPOrder order,int M_CostType_ID, int M_CostElement_ID)
+	public static BigDecimal getParentActualCostByCostType(MPPOrder order,MAcctSchema as , int M_CostType_ID, int M_CostElement_ID)
 	{
 		StringBuffer whereClause = new StringBuffer();
 		
@@ -103,9 +101,10 @@ public class CostEngine
 			actualCost = Env.ZERO;
 		
 		if(qtyDelivered.signum() != 0)
-			actualCost = actualCost.divide(qtyDelivered);
+			actualCost = actualCost.divide(qtyDelivered, as.getCostingPrecision() , BigDecimal.ROUND_HALF_DOWN);
 				
-		return actualCost.negate();
+		//return actualCost.negate();
+		return actualCost;
 	}
 
 	/**
@@ -115,7 +114,7 @@ public class CostEngine
 	 * @param trxName Transaction Name
 	 * @return Cost for Parent Transaction
 	 */
-	public static BigDecimal getParentActualCostByCostType(X_M_ProductionLine line,int M_CostType_ID, int M_CostElement_ID)
+	public static BigDecimal getParentActualCostByCostType(X_M_ProductionLine line, MAcctSchema as, int M_CostType_ID, int M_CostElement_ID)
 	{
 		StringBuffer whereClause = new StringBuffer();
 		
@@ -134,7 +133,7 @@ public class CostEngine
 			actualCost = Env.ZERO;
 		
 		if(line.getMovementQty().signum() > 0)
-			actualCost = actualCost.divide(line.getMovementQty());
+			actualCost = actualCost.divide(line.getMovementQty(), as.getCostingPrecision(), BigDecimal.ROUND_HALF_DOWN);
 				
 		return actualCost;
 	}
@@ -171,14 +170,27 @@ public class CostEngine
 	
 	public BigDecimal getProductActualCostPrice(MPPCostCollector cc, MProduct product, MAcctSchema as, MCostElement element, String trxName)
 	{
+		String CostingLevel = product.getCostingLevel(as);
+		//	Org Element
+		int Org_ID = cc.getAD_Org_ID();
+		int M_ASI_ID = cc.getM_AttributeSetInstance_ID();
+		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
+		{
+			Org_ID = 0;
+			M_ASI_ID = 0;
+		}
+		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+			M_ASI_ID = 0;
+		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
+			Org_ID = 0;
 		CostDimension d = new CostDimension(product,
 				as, as.getM_CostType_ID(),
-				0, //AD_Org_ID,
-				0, //M_ASI_ID,
+				Org_ID,
+				M_ASI_ID, //M_ASI_ID,
 				element.getM_CostElement_ID());
 		MCost cost = d.toQuery(MCost.class, trxName).firstOnly();
 		if(cost == null)
-			throw new AdempiereException("@NotFound@ @M_Cost_ID@ - "+as+", "+element); 
+			return Env.ZERO; 
 		BigDecimal price = cost.getCurrentCostPrice().add(cost.getCurrentCostPriceLL());
 		return roundCost(price, as.getC_AcctSchema_ID());
 	}
@@ -278,7 +290,20 @@ public class CostEngine
 			MAcctSchema as,
 			Boolean isSOTrx)
 	{
-		
+		MProduct product = new MProduct(mtrx.getCtx(), mtrx.getM_Product_ID(), mtrx.get_TrxName());
+		String CostingLevel = product.getCostingLevel(as);
+		//	Org Element
+		int Org_ID = mtrx.getAD_Org_ID();
+		int M_ASI_ID = mtrx.getM_AttributeSetInstance_ID();
+		if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel))
+		{
+			Org_ID = 0;
+			M_ASI_ID = 0;
+		}
+		else if (MAcctSchema.COSTINGLEVEL_Organization.equals(CostingLevel))
+			M_ASI_ID = 0;
+		else if (MAcctSchema.COSTINGLEVEL_BatchLot.equals(CostingLevel))
+			Org_ID = 0;
 		StringBuilder description = new StringBuilder();
 		if (!Util.isEmpty(model.getDescription(), true))
 			description.append(model.getDescription());
@@ -292,8 +317,13 @@ public class CostEngine
 		
 		for (MCostType ct : cts)
 		{	
+			if (!ct.isActive())
+				continue;
 			for (MCostElement ce : ces)
-			{		
+			{		if (MCost.get(mtrx.getCtx(), mtrx.getAD_Client_ID(), Org_ID, 
+						mtrx.getM_Product_ID(), ct.getM_CostType_ID(), as.getC_AcctSchema_ID(), 
+						ce.getM_CostElement_ID(), M_ASI_ID, mtrx.get_TrxName()) == null)
+				continue;
 					createCostDetail(as, mtrx , model , ct , ce);
 			}		
 		}
@@ -314,6 +344,10 @@ public class CostEngine
 		
 		//The Change of price  in the Invoice Line is not generated cost adjustment for Average PO Consting method  
 		if(model instanceof MMatchInv && MCostType.COSTINGMETHOD_AveragePO.equals(ct.getCostingMethod()))
+			return;
+
+		//The Change of price  in the Invoice Line is not generated cost adjustment for Average PO Consting method  
+		if(model instanceof MMatchPO && MCostType.COSTINGMETHOD_AverageInvoice.equals(ct.getCostingMethod()))
 			return;
 		
 		if (MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
@@ -340,8 +374,8 @@ public class CostEngine
 			{	
 				String costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
 				costThisLevel = getCostThisLevel(mtrx, as, ct, ce, model, costingLevel);
-				
-				if (model instanceof MInventoryLine && costThisLevel.signum() == 0 )
+				//If cost this level is zero and is a physical inventory  then try get cost from physical inventory
+				if (model instanceof MInventoryLine && costThisLevel.signum() == 0 && MCostElement.COSTELEMENTTYPE_Material.equals(ce.getCostElementType()))
 				{
 					MInventoryLine inventoryLine = (MInventoryLine) model;
 					//Use the cost only for Physical Inventory
@@ -395,7 +429,7 @@ public class CostEngine
 				if(MPPCostCollector.COSTCOLLECTORTYPE_MaterialReceipt.equals(cc.getCostCollectorType()))
 				{	
 					//get Actual Cost for Cost Type and Cost Element
-					costLowLevel = CostEngine.getParentActualCostByCostType(cc.getPP_Order(), ct.getM_CostType_ID(), ce.getM_CostElement_ID());
+					costLowLevel = CostEngine.getParentActualCostByCostType(cc.getPP_Order(), as , ct.getM_CostType_ID(), ce.getM_CostElement_ID());
 				}
 			}
 			if(model instanceof MProductionLine)
@@ -405,7 +439,7 @@ public class CostEngine
 				if(productionLine.isParent())
 				{
 					//get Actual Cost for Cost Type and Cost Element
-					costLowLevel = CostEngine.getParentActualCostByCostType(productionLine, ct.getM_CostType_ID(), ce.getM_CostElement_ID());
+					costLowLevel = CostEngine.getParentActualCostByCostType(productionLine, as , ct.getM_CostType_ID(), ce.getM_CostElement_ID());
 				}
 			}
 		}
@@ -413,17 +447,17 @@ public class CostEngine
 		
 		
 		final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, ct.getCostingMethod());
-		method.setCostingMethod(as, mtrx, cost, costThisLevel , costLowLevel, model.isSOTrx());
+		method.setCostingMethod(as, model, mtrx, cost, costThisLevel , costLowLevel, model.isSOTrx());
 		MCostDetail cd = method.process();	
-		final String idColumnName = CostEngine.getIDColumnName(model);		
-		cd.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(model));
-		if (model instanceof MLandedCostAllocation && MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
+		if (cd != null  && model instanceof MLandedCostAllocation && MCostElement.COSTELEMENTTYPE_LandedCost.equals(ce.getCostElementType()))
 		{
-			 cd.setM_Transaction_ID(mtrx.getM_Transaction_ID());
-			 cd.setM_InOutLine_ID(mtrx.getM_InOutLine_ID());
+			 MLandedCostAllocation allocation = (MLandedCostAllocation)model;
+			 cd.setM_InOutLine_ID(allocation.getM_InOutLine_ID());
+			 cd.setC_InvoiceLine_ID(allocation.getC_InvoiceLine_ID());
 			 cd.setProcessed(false);
+			 cd.saveEx();
 		}
-		cd.saveEx();
+
 	}
 	
 	public MCost validateCostForCostType(MAcctSchema as, MCostType ct , MCostElement ce,int M_Product_ID ,int AD_Org_ID , int M_AttributeSetInstance_ID)
@@ -458,6 +492,8 @@ public class CostEngine
 		}
 		//Get or Create MCost
 		MCost cost = MCost.getOrCreate(product, M_AttributeSetInstance_ID, as, AD_Org_ID, ct.getM_CostType_ID(), ce.getM_CostElement_ID(), ct.get_TrxName());
+		if(cost.is_new())
+			cost.saveEx();
 		return cost;
 	}
 
@@ -512,8 +548,26 @@ public class CostEngine
 			}
 		
 			final ICostingMethod method = CostingMethodFactory.get().getCostingMethod(ce, cost.getCostingMethod());
-			method.setCostingMethod(as, null, cost, model.getPriceActual(), Env.ZERO, isSOTrx);
+			method.setCostingMethod(as, model, null, cost, model.getPriceActual(), Env.ZERO, isSOTrx);
 			method.process();
+		}
+	}
+	
+	public void createCostDetailForLandedCostAllocation(MLandedCostAllocation allocation)
+	{
+		MInOutLine ioLine = (MInOutLine) allocation.getM_InOutLine();
+		for (MTransaction trx: MTransaction.getByInOutLine(ioLine))
+		{
+			for(MAcctSchema as : MAcctSchema.getClientAcctSchema(allocation.getCtx(), allocation.getAD_Client_ID()))
+			{
+				List<MCostType> cts = MCostType.get(allocation.getCtx(), allocation.get_TrxName());
+				
+				for (MCostType ct : cts)
+				{	
+					MCostElement ce = (MCostElement) allocation.getM_CostElement();
+					CostEngineFactory.getCostEngine(allocation.getAD_Client_ID()).createCostDetail(as, trx, allocation , ct, ce);	
+				}			
+			}
 		}
 	}
 	
@@ -789,7 +843,7 @@ public class CostEngine
 		if (product != null)
 		{
 			cdv.setM_Product_ID(product.getM_Product_ID());
-			cdv.setM_AttributeSetInstance_ID(0);
+			cdv.setM_AttributeSetInstance_ID(ccv.getM_AttributeSetInstance_ID());
 		}
 		if (as != null)
 		{
@@ -803,6 +857,7 @@ public class CostEngine
 		cdv.setPP_Cost_Collector_ID(ccv.getPP_Cost_Collector_ID());
 		cdv.setAmt(amt);
 		cdv.setQty(qty);
+		cdv.setDateAcct(ccv.getDateAcct());
 		cdv.saveEx();
 		processCostDetail(cdv);
 		return cdv;
@@ -818,7 +873,7 @@ public class CostEngine
 		final BigDecimal qty = routingService.getResourceBaseValue(cc.getS_Resource_ID(), cc);
 		for (MAcctSchema as : getAcctSchema(cc))
 		{
-			for (MCostElement element : getCostElements(cc.getCtx()))
+			for (MCostElement element : MCostElement.getNonCostingMethods(cc))
 			{
 				if (!isActivityControlElement(element))
 				{
@@ -882,12 +937,13 @@ public class CostEngine
 		//
 		for(MAcctSchema as : getAcctSchema(ccuv))
 		{
-			for (MCostElement element : getCostElements(ccuv.getCtx()))
+			for (MCostElement element : MCostElement.getCostingMethods(ccuv))
 			{
 				final BigDecimal price = getProductActualCostPrice(ccuv, product, as, element, ccuv.get_TrxName());
 				final BigDecimal amt = roundCost(price.multiply(qty), as.getC_AcctSchema_ID());
 				//
 				// Create / Update Cost Detail
+				if (amt.compareTo(Env.ZERO) != 0)
 				createVarianceCostDetail(ccuv,
 						amt, qty,
 						null, // no original cost detail
@@ -1052,7 +1108,7 @@ public class CostEngine
 	public BigDecimal getCostThisLevel(MTransaction mtrx, MAcctSchema as, MCostType ct, MCostElement ce,IDocumentLine model , String costingLevel)
 	{
 		BigDecimal costThisLevel = Env.ZERO;
-		MCostDetail m_last_costdetail =  MCostDetail.getLastTransaction(mtrx, as.getC_AcctSchema_ID(), ct.getM_CostType_ID(), ce.getM_CostElement_ID(), model.getDateAcct(), costingLevel);
+		MCostDetail m_last_costdetail =  MCostDetail.getLastTransaction(model,mtrx, as.getC_AcctSchema_ID(), ct.getM_CostType_ID(), ce.getM_CostElement_ID(), model.getDateAcct(), costingLevel);
 		if(m_last_costdetail != null)
 		{	
 			BigDecimal qty = m_last_costdetail.getCumulatedQty().add(m_last_costdetail.getQty());

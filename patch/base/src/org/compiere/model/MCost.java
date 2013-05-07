@@ -94,7 +94,7 @@ public class MCost extends X_M_Cost
     			.setClient_ID()
     			.setOrderBy("AD_Client_ID, AD_Org_ID, M_AttributeSetInstance_ID")
     			.list();
-    	}   
+       	}   
 
     	/**
     	 * get CostComponets
@@ -273,6 +273,7 @@ public class MCost extends X_M_Cost
     				as, AD_Org_ID, as.getM_CostType_ID(), costingMethod, qty, 
     				C_OrderLine_ID, zeroCostsOK, trxName, cost);
     	}
+    	
 	/**
 	 * 	Retrieve/Calculate Current Cost Price
 	 *	@param product product
@@ -838,7 +839,6 @@ public class MCost extends X_M_Cost
 	 * 	Create costing for client.
 	 * 	Handles Transaction if not in a transaction
 	 *	@param client client
-	 *
 	 */
 	@Deprecated
 	public static void create (MClient client)
@@ -1665,6 +1665,28 @@ public class MCost extends X_M_Cost
 		m_manual = false;
 	}	//	MCost
 
+	/**
+	 * 	Parent Constructor
+	 *	@param product Product
+	 *	@param M_AttributeSetInstance_ID asi
+	 *	@param as Acct Schema
+	 *	@param AD_Org_ID org
+	 *	@param M_CostElement_ID cost element
+	 */
+	public MCost (MProduct product, int M_AttributeSetInstance_ID,
+		MAcctSchema as, int AD_Org_ID, int M_CostElement_ID)
+	{
+		this (product.getCtx(), 0, product.get_TrxName());
+		setClientOrg(product.getAD_Client_ID(), AD_Org_ID);
+		setC_AcctSchema_ID(as.getC_AcctSchema_ID());
+		setM_CostType_ID(as.getM_CostType_ID());
+		setM_Product_ID(product.getM_Product_ID());
+		setM_AttributeSetInstance_ID(M_AttributeSetInstance_ID);
+		setM_CostElement_ID(M_CostElement_ID);
+		//
+		m_manual = false;
+	}	//	MCost
+	
 	/**
 	 * 	Parent Constructor
 	 *	@param product Product

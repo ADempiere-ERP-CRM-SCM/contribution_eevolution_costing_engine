@@ -17,10 +17,12 @@
 package org.compiere.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
@@ -36,12 +38,10 @@ import org.compiere.util.Env;
  */
 public class MLandedCostAllocation extends X_C_LandedCostAllocation implements IDocumentLine
 {	
-
-
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1574659174124528372L;
+	private static final long serialVersionUID = -8645283018475474574L;
 
 
 	/**
@@ -87,6 +87,22 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 		return retValue;
 	}	//	getOfInvliceLine
 	
+	/**
+	 * Get Landed Cost Allocation
+	 * @param MInOutLine ioLine
+	 * @param M_CostElement_ID
+	 * @return List MLandedCostAllocation
+	 */
+	public static List<MLandedCostAllocation> getOfInOuline (MInOutLine ioLine, int M_CostElement_ID)
+	{
+		StringBuilder whereClause = new StringBuilder();
+		whereClause.append(I_C_LandedCostAllocation.COLUMNNAME_M_InOutLine_ID).append("=? AND ");
+		whereClause.append(I_C_LandedCostAllocation.COLUMNNAME_M_CostElement_ID).append("=? ");
+		return new Query(ioLine.getCtx(),I_C_LandedCostAllocation.Table_Name, whereClause.toString() , ioLine.get_TrxName())
+		.setClient_ID()
+		.setParameters(ioLine.getM_InOutLine_ID(), M_CostElement_ID)
+		.list();
+	}	//	getOfInvliceLine
 	/**	Logger	*/
 	private static CLogger s_log = CLogger.getCLogger (MLandedCostAllocation.class);
 	
@@ -178,8 +194,15 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 	@Override //ancabradau
 	public BigDecimal getPriceActual()
 	{	
-		return getAmt().divide(getQty(), BigDecimal.ROUND_HALF_UP);
+		final String where = "EXISTS (SELECT 1 FROM C_Invoice i INNER JOIN C_InvoiceLine il ON (i.C_Invoice_ID=il.C_Invoice_ID) WHERE C_Currency.C_Currency_ID=i.C_Currency_ID AND il.C_InvoiceLine_ID=?)";
+		MCurrency currency = new Query (getCtx(), I_C_Currency.Table_Name, where , get_TrxName())
+		.setParameters(getC_InvoiceLine_ID())
+		.firstOnly();
+		BigDecimal price = getAmt().divide(getQty(), currency.getCostingPrecision() ,  RoundingMode.HALF_UP);
+		return price;
 	}
+
+	
 
 	@Override
 	public int getReversalLine_ID() {
@@ -200,7 +223,7 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 	}
 	
 	public Timestamp getDateAcct() {
-		return getC_InvoiceLine().getC_Invoice().getDateAcct();
+		return getM_InOutLine().getM_InOut().getDateAcct();
 	}
 	
 

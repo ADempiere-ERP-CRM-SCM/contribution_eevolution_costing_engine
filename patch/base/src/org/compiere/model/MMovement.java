@@ -50,7 +50,7 @@ public class MMovement extends X_M_Movement implements DocAction
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 3634169801280239573L;
+	private static final long serialVersionUID = -1628932946440487727L;
 
 	/**
 	 * 	Standard Constructor
@@ -89,6 +89,8 @@ public class MMovement extends X_M_Movement implements DocAction
 	private MMovementLine[]		m_lines = null;
 	/** Confirmations				*/
 	private MMovementConfirm[]	m_confirms = null;
+	/** Reversal Indicator			*/
+	public static String	REVERSE_INDICATOR = "^";
 	
 	/**
 	 * 	Get Lines
@@ -103,8 +105,8 @@ public class MMovement extends X_M_Movement implements DocAction
 		}
 		//
 		final String whereClause = "M_Movement_ID=?";
-		List<MMovement> list = new Query(getCtx(), MMovementLine.Table_Name, whereClause, get_TrxName())
-		 										.setParameters(new Object[]{getM_Movement_ID()})
+		List<MMovementLine> list = new Query(getCtx(), I_M_MovementLine.Table_Name, whereClause, get_TrxName())
+		 										.setParameters(getM_Movement_ID())
 		 										.setOrderBy(MMovementLine.COLUMNNAME_Line)
 		 										.list();
 		m_lines = new MMovementLine[list.size ()];
@@ -122,8 +124,8 @@ public class MMovement extends X_M_Movement implements DocAction
 		if (m_confirms != null && !requery)
 			return m_confirms;
 
-		List<MMovementConfirm> list = new Query(getCtx(), MMovementConfirm.Table_Name, "M_Movement_ID=?", get_TrxName())
-										.setParameters(new Object[]{get_ID()})
+		List<MMovementConfirm> list = new Query(getCtx(), I_M_MovementConfirm.Table_Name, "M_Movement_ID=?", get_TrxName())
+										.setParameters(get_ID())
 										.list();
 		m_confirms = list.toArray(new MMovementConfirm[list.size()]);
 		return m_confirms;
@@ -500,7 +502,7 @@ public class MMovement extends X_M_Movement implements DocAction
 					{
 						m_processMsg = "Transaction To not inserted";
 						return DocAction.STATUS_Invalid;
-					} 
+					}
 				}	//	Fallback
 			} // product stock	
 		}	//	for all lines
@@ -542,7 +544,9 @@ public class MMovement extends X_M_Movement implements DocAction
 	 */
 	private void checkMaterialPolicy(MMovementLine line)
 	{
-		MMovementLineMA.deleteMovementLineMA(line.get_ID(), get_TrxName());
+		int no = MMovementLineMA.deleteMovementLineMA(line.getM_MovementLine_ID(), get_TrxName());
+		if (no > 0)
+			log.config("Delete old #" + no);
 		
 		boolean needSave = false;
 
@@ -641,9 +645,7 @@ public class MMovement extends X_M_Movement implements DocAction
 		}
 		else
 		{
-			m_processMsg = "@CanNotVoid@";
-			return false;
-//			return reverseCorrectIt();
+			return reverseCorrectIt();
 		}
 		// After Void
 		m_processMsg = ModelValidationEngine.get().fireDocValidate(this,ModelValidator.TIMING_AFTER_VOID);
@@ -667,13 +669,13 @@ public class MMovement extends X_M_Movement implements DocAction
 		if (m_processMsg != null)
 			return false;
 
+		//	Close Not delivered Qty
+		setDocAction(DOCACTION_None);
+
 		// After Close
 		m_processMsg = ModelValidationEngine.get().fireDocValidate(this,ModelValidator.TIMING_AFTER_CLOSE);
 		if (m_processMsg != null)
 			return false;
-
-		//	Close Not delivered Qty
-		setDocAction(DOCACTION_None);
 		return true;
 	}	//	closeIt
 	
@@ -705,14 +707,16 @@ public class MMovement extends X_M_Movement implements DocAction
 		reversal.setIsInTransit (false);
 		reversal.setPosted(false);
 		reversal.setProcessed(false);
+		reversal.setDocumentNo(getDocumentNo() + REVERSE_INDICATOR);	//	indicate reversals
 		reversal.addDescription("{->" + getDocumentNo() + ")");
 		//FR [ 1948157  ]
 		reversal.setReversal_ID(getM_Movement_ID());
+		if (!reversal.save())
+		{
+			m_processMsg = "Could not create Movement Reversal";
+			return false;
+		}
 		reversal.setReversal(true);
-		reversal.setDocumentNo(getDocumentNo()+"^"); // arhipac: teo_sarca
-		reversal.saveEx();
-		this.setReversal_ID(reversal.get_ID()); // FR [ 1948157  ]
-		
 		//	Reverse Line Qty
 		MMovementLine[] oLines = getLines(true);
 		for (int i = 0; i < oLines.length; i++)
@@ -879,55 +883,6 @@ public class MMovement extends X_M_Movement implements DocAction
 			|| DOCSTATUS_Closed.equals(ds)
 			|| DOCSTATUS_Reversed.equals(ds);
 	}	//	isComplete
-/*	// CostDetail
-	private void createCostDetail(MTransaction trxFrom, MTransaction trxTo, MMovementLine line)
-	{
-		if (trxFrom.getMovementQty().compareTo(trxTo.getMovementQty().negate()) != 0)
-		{
-			throw new AdempiereException("Same qty is needed - "+trxFrom+", "+trxTo);
-		}
-		//
-		for(MAcctSchema as : MAcctSchema.getClientAcctSchema(getCtx(), trxFrom.getAD_Client_ID()))
-		{
-			ProductCost pc = new ProductCost (getCtx(), 
-					trxFrom.getM_Product_ID(), trxFrom.getM_AttributeSetInstance_ID(),
-					get_TrxName());
-			pc.setQty(trxFrom.getMovementQty());
-			List<CostComponent> costs = pc.getProductCostsLayers(as, line.getAD_Org_ID(),
-								null, // CostingMethod
-								line.get_ID(),
-								false); // zeroCostsOK
-			String description = line.getDescription();
-			if (description == null)
-				description = "";
-
-			for (CostComponent cc : costs)
-			{
-				final boolean sameCostDimension = isSameCostDimension(as, trxFrom, trxTo);
-				MCostDetail.createMovement(as,
-						trxFrom.getAD_Org_ID(), 	//	locator org
-						line.getM_Product_ID(), trxFrom.getM_AttributeSetInstance_ID(),
-						line.get_ID(),
-						0, // No Cost Element 
-						cc.getAmount(), cc.qty,
-						true, // IsSOTrx
-						sameCostDimension, // Is Autoprocess
-						description + "(|->)",
-						get_TrxName());
-				//
-				MCostDetail.createMovement(as,
-						trxTo.getAD_Org_ID(),	//	locator org 
-						line.getM_Product_ID(), trxTo.getM_AttributeSetInstance_ID(),
-						line.get_ID(),
-						0, // No CostElement 
-						cc.getAmount().negate(), cc.qty.negate(),
-						false, // IsSOTrx
-						sameCostDimension, // Is Autoprocess
-						description + "(|<-)",
-						get_TrxName());
-			}
-		}
-	}*/
 	
 	private boolean isSameCostDimension(MAcctSchema as, MTransaction trxFrom, MTransaction trxTo)
 	{

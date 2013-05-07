@@ -1748,7 +1748,7 @@ public class MInvoice extends X_C_Invoice implements DocAction
 				MInOutLine ioLine = (MInOutLine) allocation.getM_InOutLine();
 				for (MTransaction trx: MTransaction.getByInOutLine(ioLine))
 				{
-						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx, ioLine);
+						CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetail(trx, allocation);
 				}		
 			}
 		}
@@ -2070,13 +2070,13 @@ public class MInvoice extends X_C_Invoice implements DocAction
 		if (m_processMsg != null)
 			return false;
 
+		setProcessed(true);
+		setDocAction(DOCACTION_None);
+
 		// After Close
 		m_processMsg = ModelValidationEngine.get().fireDocValidate(this,ModelValidator.TIMING_AFTER_CLOSE);
 		if (m_processMsg != null)
 			return false;
-
-		setProcessed(true);
-		setDocAction(DOCACTION_None);
 		return true;
 	}	//	closeIt
 

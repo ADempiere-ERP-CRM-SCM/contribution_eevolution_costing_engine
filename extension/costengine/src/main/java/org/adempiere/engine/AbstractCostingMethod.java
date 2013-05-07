@@ -16,16 +16,19 @@ import org.compiere.model.MCost;
 import org.compiere.model.MCostDetail;
 import org.compiere.model.MCostElement;
 import org.compiere.model.MCostType;
+import org.compiere.model.MInOutLine;
 import org.compiere.model.MInventoryLine;
 import org.compiere.model.MMatchInv;
 import org.compiere.model.MMatchPO;
 import org.compiere.model.MMovementLine;
+import org.compiere.model.MOrderLine;
+import org.compiere.model.MPeriod;
 import org.compiere.model.MTransaction;
-import org.compiere.model.Query;
-import org.compiere.model.X_M_Transaction;
 import org.compiere.util.CLogger;
+import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Util;
+import org.eevolution.model.MPPCostCollector;
 
 
 /**
@@ -46,6 +49,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	BigDecimal m_costLowLevel;
 	BigDecimal m_cost;
 	MCostDetail m_costdetail = null;
+	BigDecimal m_movementQty = Env.ZERO;
 	BigDecimal m_CumulatedAmt = Env.ZERO;
 	BigDecimal m_CumulatedAmtLL = Env.ZERO;
 	BigDecimal m_CumulatedQty = Env.ZERO;
@@ -153,11 +157,11 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	/**
 	 * Create Reversal Transaction
 	 */
-	public MCostDetail createReversalCostDetail()
+	public void createReversalCostDetail()
 	{			
 			List<MTransaction> trxs = MTransaction.getByDocumentLine(m_trx);
 			if(trxs == null)
-				throw new AdempiereException("Can not found the original transaction");
+				return;//throw new AdempiereException("Can not found the original transaction");
 			
 			m_costdetail = new MCostDetail(m_model.getCtx(), 0 , m_trx.get_TrxName());
 			
@@ -167,21 +171,21 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				String idColumnName = model.get_TableName()+"_ID";											
 				
 				//Qty Transaction								
-				MCostDetail original_cd = MCostDetail.getByTransaction(original_trx,m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());
+				MCostDetail original_cd = MCostDetail.getByTransaction(model, original_trx,m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());
 				if(original_cd == null)
-					throw new AdempiereException("Can not found the original cost detail");
+					return; //throw new AdempiereException("Can not found the original cost detail");
 				
 				if(trxs.get(0).equals(original_trx))
 				{					
 					m_costdetail.setAD_Org_ID(original_cd.getAD_Org_ID());
 					m_costdetail.copyValues(original_cd , m_costdetail);
-					m_costdetail.setCumulatedAmt(getNewCumulatedAmt(m_last_costdetail));	
-					m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
-					m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
+					m_costdetail.setCumulatedAmt(getNewCumulatedAmt(original_cd));	
+					m_costdetail.setCumulatedQty(getNewCumulatedQty(original_cd));
+					m_costdetail.setCurrentCostPrice(getNewCurrentCostPrice(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
 					m_costdetail.setAmt(m_CurrentCostPrice.multiply(m_trx.getMovementQty()).abs());
-					m_costdetail.setCumulatedAmtLL(getNewCumulatedAmtLL(m_last_costdetail));	
-					m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
-					m_costdetail.setCurrentCostPriceLL(getNewCurrentCostPriceLL(m_last_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
+					m_costdetail.setCumulatedAmtLL(getNewCumulatedAmtLL(original_cd));	
+					m_costdetail.setCumulatedQty(getNewCumulatedQty(original_cd));
+					m_costdetail.setCurrentCostPriceLL(getNewCurrentCostPriceLL(original_cd,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP));				
 					m_costdetail.setAmtLL(m_CurrentCostPriceLL.multiply(m_trx.getMovementQty()));
 					
 					m_costdetail.setQty(Env.ZERO);
@@ -200,7 +204,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				BigDecimal costAdjustment = m_costdetail.getCostAdjustment();
 				BigDecimal costAdjustmentLL = m_costdetail.getCostAdjustmentLL();
 				
-				
+				m_costdetail.setSeqNo(original_cd.getSeqNo() + 10);
 				m_costdetail.setQty(original_cd.getQty().negate().add(qty));
 				m_costdetail.setAmt(original_cd.getAmt().add(amt));
 				m_costdetail.setCostAmt(original_cd.getCostAmt().add(costAmt));
@@ -233,8 +237,7 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 				m_CumulatedAmtLL = getNewCumulatedAmtLL(m_costdetail);
 				m_CurrentCostPrice = getNewCurrentCostPrice(m_costdetail,m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
 			}
-			
-			return m_costdetail;
+			//Only uncomment to debug Trx.get(m_costdetail.get_TrxName(), false).commit();
 	}
 	
 	/**
@@ -287,10 +290,71 @@ public abstract class AbstractCostingMethod implements ICostingMethod
 	 * @param ct Cost Type
 	 * @param ce Cost Element
 	 */
-	public void adjustCostDetail(MCostDetail cd , MCostType ct, MCostElement ce)
+	public void adjustCostDetail(MCostDetail cd )
 	{
-		MTransaction trx = new MTransaction(m_model.getCtx(), cd.getM_Transaction_ID(), m_model.get_TrxName());
+		MCostType ct = (MCostType) cd.getM_CostType();
+		MCostElement ce =(MCostElement)  cd.getM_CostElement();
+		MTransaction trx = new MTransaction(cd.getCtx(), cd.getM_Transaction_ID(), cd.get_TrxName());
 		IDocumentLine docLine = trx.getDocumentLine();
-		CostEngineFactory.getCostEngine(m_model.getAD_Client_ID()).createCostDetail(m_as,trx,docLine,ct,ce);
+		CostEngineFactory.getCostEngine(cd.getAD_Client_ID()).createCostDetail(m_as,trx,docLine,ct,ce);
+	}
+	
+	public void clearAccounting(MCostDetail cd)
+	{
+		//Only can delete if period is open
+		MTransaction trx = new MTransaction(cd.getCtx(), cd.getM_Transaction_ID(), cd.get_TrxName());
+		IDocumentLine docLine = trx.getDocumentLine();
+		MPeriod.testPeriodOpen(cd.getCtx(), cd.getDateAcct(), docLine.getC_DocType_ID(), cd.getAD_Org_ID());
+		
+		String sqldelete = "DELETE FROM Fact_Acct WHERE Record_ID =? AND AD_Table_ID=?";
+		int ad_table_id = 0;
+		int record_id = 0;
+		if (cd.getC_OrderLine_ID() != 0)
+		{
+			MOrderLine line = (MOrderLine)cd.getC_OrderLine();
+			line.getParent().setPosted(false);
+			line.getParent().saveEx();
+			record_id = line.getParent().get_ID();
+			ad_table_id = line.getParent().get_Table_ID();
+		}
+		if (cd.getM_InOutLine_ID() != 0)
+		{
+			MInOutLine line = (MInOutLine)cd.getM_InOutLine();
+			line.getParent().setPosted(false);
+			line.getParent().saveEx();
+			record_id = line.getParent().get_ID();
+			ad_table_id = line.getParent().get_Table_ID();
+		}
+
+		if (cd.getM_InventoryLine_ID() != 0)
+		{
+			MInventoryLine line = (MInventoryLine)cd.getM_InventoryLine();
+			line.getParent().setPosted(false);
+			line.getParent().saveEx();
+			record_id = line.getParent().get_ID();
+			ad_table_id = line.getParent().get_Table_ID();
+		}
+
+		if (cd.getM_MovementLine_ID() != 0)
+		{
+			MMovementLine line = (MMovementLine)cd.getM_MovementLine();
+			line.getParent().setPosted(false);
+			line.getParent().saveEx();
+			record_id = line.getParent().get_ID();
+			ad_table_id = line.getParent().get_Table_ID();
+		}
+		if (cd.getM_ProductionLine_ID() != 0)
+		{
+		}
+
+		if (cd.getPP_Cost_Collector_ID() != 0)
+		{
+			MPPCostCollector cc = (MPPCostCollector)cd.getPP_Cost_Collector();
+			cc.setPosted(false);
+			cc.saveEx();
+			record_id = cc.get_ID();
+			ad_table_id = cc.get_Table_ID();
+		}
+		int no = DB.executeUpdateEx(sqldelete,  new Object[]{record_id, ad_table_id}, cd.get_TrxName());
 	}
 }

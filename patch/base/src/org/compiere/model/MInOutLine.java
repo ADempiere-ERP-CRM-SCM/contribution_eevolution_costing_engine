@@ -81,7 +81,7 @@ implements IDocumentLine
 		int M_RMALine_ID, String where, String trxName)
 	{
 		String whereClause = "M_RMALine_ID=? " + (!Util.isEmpty(where, true) ? " AND "+where : "");
-		List<MRMALine> list = new Query(ctx, Table_Name, whereClause, trxName)
+		List<MInOutLine> list = new Query(ctx, Table_Name, whereClause, trxName)
 									.setParameters(M_RMALine_ID)
 									.list();
 		return list.toArray (new MInOutLine[list.size()]);
@@ -676,7 +676,7 @@ implements IDocumentLine
 				log.severe("No Invoice Line for: " + this.toString());
 				return Env.ZERO;
 			}
-			return m_il.getLineNetAmt();
+			return this.getMovementQty().multiply(m_il.getPriceActual());  // Actual delivery
 		}
 		else if (MLandedCost.LANDEDCOSTDISTRIBUTION_Line.equals(CostDistribution))
 			return Env.ONE;

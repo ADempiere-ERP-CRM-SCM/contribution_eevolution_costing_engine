@@ -22,7 +22,7 @@ import org.compiere.util.Util;
  */
 public class StandardCostingMethod extends AbstractCostingMethod implements ICostingMethod {
 	
-	public void setCostingMethod (MAcctSchema as,MTransaction mtrx, MCost dimension,
+	public void setCostingMethod (MAcctSchema as,IDocumentLine model, MTransaction mtrx, MCost dimension,
 			BigDecimal costThisLevel, BigDecimal costLowLevel, Boolean isSOTrx)
 	{
 		m_as = as;
@@ -33,7 +33,7 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
 		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
-		m_costdetail = MCostDetail.getByTransaction(mtrx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());
+		m_costdetail = MCostDetail.getByTransaction(model, mtrx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());
 	}
 
 	private void calculate()
@@ -60,8 +60,8 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 			m_CumulatedQty = m_costdetail.getCumulatedQty().add(m_trx.getMovementQty());
 			m_CumulatedAmt = m_costdetail.getCumulatedAmt().add(m_Amount);
 			m_CumulatedAmtLL = m_costdetail.getCumulatedAmtLL().add(m_AmountLL);
-			m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-			m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+			m_CurrentCostPrice = m_dimension.getCurrentCostPrice();
+			m_CurrentCostPriceLL = m_dimension.getCurrentCostPriceLL(); 
 			m_AdjustCost = m_CurrentCostPrice.multiply(m_dimension.getCumulatedQty()).subtract(m_dimension.getCumulatedAmt());
 			m_AdjustCost = m_CurrentCostPriceLL.multiply(m_dimension.getCumulatedQty()).subtract(m_dimension.getCumulatedAmtLL());
 			return;
@@ -72,8 +72,8 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		m_CumulatedAmt = m_dimension.getCumulatedAmt().add(m_Amount).add(m_AdjustCost);
 		m_CumulatedAmtLL = m_dimension.getCumulatedAmtLL().add(m_AmountLL).add(m_AdjustCostLL);
 		m_CumulatedQty = m_dimension.getCumulatedQty().add( m_trx.getMovementQty());
-		m_CurrentCostPrice = m_CumulatedAmt.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
-		m_CurrentCostPriceLL = m_CumulatedAmtLL.divide(m_CumulatedQty, m_as.getCostingPrecision(), BigDecimal.ROUND_HALF_UP);
+		m_CurrentCostPrice = m_dimension.getCurrentCostPrice();
+		m_CurrentCostPriceLL = m_dimension.getCurrentCostPriceLL(); 
 	}
 	
 	
@@ -88,7 +88,9 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		
 		if(m_costdetail == null)
 		{	
-			m_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , m_CurrentCostPriceLL.multiply(m_trx.getMovementQty()), m_trx.getMovementQty(), m_trx.get_TrxName());
+			m_costdetail = new MCostDetail(m_trx,  m_as.getC_AcctSchema_ID() ,m_dimension.getM_CostType_ID(), 
+					m_dimension.getM_CostElement_ID(), m_CurrentCostPrice.multiply(m_trx.getMovementQty()) , 
+					m_CurrentCostPriceLL.multiply(m_trx.getMovementQty()), m_trx.getMovementQty(), m_trx.get_TrxName());
 			m_costdetail.setDateAcct(m_model.getDateAcct());
 			m_costdetail.set_ValueOfColumn(idColumnName,CostEngine.getIDColumn(m_model));
 		}		
@@ -136,7 +138,10 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 		if(m_trx != null)
 			m_costdetail.setM_Transaction_ID(m_trx.getM_Transaction_ID());
 		m_costdetail.setDescription(description.toString());
+		updateAmtCost();
 		m_costdetail.saveEx();
+		//CostAmt
+		
 		return;
 	}
 	
@@ -227,6 +232,20 @@ public class StandardCostingMethod extends AbstractCostingMethod implements ICos
 	protected List<CostComponent> getCalculatedCosts() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	private void updateAmtCost()
+	{
+		if(m_trx.getMovementType().contains("+"))
+		{	
+			m_costdetail.setCostAmt(m_costdetail.getAmt().subtract(m_costdetail.getCostAdjustment()));
+			m_costdetail.setCostAmtLL(m_costdetail.getAmtLL().subtract(m_AdjustCostLL));
+		}	
+		if(m_trx.getMovementType().contains("-"))
+		{	
+			m_costdetail.setCostAmt(m_costdetail.getAmt().add(m_AdjustCost));
+			m_costdetail.setCostAmtLL(m_costdetail.getAmtLL().add(m_AdjustCostLL));
+		}	
 	}
 
 }

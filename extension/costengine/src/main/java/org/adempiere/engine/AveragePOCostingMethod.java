@@ -22,7 +22,7 @@ import org.compiere.util.Util;
  * 
  */
 public class AveragePOCostingMethod extends  AbstractCostingMethod implements ICostingMethod {
-	public void setCostingMethod (MAcctSchema as, MTransaction mtrx, MCost dimension,BigDecimal costThisLevel,
+	public void setCostingMethod (MAcctSchema as, IDocumentLine model ,MTransaction mtrx, MCost dimension,BigDecimal costThisLevel,
 			BigDecimal costLowLevel, Boolean isSOTrx)
 	{
 		m_as = as;		
@@ -33,14 +33,19 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 		m_isSOTrx = isSOTrx;
 		m_model = mtrx.getDocumentLine();
 		costingLevel = MProduct.get(mtrx.getCtx(), mtrx.getM_Product_ID()).getCostingLevel(as, mtrx.getAD_Org_ID());
-		m_costdetail = MCostDetail.getByTransaction(m_trx, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());	
+		m_costdetail = MCostDetail.getByTransaction(model, m_trx, m_as.getC_AcctSchema_ID() , m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID());	
 	}
 	
 
 	public void calculate()
 	{	
 		//find the last cost detail transaction
-		m_last_costdetail =  MCostDetail.getLastTransaction(m_trx, m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(),m_model.getDateAcct(), costingLevel);			
+		//try find the last cost detail transaction
+		Integer seqNo = null;
+		if(m_costdetail != null)
+			seqNo = m_costdetail.getSeqNo();
+	
+		m_last_costdetail =  MCostDetail.getLastTransaction(m_model,m_trx, m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID() , m_model.getDateAcct(), costingLevel);			
 		  
 		if(m_model.getReversalLine_ID() > 0 && m_costdetail == null)
 			return;
@@ -206,8 +211,8 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 				for(MCostDetail cd : cds)
 				{
 					cd.setProcessing(true);
-					cd.saveEx();				
-					adjustCostDetail(cd,ct,ce);
+					cd.saveEx();		
+					adjustCostDetail(cd);
 					cd.setProcessing(false);
 					cd.saveEx();
 				}

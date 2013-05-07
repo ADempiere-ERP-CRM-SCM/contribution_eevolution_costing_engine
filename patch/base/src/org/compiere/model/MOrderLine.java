@@ -856,7 +856,7 @@ public class MOrderLine extends X_C_OrderLine implements IDocumentLine
 			setQtyOrdered(getQtyOrdered());
 		
 		//	Qty on instance ASI for SO
-		if (m_IsSOTrx 
+		if (getParent().isSOTrx() 
 			&& getM_AttributeSetInstance_ID() != 0
 			&& (newRecord || is_ValueChanged("M_Product_ID")
 				|| is_ValueChanged("M_AttributeSetInstance_ID")

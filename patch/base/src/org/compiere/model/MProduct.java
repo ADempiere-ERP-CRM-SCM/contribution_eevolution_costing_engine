@@ -770,6 +770,28 @@ public class MProduct extends X_M_Product
 			mcost.delete(true, get_TrxName());
 		}*/
 		
+		// @Trifon Delete Product UOM Conversion
+		final String whereClause = MProduct.COLUMNNAME_M_Product_ID +"=?";
+		List<MUOMConversion> conversions = new Query(getCtx(), I_C_UOM_Conversion.Table_Name, whereClause, get_TrxName())
+			.setClient_ID()
+			.setParameters( get_ID() )
+			.setOnlyActiveRecords( false )
+			.list();
+		for(MUOMConversion conversion: conversions)
+		{	
+			conversion.deleteEx(true);
+		}
+		// @Trifon Delete Product Downloads
+		List<MProductDownload> downloads = new Query(getCtx(), I_M_ProductDownload.Table_Name, whereClause, get_TrxName())
+			.setClient_ID()
+			.setParameters( get_ID() )
+			.setOnlyActiveRecords( false )
+			.list();
+		for(MProductDownload download : downloads)
+		{	
+			download.deleteEx(true);
+		}
+		
 		//
 		return delete_Accounting("M_Product_Acct"); 
 	}	//	beforeDelete
@@ -820,6 +842,7 @@ public class MProduct extends X_M_Product
 	 * Check if ASI is mandatory
 	 * @param isSOTrx is outgoing trx?
 	 * @return true if ASI is mandatory, false otherwise
+	 * @deprecated
 	 */
 	/*
 	public boolean isASIMandatory(boolean isSOTrx) {
@@ -950,7 +973,6 @@ public class MProduct extends X_M_Product
 		}
 		return costingMethod;
 	}
-	
 	/**
 	 * Get Product Costing Method
 	 * @param C_AcctSchema_ID accounting schema ID

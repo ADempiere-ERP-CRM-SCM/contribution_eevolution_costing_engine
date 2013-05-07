@@ -245,7 +245,7 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 		setDescription(sLine.getDescription());
 		//
 		setM_Product_ID(sLine.getM_Product_ID());
-		if (sLine.sameOrderLineUOM())
+		if (sLine.sameOrderLineUOM() || getProduct() == null)
 			setC_UOM_ID(sLine.getC_UOM_ID());
 		else
 			// use product UOM if the shipment hasn't the same uom than the order
@@ -1149,6 +1149,7 @@ public class MInvoiceLine extends X_C_InvoiceLine implements IDocumentLine
 			// MZ Goodwill
 			// add set Qty from InOutLine
 			lca.setQty(iol.getMovementQty());
+			lca.setM_InOutLine_ID(iol.getM_InOutLine_ID());
 			// end MZ
 			if (base.signum() != 0)
 			{
