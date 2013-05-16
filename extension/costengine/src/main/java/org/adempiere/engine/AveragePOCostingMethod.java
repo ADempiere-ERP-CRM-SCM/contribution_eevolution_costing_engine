@@ -40,12 +40,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 	public void calculate()
 	{	
 		//find the last cost detail transaction
-		//try find the last cost detail transaction
-		Integer seqNo = null;
-		if(m_costdetail != null)
-			seqNo = m_costdetail.getSeqNo();
-	
-		m_last_costdetail =  MCostDetail.getLastTransaction(m_model,m_trx, m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID() , m_model.getDateAcct(), costingLevel);			
+		m_last_costdetail =  MCostDetail.getLastTransaction(m_model,m_trx, m_as.getC_AcctSchema_ID(), m_dimension.getM_CostType_ID(), m_dimension.getM_CostElement_ID(),m_model.getDateAcct(), costingLevel);			
 		  
 		if(m_model.getReversalLine_ID() > 0 && m_costdetail == null)
 			return;
@@ -211,7 +206,7 @@ public class AveragePOCostingMethod extends  AbstractCostingMethod implements IC
 				for(MCostDetail cd : cds)
 				{
 					cd.setProcessing(true);
-					cd.saveEx();		
+					cd.saveEx();				
 					adjustCostDetail(cd);
 					cd.setProcessing(false);
 					cd.saveEx();
