@@ -48,21 +48,16 @@ public class MCostDetail extends X_M_CostDetail
 {
 		
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4920936335090676482L;
-	
-	/**
 	 * get true if cost is different of zero
 	 * @param cost
 	 * @return
 	 */
-	public static boolean differentCostThanZero(MCostDetail cost)
+	public static boolean existsCost(MCostDetail cost)
 	{
 		if (cost.getCostAmt().add(cost.getCostAdjustment()).add(cost.getCostAmtLL()).add(cost.getCostAdjustmentLL()).signum() == 0)
-			return true;
-		else
 			return false;
+		else
+			return true;
 	}
 	
 	/**

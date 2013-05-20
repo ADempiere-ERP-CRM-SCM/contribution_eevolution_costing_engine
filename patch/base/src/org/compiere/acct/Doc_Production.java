@@ -179,7 +179,7 @@ public class Doc_Production extends Doc
 			for (MCostDetail cost : line.getCostDetail(as))
 			{
 				
-				if(cost.differentCostThanZero(cost))
+				if(cost.existsCost(cost))
 					continue;	 
 				
 				costs = MCostDetail.getTotalCost(cost, as);

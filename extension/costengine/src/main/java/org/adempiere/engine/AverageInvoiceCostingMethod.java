@@ -439,7 +439,16 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
 			MInOutLine ioLine =  (MInOutLine) m_model;
 			m_costdetail.setC_OrderLine_ID(ioLine.getC_OrderLine_ID());
 		}
-		
+		if (m_model instanceof MMatchInv && m_costdetail.getM_InOutLine_ID() == 0)
+		{	
+			MMatchInv iMatch =  (MMatchInv) m_model;
+			m_costdetail.setM_InOutLine_ID(iMatch.getM_InOutLine_ID());
+		}
+		if(m_model instanceof MMatchPO && m_costdetail.getM_InOutLine_ID() == 0)
+		{
+			MMatchPO poMatch =  (MMatchPO) m_model;
+			m_costdetail.setM_InOutLine_ID(poMatch.getM_InOutLine_ID());
+		}
 		m_costdetail.setCumulatedAmt(getNewCumulatedAmt(m_last_costdetail));
 		m_costdetail.setCumulatedQty(getNewCumulatedQty(m_last_costdetail));
 		m_costdetail.setCurrentCostPrice(m_CurrentCostPrice);
