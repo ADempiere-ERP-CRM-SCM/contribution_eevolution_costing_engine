@@ -89,6 +89,7 @@ public class MCostDetail extends X_M_CostDetail
 	
 	/**
 	 * get the last entry for a Cost Detail based on the Material Transaction and Cost Dimension
+	 * @param model
 	 * @param mtrx Transaction Material
 	 * @param C_AcctSchema_ID
 	 * @param M_CostType_ID
@@ -113,7 +114,7 @@ public class MCostDetail extends X_M_CostDetail
 		{
 			;
 		}	
-		else if (model instanceof MMatchInv)
+		/*else if (model instanceof MMatchInv)
 		{	
 				whereClause.append(MCostDetail.COLUMNNAME_M_Transaction_ID).append(" <= ? AND ");
 				params.add(mtrx.getM_Transaction_ID());
@@ -121,10 +122,10 @@ public class MCostDetail extends X_M_CostDetail
 				whereClause.append(MCostDetail.COLUMNNAME_C_InvoiceLine_ID).append(" IS NULL AND ");
 		}
 		else
-		{	
+		{*/	
 			whereClause.append(MCostDetail.COLUMNNAME_M_Transaction_ID).append(" <> ? AND ");
 			params.add(mtrx.getM_Transaction_ID());
-		}
+		//}
 		
 		whereClause.append("DateAcct <= " +DB.TO_DATE(dateAcct) + " AND ");
 		orderBy.append(MCostDetail.COLUMNNAME_SeqNo).append(" DESC");			
@@ -158,20 +159,20 @@ public class MCostDetail extends X_M_CostDetail
 
 		
 		
-		//List<MCostDetail> costs = new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
-		//.setParameters(params)	
-		//.setOrderBy(orderBy.toString())
-		//.list();
-		
-		//System.out.println("---------------------- Transaccion -------------------------------------------------------");
-		//System.out.println(mtrx.toString());	
-		//System.out.println("------------------------------------------------------------------------------------------");
-		//for (MCostDetail cost : costs)
-		//{
-		//	System.out.println(cost.toString());
-		//}
-		//System.out.println("---------------------- FIN BUSCANDO LA ULTIMA TRANSACCIONES ------------------------------");
-		//System.out.println("");
+		/*List<MCostDetail> costs = new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
+		.setParameters(params)	
+		.setOrderBy(orderBy.toString())
+		.list();
+
+		System.out.println("---------------------- Transaccion -------------------------------------------------------");
+		System.out.println(mtrx.toString());	
+		System.out.println("------------------------------------------------------------------------------------------");
+		for (MCostDetail cost : costs)
+		{
+			System.out.println(cost.toString());
+		}
+		System.out.println("---------------------- FIN BUSCANDO LA ULTIMA TRANSACCIONES ------------------------------");
+		System.out.println("");*/
 		
 		return  new Query(mtrx.getCtx(), Table_Name, whereClause.toString(), mtrx.get_TrxName())
 		.setParameters(params)	
@@ -372,13 +373,13 @@ public class MCostDetail extends X_M_CostDetail
 		params.add(M_CostType_ID);
 		whereClause.append(MCostDetail.COLUMNNAME_M_Transaction_ID ).append( "=? ");
 		params.add(mtrx.getM_Transaction_ID());
-		if(model instanceof MMatchInv)
+		/*if(model instanceof MMatchInv)
 		{	
 			MMatchInv matchInv = (MMatchInv) model;
 			whereClause.append(" AND ").append(MCostDetail.COLUMNNAME_C_InvoiceLine_ID).append( "=? ");
 			params.add(matchInv.getC_InvoiceLine_ID());
 		}	
-		else if (model.getReversalLine_ID() == 0)
+		else*/ if (model.getReversalLine_ID() == 0)
 		{	
 			whereClause.append(" AND ").append(model.get_TableName()).append( "_ID=? ");
 			params.add(model.get_ID());
@@ -425,41 +426,47 @@ public class MCostDetail extends X_M_CostDetail
 	 */
 	public static List<MCostDetail> getAfterDate (MCostDetail cd, String costingLevel)
 	{
-		ArrayList<Object> params = new ArrayList();
+		ArrayList<Object> params = new ArrayList<Object>();
 		final StringBuffer whereClause = new StringBuffer(MCostDetail.COLUMNNAME_C_AcctSchema_ID + "=? AND ");
 		params.add(cd.getC_AcctSchema_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID+ "=? AND ");		
+		whereClause.append(MCostDetail.COLUMNNAME_M_Product_ID).append("=? AND ");		
 		params.add(cd.getM_Product_ID());
 		
-		/*if(MAcctSchema.COSTINGLEVEL_Organization.equals(costingLevel))
+		if(MAcctSchema.COSTINGLEVEL_Organization.equals(costingLevel))
 		{	
-		whereClause.append(MCostDetail.COLUMNNAME_AD_Org_ID+ "=? AND ");
+		whereClause.append(MCostDetail.COLUMNNAME_AD_Org_ID).append("=? AND ");
 		params.add(cd.getAD_Org_ID());
 		}
 		if(MAcctSchema.COSTINGLEVEL_BatchLot.equals(costingLevel))
 		{
-			whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID+ "=? AND ");
+			whereClause.append(MCostDetail.COLUMNNAME_M_AttributeSetInstance_ID).append("=? AND ");
 			params.add(cd.getM_AttributeSetInstance_ID());
-		}*/
+		}
 		
-		whereClause.append( MCostDetail.COLUMNNAME_M_CostType_ID+"=? AND ");
+		whereClause.append( MCostDetail.COLUMNNAME_M_CostType_ID).append("=? AND ");
 		params.add(cd.getM_CostType_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID+"=? AND ");
+		
+		whereClause.append(MCostDetail.COLUMNNAME_M_CostElement_ID).append("=? AND ");
 		params.add(cd.getM_CostElement_ID());
-		whereClause.append("(to_char(DateAcct, 'yyyymmdd') || M_CostDetail_ID) > (SELECT (to_char(cd.DateAcct, 'yyyymmdd') || cd.M_CostDetail_ID) FROM M_CostDetail cd WHERE cd.M_CostDetail_ID = ? ) AND ");
+
+		whereClause.append( MCostDetail.COLUMNNAME_M_CostDetail_ID).append("<>? AND ");
 		params.add(cd.getM_CostDetail_ID());
-		whereClause.append(MCostDetail.COLUMNNAME_Processing + "=? ");
+		
+		whereClause.append( MCostDetail.COLUMNNAME_M_Transaction_ID).append("<>? AND ");
+		params.add(cd.getM_Transaction_ID());
+		
+		whereClause.append(MCostDetail.COLUMNNAME_SeqNo).append(">=? AND ");
+		params.add(cd.getSeqNo());
+		whereClause.append(MCostDetail.COLUMNNAME_Processing).append("=? ");
 		params.add(false);
 		
-		//whereClause.append("AND EXISTS ( SELECT 1 FROM M_Transaction t INNER JOIN M_Locator l ON (t.M_Locator_ID=l.M_Locator_ID ) WHERE t.M_Transaction_ID=M_CostDetail.M_Transaction_ID AND l.M_Warehouse_ID=?) ");
-		//params.add(cd.getM_Warehouse_ID());
 		
 		return  new Query(cd.getCtx(), Table_Name, whereClause.toString(), cd.get_TrxName())
 		.setClient_ID()
 		.setParameters(params)
-		.setOrderBy("(to_char(DateAcct, 'yyyymmdd') || M_CostDetail_ID)")
+		.setOrderBy(MCostDetail.COLUMNNAME_SeqNo + " ASC")
 		.list();
-	}
+	}	
 	
 	/**
 	 * Get a list the Cost Detail After the Cost Adjustment Date

@@ -133,8 +133,8 @@ public class MTransaction extends X_M_Transaction
 		List<Object> parameters = new ArrayList();
 		String columnName =  reversal.get_TableName()+"_ID";			
 		StringBuffer whereClause = new StringBuffer(I_M_Transaction.COLUMNNAME_M_Product_ID);
-		parameters.add(reversal.getM_Product_ID());
 		whereClause.append( "=? AND ");
+		parameters.add(reversal.getM_Product_ID());
 		whereClause.append( columnName ).append("=? AND ");
 		parameters.add(reversal.get_ID());
 		
@@ -269,6 +269,7 @@ public class MTransaction extends X_M_Transaction
 	{
 		StringBuffer sb = new StringBuffer ("MTransaction[");
 		sb.append(get_ID()).append(",").append(getMovementType())
+			.append(",MovementDate=").append(getMovementDate())
 			.append(",Qty=").append(getMovementQty())
 			.append(",M_Product_ID=").append(getM_Product_ID())
 			.append(",ASI=").append(getM_AttributeSetInstance_ID())
